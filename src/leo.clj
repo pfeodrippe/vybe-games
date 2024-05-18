@@ -74,10 +74,10 @@
               (vg/default-systems w)
               ;; For dev mode.
               (vf/progress w (vr.c/get-frame-time)))
-        #_ #__ (do (def w w)
-                   (def shadowmap-shader shadowmap-shader)
-                   (def kuwahara-shader kuwahara-shader)
-                   (def dither-shader dither-shader))
+        _ (do (def w w)
+              (def shadowmap-shader shadowmap-shader)
+              (def kuwahara-shader kuwahara-shader)
+              (def dither-shader dither-shader))
 
         #_ (init)]
 
