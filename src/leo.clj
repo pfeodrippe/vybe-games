@@ -88,10 +88,10 @@
     (vg/with-multipass view-2 {:shaders [[noise-blur-shader {:u_radius (+ 2.0 (rand 2))}]
                                          [dither-shader {:u_offsets (vg/Vector3 (mapv #(* % 0.5) [0.02 (+ 0.016 (wobble 0.005))
                                                                                                   (+ 0.040 (wobble 0.01))]))}]]}
-      (vr.c/clear-background (vr/Color [255 20 90 255]))
+      (vr.c/clear-background (vr/Color "#A98B39"))
       (vg/with-camera (get-in w [:vf.gltf/Camera vg/Camera])
         (vg/draw-scene w)
-        (vg/draw-debug w)))
+        #_(vg/draw-debug w)))
 
     ;; Draw to the screen.
     (vg/with-drawing
