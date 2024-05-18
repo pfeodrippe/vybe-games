@@ -1,0 +1,11 @@
+{:deps
+ {io.github.pfeodrippe/vybe {:mvn/version "0.1.7"}}
+
+ :aliases
+ {:dev {:jvm-opts ["--enable-native-access=ALL-UNNAMED"
+                   "-XstartOnFirstThread"
+
+                   ;; For tracing panama calls.
+                   #_"-Djextract.trace.downcalls=true"]}}
+
+ :paths ["src" "resources"]}
