@@ -1,0 +1,5 @@
+- [ ] create blender model
+- [ ] make things small
+- [ ] movement things
+- [ ] interact with a character
+- [ ] zoom into a character
