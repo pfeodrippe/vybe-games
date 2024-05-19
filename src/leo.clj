@@ -62,6 +62,9 @@
 
 #_(init)
 
+(defn indices [pred coll]
+  (keep-indexed #(when (pred %2) %1) coll))
+
 (defn draw
   []
   (let [{:keys [vf/world view-2 shadowmap-shader
@@ -81,6 +84,20 @@
 
         #_ (init)]
 
+    (vf/with-each w [[_ node] [:vg.anim/target-node :*]
+                     [_ c] [:vg.anim/target-component :*]
+                     {:keys [timeline_count values timeline]} vg/AnimationChannel
+                     player [:meta {:flags #{:up :cascade}}
+                             vg/AnimationPlayer]]
+      (let [values (vp/arr values timeline_count c)
+            timeline (vp/arr timeline timeline_count :float)
+            idx* (first (indices #(>= % (:current_time player)) timeline))
+            idx (max (dec (or idx* (count timeline))) 0)]
+        (if idx*
+          (update player :current_time + (* (vr.c/get-frame-time) 0.7))
+          (assoc player :current_time 0))
+        (merge w {node [(nth values idx)]})))
+
     (vg/draw-lights w shadowmap-shader depth-rts)
 
     #_(init)
@@ -92,6 +109,8 @@
       (vg/with-camera (get-in w [:vf.gltf/Camera vg/Camera])
         (vg/draw-scene w)
         #_(vg/draw-debug w)))
+
+    #_(get (:vf.gltf/ball-path w) [vg/Transform :global])
 
     ;; Draw to the screen.
     (vg/with-drawing

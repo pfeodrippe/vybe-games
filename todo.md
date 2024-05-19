@@ -1,7 +1,12 @@
 - [x] fix `zsh: killed`
 - [x] create blender model
-- [ ] make things small
-- [ ] movement things
+- [x] add ball moving through the base
+  - [x] read animation from gltf
+  - [x] query animation correctly (wildcard)
+  - [x] create anonymous entities using `vf/_`
+  - [x] run animation in-game
+- [ ] white noise sound
+- [ ] move things
 - [ ] interact with a character
 - [ ] zoom into a character
 - [ ] sound design
