@@ -69,7 +69,7 @@
   []
   (let [{:keys [vf/world view-2 shadowmap-shader
                 dither-shader noise-blur-shader
-                depth-rts]}
+                depth-rts default-shader]}
         env
 
         w world
@@ -84,6 +84,7 @@
 
         #_ (init)]
 
+    ;; -- Animation
     (vf/with-each w [[_ node] [:vg.anim/target-node :*]
                      [_ c] [:vg.anim/target-component :*]
                      {:keys [timeline_count values timeline]} vg/AnimationChannel
@@ -94,21 +95,33 @@
             idx* (first (indices #(>= % (:current_time player)) timeline))
             idx (max (dec (or idx* (count timeline))) 0)]
         (if idx*
-          (update player :current_time + (* (vr.c/get-frame-time) 0.7))
+          (update player :current_time + (* (vr.c/get-frame-time) 0.6))
+          #_(update player :current_time + (* (vr.c/get-frame-time) 0.01))
           (assoc player :current_time 0))
         (merge w {node [(nth values idx)]})))
 
-    (vg/draw-lights w shadowmap-shader depth-rts)
+    ;; -- Keyboard
+    (let [key #(vr.c/is-key-down %1)]
+      (cond
+        (key (raylib/KEY_W))
+        (update-in w [:vf.gltf/Armature vg/Translation :z] + 0.35)
+
+        (key (raylib/KEY_S))
+        (update-in w [:vf.gltf/Armature vg/Translation :z] - 0.2)))
+
+    ;; -- Drawing
+    (vg/draw-lights w #_default-shader shadowmap-shader depth-rts)
 
     #_(init)
 
-    (vg/with-multipass view-2 {:shaders [[noise-blur-shader {:u_radius (+ 2.0 (rand 2))}]
-                                         [dither-shader {:u_offsets (vg/Vector3 (mapv #(* % 0.5) [0.02 (+ 0.016 (wobble 0.005))
-                                                                                                  (+ 0.040 (wobble 0.01))]))}]]}
+    (vg/with-multipass view-2 {:shaders [[noise-blur-shader {:u_radius (+ 1.0 (rand 1))}]
+                                         [dither-shader {:u_offsets (vg/Vector3 (mapv #(* % 0.3)
+                                                                                      [0.02 (+ 0.016 (wobble 0.005))
+                                                                                       (+ 0.040 (wobble 0.01))]))}]]}
       (vr.c/clear-background (vr/Color "#A98B39"))
       (vg/with-camera (get-in w [:vf.gltf/Camera vg/Camera])
         (vg/draw-scene w)
-        #_(vg/draw-debug w)))
+        (vg/draw-debug w)))
 
     #_(get (:vf.gltf/ball-path w) [vg/Transform :global])
 
@@ -120,9 +133,15 @@
                              (vr/Rectangle [0 0 600 -600]) (vr/Rectangle [0 0 600 600])
                              (vr/Vector2 [0 0]) 0 vg/color-white)
 
+      #_(vr.c/clear-background (vr/Color "#A98B39"))
+      #_(vg/with-camera (get-in w [:vf.gltf/Camera vg/Camera])
+          (vg/draw-scene w)
+          (vg/draw-debug w))
+
       (vr.c/draw-fps 510 570))))
 
 #_(init)
+#_(vr.c/set-target-fps 10)
 
 (defn init
   []
@@ -132,6 +151,7 @@
     (vr.c/set-window-state (raylib/FLAG_WINDOW_UNFOCUSED))
     (vr.c/set-target-fps 60)
     #_(vr.c/set-target-fps 30)
+    #_(vr.c/set-target-fps 10)
     #_(vr.c/set-target-fps 120)
     (vr.c/set-window-position 1120 200)
     (vr.c/clear-background (vr/Color [10 100 200 255]))
@@ -140,7 +160,8 @@
 
   (reset! env {})
   (swap! env merge {:vf/world (-> (vf/make-world)
-                                  (vg/gltf->flecs :flecs (.getPath (io/resource "models.glb"))))})
+                                  (vg/gltf->flecs :flecs (.getPath (io/resource "models.glb")))
+                                  #_(vg/gltf->flecs :limbs "/Users/pfeodrippe/Downloads/models.glb"))})
 
   (swap! env merge { ;; Create 10 depth render textures for reuse.
                     :depth-rts (pmap #(do % (load-shadowmap-render-texture 600 600))

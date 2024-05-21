@@ -5,6 +5,19 @@
   - [x] query animation correctly (wildcard)
   - [x] create anonymous entities using `vf/_`
   - [x] run animation in-game
+- [ ] animation
+  - [x] fix vini's model
+  - [x] animate vini's
+    - https://stackoverflow.com/questions/55989429/understanding-the-skinning-part-of-a-gltf2-0-file-for-opengl-engine
+    - https://github.com/KhronosGroup/glTF-Tutorials/blob/main/gltfTutorial/gltfTutorial_020_Skins.md
+    - [x] a_joint
+    - [x] a_weight
+    - [x] u_jointMat
+  - [x] fix scale
+  - [x] fix reference pose
+  - [x] fix normals
+  - [ ] make animation programmable
+  - [ ] control animation with keyboard
 - [ ] white noise sound
 - [ ] move things
 - [ ] interact with a character
