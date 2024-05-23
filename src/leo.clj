@@ -8,12 +8,16 @@
    [clojure.math :as math]
    [clojure.string :as str]
    [clojure.java.io :as io]
+   [overtone.live :refer :all]
+   [vybe.audio :as va]
    #_[clj-java-decompiler.core :refer [decompile disassemble]])
   (:import
    (org.vybe.flecs flecs)
    (org.vybe.raylib raylib)))
 
 #_(init)
+
+#_(l/demo 0.2 (l/sin-osc 800))
 
 (set! *warn-on-reflection* true)
 
@@ -65,6 +69,41 @@
 (defn indices [pred coll]
   (keep-indexed #(when (pred %2) %1) coll))
 
+(defonce my-bus
+  (audio-bus 1))
+
+(defonce main-g (group "get-on-the-bus main"))
+(defonce early-g (group "early birds" :head main-g))
+(defonce later-g (group "latecomers" :after early-g))
+
+(defsynth ddd
+  [freq 20000, mul 0.5, out_bus 0]
+  (out out_bus (* mul (lpf (pink-noise 0.4) freq))))
+
+(defsynth-load directional
+  "resources/sc/compiled/directional.scsyndef")
+#_ (def d (directional [:tail later-g] :in my-bus :out_bus 0))
+
+(defsynth-load bass-drum
+  "resources/sc/compiled/sonic-pi-sc808_bassdrum.scsyndef")
+#_ (bass-drum)
+
+(comment
+
+  (def aaa (ddd [:tail early-g] :out_bus my-bus))
+
+  (stop)
+
+  (ctl d :azim 3.28)
+
+  (pp-node-tree)
+
+  (ctl aaa :mul 0.2)
+
+  ())
+
+#_ (init)
+
 (defn draw
   []
   (let [{:keys [vf/world view-2 shadowmap-shader
@@ -84,6 +123,14 @@
 
         #_ (init)]
 
+    (comment
+
+      (vr.c/vector-3-distance
+       (vg/matrix->translation (get-in w [:vf.gltf/Camera [vg/Transform :global]]))
+       (vg/matrix->translation (get-in w [:vf.gltf/Sphere [vg/Transform :global]])))
+
+      ())
+
     ;; -- Animation
     (vf/with-each w [[_ node] [:vg.anim/target-node :*]
                      [_ c] [:vg.anim/target-component :*]
@@ -93,21 +140,44 @@
       (let [values (vp/arr values timeline_count c)
             timeline (vp/arr timeline timeline_count :float)
             idx* (first (indices #(>= % (:current_time player)) timeline))
-            idx (max (dec (or idx* (count timeline))) 0)]
+            idx (max (dec (or idx* (count timeline))) 0)
+            step (let [key #(vr.c/is-key-down %1)]
+                   (cond
+                     (key (raylib/KEY_W))
+                     1.5
+
+                     (key (raylib/KEY_S))
+                     -1.5
+
+                     :else
+                     0.6))]
         (if idx*
-          (update player :current_time + (* (vr.c/get-frame-time) 0.6))
+          (do (when (and (= c vg/Translation)
+                         #_(zero? (mod idx* 20)))
+                #_(println idx* [node c])
+                (let [freq (+ 600 (* 30 idx*) #_(rand-int 187))
+                      d (vr.c/vector-3-distance
+                         (vg/matrix->translation (get-in w [:vf.gltf/Camera [vg/Transform :global]]))
+                         (vg/matrix->translation (get-in w [:vf.gltf/Sphere [vg/Transform :global]])))
+                      amp (/ 1 (* d d 5))]
+                  #_(ctl aaa :mula amp :mulb amp)))
+              (update player :current_time + (* (vr.c/get-frame-time) step)))
           #_(update player :current_time + (* (vr.c/get-frame-time) 0.01))
           (assoc player :current_time 0))
         (merge w {node [(nth values idx)]})))
 
     ;; -- Keyboard
-    (let [key #(vr.c/is-key-down %1)]
-      (cond
-        (key (raylib/KEY_W))
-        (update-in w [:vf.gltf/Armature vg/Translation :z] + 0.35)
+    #_(let [key #(vr.c/is-key-pressed %1)]
+        (cond
+          (key (raylib/KEY_W))
+          (l/demo 0.1 [(l/sin-osc 800)
+                       (l/sin-osc 800)])
+          #_(update-in w [:vf.gltf/Armature vg/Translation :z] + 0.35)
 
-        (key (raylib/KEY_S))
-        (update-in w [:vf.gltf/Armature vg/Translation :z] - 0.2)))
+          (key (raylib/KEY_S))
+          (l/demo 0.1 [(l/sin-osc 400)
+                       (l/sin-osc 400)])
+          #_(update-in w [:vf.gltf/Armature vg/Translation :z] - 0.2)))
 
     ;; -- Drawing
     (vg/draw-lights w #_default-shader shadowmap-shader depth-rts)
@@ -121,7 +191,7 @@
       (vr.c/clear-background (vr/Color "#A98B39"))
       (vg/with-camera (get-in w [:vf.gltf/Camera vg/Camera])
         (vg/draw-scene w)
-        (vg/draw-debug w)))
+        #_(vg/draw-debug w)))
 
     #_(get (:vf.gltf/ball-path w) [vg/Transform :global])
 
