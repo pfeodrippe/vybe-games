@@ -5,7 +5,7 @@
   - [x] query animation correctly (wildcard)
   - [x] create anonymous entities using `vf/_`
   - [x] run animation in-game
-- [ ] animation
+- [x] animation
   - [x] fix vini's model
   - [x] animate vini's
     - https://stackoverflow.com/questions/55989429/understanding-the-skinning-part-of-a-gltf2-0-file-for-opengl-engine
@@ -16,12 +16,15 @@
   - [x] fix scale
   - [x] fix reference pose
   - [x] fix normals
-  - [ ] make animation programmable
-  - [ ] control animation with keyboard
-- [ ] white noise sound
+  - [x] control animation with keyboard
+- [ ] positional sound
+  - [ ] use ambisonics
+    - Repo, https://github.com/ambisonictoolkit/atk-sc3?tab=readme-ov-file
+    - Eli's tutorial about ambisonics, https://www.youtube.com/watch?v=I2Cr_a4KCCI
 - [ ] move things
 - [ ] interact with a character
 - [ ] zoom into a character
 - [ ] sound design
   - [ ] zoom sound
   - [ ] near sound
+- [ ] make animation programmable
