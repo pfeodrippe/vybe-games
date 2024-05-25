@@ -76,25 +76,36 @@
 (defonce early-g (group "early birds" :head main-g))
 (defonce later-g (group "latecomers" :after early-g))
 
-(defsynth ddd
-  [freq 20000, mul 0.5, out_bus 0]
-  (out out_bus (* mul (lpf (pink-noise 0.4) freq))))
-
-(defsynth-load directional
-  "resources/sc/compiled/directional.scsyndef")
-#_ (def d (directional [:tail later-g] :in my-bus :out_bus 0))
-
 (defsynth-load bass-drum
   "resources/sc/compiled/sonic-pi-sc808_bassdrum.scsyndef")
 #_ (bass-drum)
 
+(defonce b (sample "~/Downloads/wrapping-paper-rustle-72405.mp3"))
+
+(defsynth ddd
+  [freq 20000, mul 0.5, out_bus 0]
+  (out out_bus
+       (* mul (sin-osc 260) (saw 3) 0.04)
+       #_(play-buf 1 b (buf-rate-scale:ir b) :loop 1)
+       #_(* mul (lpf (pink-noise 0.4) freq))))
+
+(defsynth-load directional
+  "resources/sc/compiled/directional.scsyndef")
+#_ (def sound-d (directional [:tail later-g] :in my-bus :out_bus 0))
+
 (comment
 
-  (def aaa (ddd [:tail early-g] :out_bus my-bus))
+  (def b (sample "/Users/pfeodrippe/Library/Application Support/ATK/sounds/stereo/Aurora_Surgit-Dies_Irae.wav"))
+
+  (do
+    (stop)
+    (def aaa (ddd [:tail early-g] :out_bus my-bus))
+    (def sound-d (directional [:tail later-g] :in my-bus :out_bus 0)))
 
   (stop)
 
-  (ctl d :azim 3.28)
+  (ctl sound-d :azim (/ math/PI 2))
+  (ctl sound-d :elev (/ math/PI 2))
 
   (pp-node-tree)
 
@@ -123,14 +134,6 @@
 
         #_ (init)]
 
-    (comment
-
-      (vr.c/vector-3-distance
-       (vg/matrix->translation (get-in w [:vf.gltf/Camera [vg/Transform :global]]))
-       (vg/matrix->translation (get-in w [:vf.gltf/Sphere [vg/Transform :global]])))
-
-      ())
-
     ;; -- Animation
     (vf/with-each w [[_ node] [:vg.anim/target-node :*]
                      [_ c] [:vg.anim/target-component :*]
@@ -150,7 +153,8 @@
                      -1.5
 
                      :else
-                     0.6))]
+                     0.3))]
+
         (if idx*
           (do (when (and (= c vg/Translation)
                          #_(zero? (mod idx* 20)))
@@ -159,12 +163,27 @@
                       d (vr.c/vector-3-distance
                          (vg/matrix->translation (get-in w [:vf.gltf/Camera [vg/Transform :global]]))
                          (vg/matrix->translation (get-in w [:vf.gltf/Sphere [vg/Transform :global]])))
-                      amp (/ 1 (* d d 5))]
-                  #_(ctl aaa :mula amp :mulb amp)))
-              (update player :current_time + (* (vr.c/get-frame-time) step)))
+                      [azim elev] (let [{:keys [x y z]} (vr.c/vector-3-subtract
+                                                         (vg/matrix->translation (get-in w [:vf.gltf/Camera [vg/Transform :global]]))
+                                                         #_(-> (vg/Vector3 [0 0 -1])
+                                                               (vr.c/vector-3-transform (get-in w [:vf.gltf/Camera [vg/Transform :global]])))
+                                                         (vg/matrix->translation (get-in w [:vf.gltf/Sphere [vg/Transform :global]])))]
+                                    (cond
+                                      (< x 0)
+                                      [(vr.c/atan-2 z x)
+                                       (vr.c/atan-2 y x)]
+
+                                      :else
+                                      [(- (vr.c/atan-2 z x))
+                                       (- (vr.c/atan-2 y x))]))
+                      amp (/ 1 (* d d 1))]
+                  (ctl sound-d :azim azim :elev elev :amp 2)))
+              #_(update player :current_time + (* (vr.c/get-frame-time) step)))
           #_(update player :current_time + (* (vr.c/get-frame-time) 0.01))
           (assoc player :current_time 0))
         (merge w {node [(nth values idx)]})))
+
+    #_ (init)
 
     ;; -- Keyboard
     #_(let [key #(vr.c/is-key-pressed %1)]
@@ -189,9 +208,10 @@
                                                                                       [0.02 (+ 0.016 (wobble 0.005))
                                                                                        (+ 0.040 (wobble 0.01))]))}]]}
       (vr.c/clear-background (vr/Color "#A98B39"))
-      (vg/with-camera (get-in w [:vf.gltf/Camera vg/Camera])
+      (vg/with-camera #_(get-in w [:vf.gltf/Light vg/Camera])
+        (get-in w [:vf.gltf/Camera vg/Camera])
         (vg/draw-scene w)
-        #_(vg/draw-debug w)))
+        (vg/draw-debug w)))
 
     #_(get (:vf.gltf/ball-path w) [vg/Transform :global])
 

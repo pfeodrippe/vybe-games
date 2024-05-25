@@ -39,8 +39,8 @@ SynthDef(\simple, {|
 (
 ~aa = Synth(\simple, [\out_bus, ~myBus]);
 ~ss = Synth(\directional, [\in, ~myBus], ~aa, \addAfter);
-//~ss.set(\azim, 180);
 )
+(~ss.set(\azim, 180);)
 ~ss.free;
 
 /////////////////////////////////////////////////////////////// ----------------------------------
@@ -56,14 +56,15 @@ SynthDef('directional', {|
 
 	var sig, azim, enc, dec;
 	enc = FoaEncoderMatrix.newDirection(theta: 0, phi: 0);
-	dec = FoaDecoderMatrix.newStereo(angle: 0, pattern: 0.5);
+	dec = FoaDecoderMatrix.newStereo(angle: 110.degrad/2, pattern: 0.5);
 
 	//azim = LFSaw.kr(1/12).bipolar(180).poll;
 	sig = In.ar(in, 1);
 	sig = FoaEncode.ar(sig, enc);
 	sig = FoaRotate.ar(sig, \azim.kr(0));
+	sig = FoaTilt.ar(sig, \elev.kr(0));
 	sig = FoaDecode.ar(sig, dec);
-	Out.ar(out_bus, sig);
+	Out.ar(out_bus, sig * \amp.kr(1));
 }).writeDefFile(~resourcesPath).add;
 
 SynthDef('sonic-pi-sc808_bassdrum', {|
