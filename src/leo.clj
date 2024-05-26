@@ -163,22 +163,20 @@
                       d (vr.c/vector-3-distance
                          (vg/matrix->translation (get-in w [:vf.gltf/Camera [vg/Transform :global]]))
                          (vg/matrix->translation (get-in w [:vf.gltf/Sphere [vg/Transform :global]])))
-                      [azim elev] (let [{:keys [x y z]} (vr.c/vector-3-subtract
-                                                         (vg/matrix->translation (get-in w [:vf.gltf/Camera [vg/Transform :global]]))
-                                                         #_(-> (vg/Vector3 [0 0 -1])
-                                                               (vr.c/vector-3-transform (get-in w [:vf.gltf/Camera [vg/Transform :global]])))
-                                                         (vg/matrix->translation (get-in w [:vf.gltf/Sphere [vg/Transform :global]])))]
-                                    (cond
-                                      (< x 0)
-                                      [(vr.c/atan-2 z x)
-                                       (vr.c/atan-2 y x)]
-
-                                      :else
-                                      [(- (vr.c/atan-2 z x))
-                                       (- (vr.c/atan-2 y x))]))
+                      [azim elev] (let [cam-transform (get-in w [:vf.gltf/Camera [vg/Transform :global]])
+                                        sphere-transform (get-in w [:vf.gltf/Sphere [vg/Transform :global]])
+                                        {:keys [x y z] :as _v} (-> (vr.c/matrix-multiply sphere-transform (vr.c/matrix-invert cam-transform))
+                                                                   vg/matrix->translation)]
+                                    (if (> z 0)
+                                      [(- (vr.c/atan-2 x z))
+                                       (vr.c/atan-2 y z)
+                                       _v]
+                                      [(vr.c/atan-2 x z)
+                                       (vr.c/atan-2 y z)
+                                       _v]))
                       amp (/ 1 (* d d 1))]
-                  (ctl sound-d :azim azim :elev elev :amp 2)))
-              #_(update player :current_time + (* (vr.c/get-frame-time) step)))
+                  (ctl sound-d :azim azim :elev elev :amp amp)))
+              (update player :current_time + (* (vr.c/get-frame-time) step)))
           #_(update player :current_time + (* (vr.c/get-frame-time) 0.01))
           (assoc player :current_time 0))
         (merge w {node [(nth values idx)]})))
@@ -209,9 +207,9 @@
                                                                                        (+ 0.040 (wobble 0.01))]))}]]}
       (vr.c/clear-background (vr/Color "#A98B39"))
       (vg/with-camera #_(get-in w [:vf.gltf/Light vg/Camera])
-        (get-in w [:vf.gltf/Camera vg/Camera])
-        (vg/draw-scene w)
-        (vg/draw-debug w)))
+                      (get-in w [:vf.gltf/Camera vg/Camera])
+                      (vg/draw-scene w)
+                      (vg/draw-debug w)))
 
     #_(get (:vf.gltf/ball-path w) [vg/Transform :global])
 
