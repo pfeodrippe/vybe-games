@@ -1,5 +1,9 @@
 Server.default.reboot;
 
+UGen.allSubclasses[0].ar.inputs;
+Line.ar.argNameForInputAt(0);
+FoaDecode.ar.argNames; // THIS DOESN'T WORK!!!
+
 (
 ~enc = FoaEncoderMatrix.newDirection(theta: 0, phi: 0);
 ~dec = FoaDecoderMatrix.newStereo(angle: 110.degrad/2, pattern: 0.5);
@@ -63,6 +67,7 @@ SynthDef('directional', {|
 	sig = FoaEncode.ar(sig, enc);
 	sig = FoaRotate.ar(sig, \azim.kr(0));
 	sig = FoaTilt.ar(sig, \elev.kr(0));
+	//sig = FoaProximity.ar(sig, \distance.kr(1) + 0.01);
 	sig = FoaDecode.ar(sig, dec);
 	Out.ar(out_bus, sig * \amp.kr(1));
 }).writeDefFile(~resourcesPath).add;
