@@ -21,10 +21,26 @@
   - [x] use ambisonics
     - Repo, https://github.com/ambisonictoolkit/atk-sc3?tab=readme-ov-file
     - Eli's tutorial about ambisonics, https://www.youtube.com/watch?v=I2Cr_a4KCCI
-- [ ] move things
+- [ ] camera far
+  - [ ] see camera view on blender
+  - [ ] use it on game
+  - [ ] active camera should be the one with the sound
+- [ ] object appearance
+  - [ ] hover on a object
+    - [ ] sound
+  - [ ] click on a object
+    - [ ] sound
+  - [ ] trigger animation
+    - [ ] sound
+- [ ] click on the character passing through to know what they have to say
 - [ ] interact with a character
 - [ ] zoom into a character
 - [ ] sound design
   - [ ] zoom sound
   - [ ] near sound
 - [ ] make animation programmable
+
+## Ideas
+
+- [ ] blue's bird
+- [ ] overly afficionated fox
