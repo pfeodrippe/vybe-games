@@ -17,8 +17,8 @@
   - [x] fix reference pose
   - [x] fix normals
   - [x] control animation with keyboard
-- [ ] positional sound
-  - [ ] use ambisonics
+- [x] positional sound
+  - [x] use ambisonics
     - Repo, https://github.com/ambisonictoolkit/atk-sc3?tab=readme-ov-file
     - Eli's tutorial about ambisonics, https://www.youtube.com/watch?v=I2Cr_a4KCCI
 - [ ] move things
