@@ -159,9 +159,7 @@
 
         (if idx*
           (do (when (= c vg/Translation)
-                #_(println idx* [node c])
-                (let [freq (+ 600 (* 30 idx*) #_(rand-int 187))
-                      d (vr.c/vector-3-distance
+                (let [d (vr.c/vector-3-distance
                          (vg/matrix->translation (get-in w [:vg/camera-active [vg/Transform :global]]))
                          (vg/matrix->translation (get-in w [:vg.gltf/Sphere [vg/Transform :global]])))
                       [azim elev] (let [cam-transform (get-in w [:vg/camera-active [vg/Transform :global]])
@@ -179,25 +177,21 @@
                       amp (/ 1 (* d d 1))]
                   #_(ctl sound-d :azim azim :elev elev :amp amp :distance d)))
               (update player :current_time + (* (vr.c/get-frame-time) step)))
-
-          #_(update player :current_time + (* (vr.c/get-frame-time) 0.01))
           (assoc player :current_time 0))
         (merge w {node [(nth values idx)]})))
 
     #_ (init)
 
     ;; -- Keyboard
-    #_(let [key #(vr.c/is-key-pressed %1)]
-        (cond
-          (key (raylib/KEY_W))
-          (l/demo 0.1 [(l/sin-osc 800)
-                       (l/sin-osc 800)])
-          #_(update-in w [:vg.gltf/Armature vg/Translation :z] + 0.35)
-
-          (key (raylib/KEY_S))
-          (l/demo 0.1 [(l/sin-osc 400)
-                       (l/sin-osc 400)])
-          #_(update-in w [:vg.gltf/Armature vg/Translation :z] - 0.2)))
+    (let [key #(vr.c/is-key-pressed %1)]
+      (cond
+        (key (raylib/KEY_SPACE))
+        (let [new-entity (if (contains? (:vg/camera-active w) (vf/is-a :vg.gltf/CameraFar))
+                           :vg.gltf/Camera
+                           :vg.gltf/CameraFar)]
+          (-> w
+              (update :vg/camera-active disj (vf/is-a :*))
+              (assoc :vg/camera-active [(vf/is-a new-entity)])))))
 
     ;; -- Drawing
     (vg/draw-lights w #_default-shader shadowmap-shader depth-rts)
