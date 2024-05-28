@@ -8,8 +8,8 @@
    [clojure.math :as math]
    [clojure.string :as str]
    [clojure.java.io :as io]
-   [overtone.live :refer :all]
-   [vybe.audio :as va]
+   #_[overtone.live :refer :all]
+   #_[vybe.audio :as va]
    #_[clj-java-decompiler.core :refer [decompile disassemble]])
   (:import
    (org.vybe.flecs flecs)
@@ -69,29 +69,31 @@
 (defn indices [pred coll]
   (keep-indexed #(when (pred %2) %1) coll))
 
-(defonce my-bus
-  (audio-bus 1))
+#_(do
 
-(defonce main-g (group "get-on-the-bus main"))
-(defonce early-g (group "early birds" :head main-g))
-(defonce later-g (group "latecomers" :after early-g))
+    (defonce my-bus
+      (audio-bus 1))
 
-(defsynth-load bass-drum
-  "resources/sc/compiled/sonic-pi-sc808_bassdrum.scsyndef")
-#_ (bass-drum)
+    (defonce main-g (group "get-on-the-bus main"))
+    (defonce early-g (group "early birds" :head main-g))
+    (defonce later-g (group "latecomers" :after early-g))
 
-(defonce b (sample "~/Downloads/wrapping-paper-rustle-72405.mp3"))
+    (defsynth-load bass-drum
+      "resources/sc/compiled/sonic-pi-sc808_bassdrum.scsyndef")
+    #_ (bass-drum)
 
-(defsynth ddd
-  [freq 300, mul 0.5, out_bus 0]
-  (out out_bus
-       #_(* mul (sin-osc 260) (saw 3) 0.04)
-       #_(play-buf 1 b (buf-rate-scale:ir b) :loop 1)
-       (* mul (lpf (pink-noise 0.4) 500))))
+    (defonce b (sample "~/Downloads/wrapping-paper-rustle-72405.mp3"))
 
-(defsynth-load directional
-  "resources/sc/compiled/directional.scsyndef")
-#_ (def sound-d (directional [:tail later-g] :in my-bus :out_bus 0))
+    (defsynth ddd
+      [freq 300, mul 0.5, out_bus 0]
+      (out out_bus
+           #_(* mul (sin-osc 260) (saw 3) 0.04)
+           #_(play-buf 1 b (buf-rate-scale:ir b) :loop 1)
+           (* mul (lpf (pink-noise 0.4) 500))))
+
+    (defsynth-load directional
+      "resources/sc/compiled/directional.scsyndef")
+    #_ (def sound-d (directional [:tail later-g] :in my-bus :out_bus 0)))
 
 (comment
 
@@ -119,34 +121,33 @@
 
 (defn draw
   []
-  (let [{:keys [vf/world view-2 shadowmap-shader
-                dither-shader noise-blur-shader
-                depth-rts default-shader]}
-        env
+  (vp/with-arena _
 
-        w world
-        _ (do (vg/run-reloadable-commands!)
-              (vg/default-systems w)
-              ;; For dev mode.
-              (vf/progress w (vr.c/get-frame-time)))
-        _ (do (def w w)
-              (def shadowmap-shader shadowmap-shader)
-              (def kuwahara-shader kuwahara-shader)
-              (def dither-shader dither-shader))
+    #_ (reset! vp/*default-arena (java.lang.foreign.Arena/ofShared))
 
-        #_ (init)]
+    (let [{:keys [vf/world view-2 shadowmap-shader
+                  dither-shader noise-blur-shader
+                  depth-rts default-shader]}
+          env
 
-    ;; -- Animation
-    (vf/with-each w [[_ node] [:vg.anim/target-node :*]
-                     [_ c] [:vg.anim/target-component :*]
-                     {:keys [timeline_count values timeline]} vg/AnimationChannel
-                     player [:meta {:flags #{:up :cascade}}
-                             vg/AnimationPlayer]]
-      (let [values (vp/arr values timeline_count c)
-            timeline (vp/arr timeline timeline_count :float)
-            idx* (first (indices #(>= % (:current_time player)) timeline))
-            idx (max (dec (or idx* (count timeline))) 0)
-            step (let [key #(vr.c/is-key-down %1)]
+          w world
+          _ (do (vg/run-reloadable-commands!)
+                (vg/default-systems w)
+                ;; For dev mode.
+                (vf/progress w (vr.c/get-frame-time)))
+          #_ #__ (do (def w w)
+                     (def shadowmap-shader shadowmap-shader)
+                     (def dither-shader dither-shader))
+
+          #_ (init)]
+
+      #_(when (vr.c/is-gamepad-available 0)
+          (when (vr.c/is-gamepad-button-pressed 0 (raylib/GAMEPAD_BUTTON_RIGHT_FACE_UP))
+            (println :aaa 2))
+          #_(println :aaa (vr.c/get-gamepad-axis-movement 0 0)))
+
+      ;; -- Animation
+      (let [step (let [key #(vr.c/is-key-down %1)]
                    (cond
                      (key (raylib/KEY_W))
                      1.5
@@ -155,75 +156,117 @@
                      -1.5
 
                      :else
-                     0.3))]
+                     1))]
+        (vf/with-each w [player vg/AnimationPlayer]
+          (update player :current_time + (* (vr.c/get-frame-time) step))))
 
-        (if idx*
-          (do (when (= c vg/Translation)
-                (let [d (vr.c/vector-3-distance
-                         (vg/matrix->translation (get-in w [:vg/camera-active [vg/Transform :global]]))
-                         (vg/matrix->translation (get-in w [:vg.gltf/Sphere [vg/Transform :global]])))
-                      [azim elev] (let [cam-transform (get-in w [:vg/camera-active [vg/Transform :global]])
-                                        sphere-transform (get-in w [:vg.gltf/Sphere [vg/Transform :global]])
-                                        {:keys [x y z] :as _v} (-> sphere-transform
-                                                                   (vr.c/matrix-multiply (vr.c/matrix-invert cam-transform))
-                                                                   vg/matrix->translation)]
-                                    (if (> z 0)
-                                      [(- (vr.c/atan-2 x z))
-                                       (vr.c/atan-2 y z)
-                                       _v]
-                                      [(vr.c/atan-2 x z)
-                                       (vr.c/atan-2 y z)
-                                       _v]))
-                      amp (/ 1 (* d d 1))]
-                  #_(ctl sound-d :azim azim :elev elev :amp amp :distance d)))
-              (update player :current_time + (* (vr.c/get-frame-time) step)))
-          (assoc player :current_time 0))
-        (merge w {node [(nth values idx)]})))
+      (vf/with-each w [[_ node] [:vg.anim/target-node :*]
+                       [_ c] [:vg.anim/target-component :*]
+                       {:keys [timeline_count values timeline]} vg/AnimationChannel
+                       player [:meta {:flags #{:up :cascade}}
+                               vg/AnimationPlayer]
+                       e :vf/entity
+                       [_ n] [:vf/child-of :*]]
+        #_(def e e)
 
-    #_ (init)
+        (comment
 
-    ;; -- Keyboard
-    (let [key #(vr.c/is-key-pressed %1)]
-      (cond
-        (key (raylib/KEY_SPACE))
-        (let [new-entity (if (contains? (:vg/camera-active w) (vf/is-a :vg.gltf/CameraFar))
-                           :vg.gltf/Camera
-                           :vg.gltf/CameraFar)]
-          (-> w
-              (update :vg/camera-active disj (vf/is-a :*))
-              (assoc :vg/camera-active [(vf/is-a new-entity)])))))
+          (get e [:vf/child-of :*])
 
-    ;; -- Drawing
-    (vg/draw-lights w #_default-shader shadowmap-shader depth-rts)
+          (vf/with-each w [e :vf/entity,
+                           c [:meta {:term {:src {:id (.id e)
+                                                  #_ #_:name (vf/get-name e)}}
+                                     #_ #_:flags #{:is-entity}}
+                              :vg/channel]]
+            e)
 
-    #_(init)
+          (vf/with-each w [e :vf/entity,
+                           c [:meta {:term {:src {:id (flecs/EcsIsName)
+                                                  :name (vp/try-string "vf_gltf/model.vg_gltf_anim/CubeAction.vf/ANOM_29739")}}
+                                     #_ #_:flags #{:is-entity}}
+                              :vg/channel]]
+            e)
 
-    (vg/with-multipass view-2 {:shaders [[noise-blur-shader {:u_radius (+ 1.0 (rand 1))}]
-                                         [dither-shader {:u_offsets (vg/Vector3 (mapv #(* % 0.3)
-                                                                                      [0.02 (+ 0.016 (wobble 0.005))
-                                                                                       (+ 0.040 (wobble 0.01))]))}]]}
-      (vr.c/clear-background (vr/Color "#A98B39"))
-      (vg/with-camera #_(get-in w [:vg.gltf/Light vg/Camera])
-                      (get-in w [:vg/camera-active vg/Camera])
-                      (vg/draw-scene w)
-                      #_(vg/draw-debug w)))
+          (vp/->string (vybe.flecs.c/ecs-entity-str w (.id e)))
 
-    #_(get (:vg.gltf/ball-path w) [vg/Transform :global])
+          ())
 
-    ;; Draw to the screen.
-    (vg/with-drawing
-      (vr.c/clear-background (vr/Color [255 20 100 255]))
+        (when (not= n :vg.gltf.anim/Right)
+          (let [values (vp/arr values timeline_count c)
+                timeline (vp/arr timeline timeline_count :float)
+                idx* (first (indices #(>= % (:current_time player)) timeline))
+                idx (max (dec (or idx* (count timeline))) 0)]
+            (if idx*
+              (do (when (= c vg/Translation)
+                    (let [d (vr.c/vector-3-distance
+                             (vg/matrix->translation (get-in w [:vg/camera-active [vg/Transform :global]]))
+                             (vg/matrix->translation (get-in w [:vg.gltf/Sphere [vg/Transform :global]])))
+                          [azim elev] (let [cam-transform (get-in w [:vg/camera-active [vg/Transform :global]])
+                                            sphere-transform (get-in w [:vg.gltf/Sphere [vg/Transform :global]])
+                                            {:keys [x y z] :as _v} (-> sphere-transform
+                                                                       (vr.c/matrix-multiply (vr.c/matrix-invert cam-transform))
+                                                                       vg/matrix->translation)]
+                                        (if (> z 0)
+                                          [(- (vr.c/atan-2 x z))
+                                           (vr.c/atan-2 y z)
+                                           _v]
+                                          [(vr.c/atan-2 x z)
+                                           (vr.c/atan-2 y z)
+                                           _v]))
+                          amp (if (zero? d)
+                                1
+                                (/ 1 (* d d 1)))]
+                      #_(ctl sound-d :azim azim :elev elev :amp amp :distance d))))
+              (assoc player :current_time 0))
 
-      (vr.c/draw-texture-pro (:texture view-2)
-                             (vr/Rectangle [0 0 600 -600]) (vr/Rectangle [0 0 600 600])
-                             (vr/Vector2 [0 0]) 0 vg/color-white)
+            (merge w {node [(nth values idx)]}))))
 
-      #_(vr.c/clear-background (vr/Color "#A98B39"))
-      #_(vg/with-camera (get-in w [:vg.gltf/Camera vg/Camera])
-          (vg/draw-scene w)
-          (vg/draw-debug w))
+      #_ (init)
 
-      (vr.c/draw-fps 510 570))))
+      ;; -- Keyboard
+      (let [key #(vr.c/is-key-pressed %1)]
+        (cond
+          (key (raylib/KEY_SPACE))
+          (let [new-entity (if (contains? (:vg/camera-active w) (vf/is-a :vg.gltf/CameraFar))
+                             :vg.gltf/Camera
+                             :vg.gltf/CameraFar)]
+            (-> w
+                (update :vg/camera-active disj (vf/is-a :*))
+                (assoc :vg/camera-active [(vf/is-a new-entity)])))))
+
+      ;; -- Drawing
+      (vg/draw-lights w #_default-shader shadowmap-shader depth-rts)
+
+      #_(init)
+
+      (vg/with-multipass view-2 {:shaders [[noise-blur-shader {:u_radius (+ 1.0 (rand 1))}]
+                                           [dither-shader {:u_offsets (vg/Vector3 (mapv #(* % 0.3)
+                                                                                        [0.02 (+ 0.016 (wobble 0.005))
+                                                                                         (+ 0.040 (wobble 0.01))]))}]]}
+        (vr.c/clear-background (vr/Color "#A98B39"))
+        (vg/with-camera #_(get-in w [:vg.gltf/Light vg/Camera])
+                          (get-in w [:vg/camera-active vg/Camera])
+                          (vg/draw-scene w)
+                          #_(vg/draw-debug w)))
+
+      #_(get (:vg.gltf/ball-path w) [vg/Transform :global])
+
+      ;; Draw to the screen.
+      (vg/with-drawing
+        (vr.c/clear-background (vr/Color [255 20 100 255]))
+
+        (vr.c/draw-texture-pro (:texture view-2)
+                               (vr/Rectangle [0 0 600 -600]) (vr/Rectangle [0 0 600 600])
+                               (vr/Vector2 [0 0]) 0 vg/color-white)
+
+        #_(vr.c/clear-background (vr/Color "#A98B39"))
+        #_(vg/with-camera (get-in w [:vg.gltf/Camera vg/Camera])
+            (vg/draw-scene w)
+            (vg/draw-debug w))
+
+        (vr.c/draw-fps 510 570)))
+
+    #_ (.close (vp/default-arena))))
 
 #_(init)
 #_(vr.c/set-target-fps 10)

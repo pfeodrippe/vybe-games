@@ -27,12 +27,21 @@
   - [x] active camera should be the one with the sound
   - [x] switch using space key
 - [ ] object appearance
+  - [x] cube
+    - [x] animation
+  - [ ] trigger animation
+    - [ ] how to represent it?
+      - [ ] create multiple animations in blender for the same object
+      - [ ] maybe states
+    - [ ] press `M`
+    - [ ] sound
   - [ ] hover on a object
     - [ ] sound
   - [ ] click on a object
     - [ ] sound
-  - [ ] trigger animation
-    - [ ] sound
+- [ ] particles
+  - [ ] grains in the air (maybe 1 pixel?)
+  - [ ] represents wind?
 - [ ] click on the character passing through to know what they have to say
 - [ ] interact with a character
 - [ ] zoom into a character
