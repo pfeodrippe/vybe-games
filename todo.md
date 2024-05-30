@@ -30,6 +30,7 @@
   - [x] cube
     - [x] animation
   - [ ] trigger animation
+    - [ ] switch between one state and the other
     - [ ] how to represent it?
       - [ ] create multiple animations in blender for the same object
       - [ ] maybe states

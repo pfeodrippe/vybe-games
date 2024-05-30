@@ -122,12 +122,9 @@
 (defn draw
   []
   (vp/with-arena _
-
-    #_ (reset! vp/*default-arena (java.lang.foreign.Arena/ofShared))
-
     (let [{:keys [vf/world view-2 shadowmap-shader
                   dither-shader noise-blur-shader
-                  depth-rts default-shader]}
+                  depth-rts default-shader kuwahara-shader]}
           env
 
           w world
@@ -135,9 +132,9 @@
                 (vg/default-systems w)
                 ;; For dev mode.
                 (vf/progress w (vr.c/get-frame-time)))
-          #_ #__ (do (def w w)
-                     (def shadowmap-shader shadowmap-shader)
-                     (def dither-shader dither-shader))
+          _ (do (def w w)
+                (def shadowmap-shader shadowmap-shader)
+                (def dither-shader dither-shader))
 
           #_ (init)]
 
@@ -227,12 +224,18 @@
       (let [key #(vr.c/is-key-pressed %1)]
         (cond
           (key (raylib/KEY_SPACE))
-          (let [new-entity (if (contains? (:vg/camera-active w) (vf/is-a :vg.gltf/CameraFar))
-                             :vg.gltf/Camera
-                             :vg.gltf/CameraFar)]
+          (let [[old-entity new-entity] (if (contains? (:vg/camera-active w) :vg.gltf/CameraFar)
+                                          [:vg.gltf/CameraFar :vg.gltf/Camera]
+                                          [:vg.gltf/Camera :vg.gltf/CameraFar])]
             (-> w
-                (update :vg/camera-active disj (vf/is-a :*))
-                (assoc :vg/camera-active [(vf/is-a new-entity)])))))
+                ;; TODO Use a union or similar here.
+                (update :vg/camera-active disj old-entity)
+                (merge {:vg/camera-active
+                        [new-entity
+                         (vf/ref new-entity [vg/Transform :global])
+                         (vf/ref new-entity vg/Camera)]})))))
+
+      #_(init)
 
       ;; -- Drawing
       (vg/draw-lights w #_default-shader shadowmap-shader depth-rts)
@@ -240,14 +243,14 @@
       #_(init)
 
       (vg/with-multipass view-2 {:shaders [[noise-blur-shader {:u_radius (+ 1.0 (rand 1))}]
-                                           [dither-shader {:u_offsets (vg/Vector3 (mapv #(* % 0.3)
-                                                                                        [0.02 (+ 0.016 (wobble 0.005))
+                                           [dither-shader {:u_offsets (vg/Vector3 (mapv #(* % (+ 0.6 (wobble 0.3)))
+                                                                                        [0.02 (+ 0.016 (wobble 0.01))
                                                                                          (+ 0.040 (wobble 0.01))]))}]]}
         (vr.c/clear-background (vr/Color "#A98B39"))
         (vg/with-camera #_(get-in w [:vg.gltf/Light vg/Camera])
-                          (get-in w [:vg/camera-active vg/Camera])
-                          (vg/draw-scene w)
-                          #_(vg/draw-debug w)))
+                        (get-in w [:vg/camera-active vg/Camera])
+                        (vg/draw-scene w)
+                        #_(vg/draw-debug w)))
 
       #_(get (:vg.gltf/ball-path w) [vg/Transform :global])
 
@@ -259,14 +262,12 @@
                                (vr/Rectangle [0 0 600 -600]) (vr/Rectangle [0 0 600 600])
                                (vr/Vector2 [0 0]) 0 vg/color-white)
 
-        #_(vr.c/clear-background (vr/Color "#A98B39"))
-        #_(vg/with-camera (get-in w [:vg.gltf/Camera vg/Camera])
-            (vg/draw-scene w)
-            (vg/draw-debug w))
+        #_(vg/with-camera #_(get-in w [:vg.gltf/Light vg/Camera])
+                        (get-in w [:vg/camera-active vg/Camera])
+                        (vg/draw-scene w)
+                        #_(vg/draw-debug w))
 
-        (vr.c/draw-fps 510 570)))
-
-    #_ (.close (vp/default-arena))))
+        (vr.c/draw-fps 510 570)))))
 
 #_(init)
 #_(vr.c/set-target-fps 10)
