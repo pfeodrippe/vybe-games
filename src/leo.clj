@@ -154,7 +154,8 @@
 
                      :else
                      1))]
-        (vf/with-each w [player vg/AnimationPlayer]
+        (vf/with-each w [player vg/AnimationPlayer
+                         _ :vg/active]
           (update player :current_time + (* (vr.c/get-frame-time) step))))
 
       (vf/with-each w [[_ node] [:vg.anim/target-node :*]
@@ -162,6 +163,7 @@
                        {:keys [timeline_count values timeline]} vg/AnimationChannel
                        player [:meta {:flags #{:up :cascade}}
                                vg/AnimationPlayer]
+                       _ [:meta {:flags #{:up :cascade}} :vg/active]
                        e :vf/entity
                        [_ n] [:vf/child-of :*]]
         #_(def e e)
@@ -188,35 +190,39 @@
 
           ())
 
-        (when (not= n :vg.gltf.anim/Right)
-          (let [values (vp/arr values timeline_count c)
-                timeline (vp/arr timeline timeline_count :float)
-                idx* (first (indices #(>= % (:current_time player)) timeline))
-                idx (max (dec (or idx* (count timeline))) 0)]
-            (if idx*
-              (do (when (= c vg/Translation)
-                    (let [d (vr.c/vector-3-distance
-                             (vg/matrix->translation (get-in w [:vg/camera-active [vg/Transform :global]]))
-                             (vg/matrix->translation (get-in w [:vg.gltf/Sphere [vg/Transform :global]])))
-                          [azim elev] (let [cam-transform (get-in w [:vg/camera-active [vg/Transform :global]])
-                                            sphere-transform (get-in w [:vg.gltf/Sphere [vg/Transform :global]])
-                                            {:keys [x y z] :as _v} (-> sphere-transform
-                                                                       (vr.c/matrix-multiply (vr.c/matrix-invert cam-transform))
-                                                                       vg/matrix->translation)]
-                                        (if (> z 0)
-                                          [(- (vr.c/atan-2 x z))
-                                           (vr.c/atan-2 y z)
-                                           _v]
-                                          [(vr.c/atan-2 x z)
-                                           (vr.c/atan-2 y z)
-                                           _v]))
-                          amp (if (zero? d)
-                                1
-                                (/ 1 (* d d 1)))]
-                      #_(ctl sound-d :azim azim :elev elev :amp amp :distance d))))
-              (assoc player :current_time 0))
+        (let [values (vp/arr values timeline_count c)
+              timeline (vp/arr timeline timeline_count :float)
+              idx* (first (indices #(>= % (:current_time player)) timeline))
+              idx (max (dec (or idx* (count timeline))) 0)]
+          (if idx*
+            (do (when (= c vg/Translation)
+                  (let [d (vr.c/vector-3-distance
+                           (vg/matrix->translation (get-in w [:vg/camera-active [vg/Transform :global]]))
+                           (vg/matrix->translation (get-in w [:vg.gltf/Sphere [vg/Transform :global]])))
+                        [azim elev] (let [cam-transform (get-in w [:vg/camera-active [vg/Transform :global]])
+                                          sphere-transform (get-in w [:vg.gltf/Sphere [vg/Transform :global]])
+                                          {:keys [x y z] :as _v} (-> sphere-transform
+                                                                     (vr.c/matrix-multiply (vr.c/matrix-invert cam-transform))
+                                                                     vg/matrix->translation)]
+                                      (if (> z 0)
+                                        [(- (vr.c/atan-2 x z))
+                                         (vr.c/atan-2 y z)
+                                         _v]
+                                        [(vr.c/atan-2 x z)
+                                         (vr.c/atan-2 y z)
+                                         _v]))
+                        amp (if (zero? d)
+                              1
+                              (/ 1 (* d d 1)))]
+                    #_(ctl sound-d :azim azim :elev elev :amp amp :distance d))))
+            (assoc player :current_time 0))
 
-            (merge w {node [(nth values idx)]}))))
+          #_(def aa [(into {} (nth values idx))
+                     (into {} (nth values (if (>= idx (count values))
+                                            0
+                                            idx)))])
+
+          (merge w {node [(nth values idx)]})))
 
       #_ (init)
 
@@ -233,7 +239,15 @@
                 (merge {:vg/camera-active
                         [new-entity
                          (vf/ref new-entity [vg/Transform :global])
-                         (vf/ref new-entity vg/Camera)]})))))
+                         (vf/ref new-entity vg/Camera)]})))
+
+          (key (raylib/KEY_A))
+          (let [[old-entity new-entity] (if (contains? (:vg.gltf.anim/Idle w) :vg/active)
+                                          [:vg.gltf.anim/Idle :vg.gltf.anim/Running]
+                                          [:vg.gltf.anim/Running :vg.gltf.anim/Idle])]
+            (-> w
+                (update old-entity disj :vg/active)
+                (merge {new-entity [:vg/active (vg/AnimationPlayer)]})))))
 
       #_(init)
 
@@ -263,9 +277,9 @@
                                (vr/Vector2 [0 0]) 0 vg/color-white)
 
         #_(vg/with-camera #_(get-in w [:vg.gltf/Light vg/Camera])
-                        (get-in w [:vg/camera-active vg/Camera])
-                        (vg/draw-scene w)
-                        #_(vg/draw-debug w))
+                          (get-in w [:vg/camera-active vg/Camera])
+                          (vg/draw-scene w)
+                          #_(vg/draw-debug w))
 
         (vr.c/draw-fps 510 570)))))
 

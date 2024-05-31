@@ -29,8 +29,11 @@
 - [ ] object appearance
   - [x] cube
     - [x] animation
-  - [ ] trigger animation
+  - [ ] idle/run animation
     - [ ] switch between one state and the other
+      - [ ] associate animation with the armature
+    - [ ] blending
+    - [ ] maybe use `$` for the keyword name when we want something to be registered as a child?
     - [ ] how to represent it?
       - [ ] create multiple animations in blender for the same object
       - [ ] maybe states
@@ -40,6 +43,7 @@
     - [ ] sound
   - [ ] click on a object
     - [ ] sound
+- [ ] put resources in world so we can get rid of `env`
 - [ ] particles
   - [ ] grains in the air (maybe 1 pixel?)
   - [ ] represents wind?
