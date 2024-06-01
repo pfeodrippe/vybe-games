@@ -30,8 +30,7 @@
   - [x] cube
     - [x] animation
   - [ ] idle/run animation
-    - [ ] switch between one state and the other
-      - [ ] associate animation with the armature
+    - [x] switch between one state and the other
     - [ ] blending
     - [ ] maybe use `$` for the keyword name when we want something to be registered as a child?
     - [ ] how to represent it?

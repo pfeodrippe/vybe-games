@@ -195,26 +195,26 @@
               idx* (first (indices #(>= % (:current_time player)) timeline))
               idx (max (dec (or idx* (count timeline))) 0)]
           (if idx*
-            (do (when (= c vg/Translation)
-                  (let [d (vr.c/vector-3-distance
-                           (vg/matrix->translation (get-in w [:vg/camera-active [vg/Transform :global]]))
-                           (vg/matrix->translation (get-in w [:vg.gltf/Sphere [vg/Transform :global]])))
-                        [azim elev] (let [cam-transform (get-in w [:vg/camera-active [vg/Transform :global]])
-                                          sphere-transform (get-in w [:vg.gltf/Sphere [vg/Transform :global]])
-                                          {:keys [x y z] :as _v} (-> sphere-transform
-                                                                     (vr.c/matrix-multiply (vr.c/matrix-invert cam-transform))
-                                                                     vg/matrix->translation)]
-                                      (if (> z 0)
-                                        [(- (vr.c/atan-2 x z))
-                                         (vr.c/atan-2 y z)
-                                         _v]
-                                        [(vr.c/atan-2 x z)
-                                         (vr.c/atan-2 y z)
-                                         _v]))
-                        amp (if (zero? d)
-                              1
-                              (/ 1 (* d d 1)))]
-                    #_(ctl sound-d :azim azim :elev elev :amp amp :distance d))))
+            (when (= c vg/Translation)
+              (let [d (vr.c/vector-3-distance
+                       (vg/matrix->translation (get-in w [:vg/camera-active [vg/Transform :global]]))
+                       (vg/matrix->translation (get-in w [:vg.gltf/Sphere [vg/Transform :global]])))
+                    [azim elev] (let [cam-transform (get-in w [:vg/camera-active [vg/Transform :global]])
+                                      sphere-transform (get-in w [:vg.gltf/Sphere [vg/Transform :global]])
+                                      {:keys [x y z] :as _v} (-> sphere-transform
+                                                                 (vr.c/matrix-multiply (vr.c/matrix-invert cam-transform))
+                                                                 vg/matrix->translation)]
+                                  (if (> z 0)
+                                    [(- (vr.c/atan-2 x z))
+                                     (vr.c/atan-2 y z)
+                                     _v]
+                                    [(vr.c/atan-2 x z)
+                                     (vr.c/atan-2 y z)
+                                     _v]))
+                    amp (if (zero? d)
+                          1
+                          (/ 1 (* d d 1)))]
+                #_(ctl sound-d :azim azim :elev elev :amp amp :distance d)))
             (assoc player :current_time 0))
 
           #_(def aa [(into {} (nth values idx))
@@ -239,15 +239,31 @@
                 (merge {:vg/camera-active
                         [new-entity
                          (vf/ref new-entity [vg/Transform :global])
-                         (vf/ref new-entity vg/Camera)]})))
+                         (vf/ref new-entity vg/Camera)]})))))
 
-          (key (raylib/KEY_A))
-          (let [[old-entity new-entity] (if (contains? (:vg.gltf.anim/Idle w) :vg/active)
-                                          [:vg.gltf.anim/Idle :vg.gltf.anim/Running]
-                                          [:vg.gltf.anim/Running :vg.gltf.anim/Idle])]
-            (-> w
-                (update old-entity disj :vg/active)
-                (merge {new-entity [:vg/active (vg/AnimationPlayer)]})))))
+      (let [key #(vr.c/is-key-down %1)]
+        (cond
+          (key (raylib/KEY_X))
+          (-> w
+              (update :vg.gltf.anim/Idle disj :vg/active)
+              (merge {:vg.gltf.anim/Running [:vg/active]})
+              (update-in [:vg.gltf/Armature vg/Translation :z] + 0.018))
+
+          (key (raylib/KEY_Z))
+          (-> w
+              (update :vg.gltf.anim/Idle disj :vg/active)
+              (merge {:vg.gltf.anim/Running [:vg/active]
+                      :vg.gltf.anim/Right [(vf/del :vg/active)]
+                      :vg.gltf.anim/Left [:vg/active]})
+              (update-in [:vg.gltf/Armature vg/Translation :z] - 0.018))
+
+          :else
+          (-> w
+              (update :vg.gltf.anim/Running disj :vg/active)
+              (merge {:vg.gltf.anim/Idle [:vg/active]}))))
+
+      #_(update-in w [:vg.gltf/Armature vg/Translation :y] inc)
+      #_(get-in w [:vg.gltf/Armature vg/Translation])
 
       #_(init)
 
