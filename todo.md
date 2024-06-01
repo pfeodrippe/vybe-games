@@ -29,15 +29,15 @@
 - [ ] object appearance
   - [x] cube
     - [x] animation
-  - [ ] idle/run animation
+  - [x] idle/run animation
     - [x] switch between one state and the other
-    - [ ] blending
-    - [ ] maybe use `$` for the keyword name when we want something to be registered as a child?
-    - [ ] how to represent it?
-      - [ ] create multiple animations in blender for the same object
-      - [ ] maybe states
-    - [ ] press `M`
-    - [ ] sound
+  - [ ] press `M` (or click/hover) to toggle cube going up/down
+    - [x] going in loop
+    - [x] only once
+    - [ ] multiple cubes by clicking (or hovering) on them
+      - [ ] manage state machine
+      - [ ] use animation multiple times
+  - [ ] sound
   - [ ] hover on a object
     - [ ] sound
   - [ ] click on a object
@@ -53,6 +53,13 @@
   - [ ] zoom sound
   - [ ] near sound
 - [ ] make animation programmable
+
+- [ ] animation blending
+- [ ] how to represent animations?
+  - [ ] create multiple animations in blender for the same object
+  - [ ] maybe states
+- [ ] maybe use `$` for the keyword name when we want something to be registered as a child?
+
 
 ## Ideas
 

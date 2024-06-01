@@ -5,6 +5,7 @@
    [vybe.panama :as vp]
    [vybe.raylib.c :as vr.c]
    [vybe.flecs :as vf]
+   [vybe.flecs.c :as vf.c]
    [clojure.math :as math]
    [clojure.string :as str]
    [clojure.java.io :as io]
@@ -155,8 +156,23 @@
                      :else
                      1))]
         (vf/with-each w [player vg/AnimationPlayer
-                         _ :vg/active]
-          (update player :current_time + (* (vr.c/get-frame-time) step))))
+                         _ :vg/active
+                         loop [:maybe :vg.anim/loop]
+                         started [:maybe :vg.anim/started]
+                         e :vf/entity]
+          (if (and started (== (:current_time player) 0))
+            (-> e
+                (disj :vg/active :vg.anim/started)
+                (conj :vg/selected))
+            (do
+              (conj e :vg.anim/started)
+              (update player :current_time + (* (vr.c/get-frame-time) step))))))
+
+      #_(vf/with-each w [started :vg.anim/started
+                         e :vf/entity]
+          (vf/get-name e))
+
+      #_ (init)
 
       (vf/with-each w [[_ node] [:vg.anim/target-node :*]
                        [_ c] [:vg.anim/target-component :*]
@@ -168,35 +184,13 @@
                        [_ n] [:vf/child-of :*]]
         #_(def e e)
 
-        (comment
-
-          (get e [:vf/child-of :*])
-
-          (vf/with-each w [e :vf/entity,
-                           c [:meta {:term {:src {:id (.id e)
-                                                  #_ #_:name (vf/get-name e)}}
-                                     #_ #_:flags #{:is-entity}}
-                              :vg/channel]]
-            e)
-
-          (vf/with-each w [e :vf/entity,
-                           c [:meta {:term {:src {:id (flecs/EcsIsName)
-                                                  :name (vp/try-string "vf_gltf/model.vg_gltf_anim/CubeAction.vf/ANOM_29739")}}
-                                     #_ #_:flags #{:is-entity}}
-                              :vg/channel]]
-            e)
-
-          (vp/->string (vybe.flecs.c/ecs-entity-str w (.id e)))
-
-          ())
-
         (let [values (vp/arr values timeline_count c)
               timeline (vp/arr timeline timeline_count :float)
               idx* (first (indices #(>= % (:current_time player)) timeline))
               idx (max (dec (or idx* (count timeline))) 0)]
           (if idx*
             (when (= c vg/Translation)
-              (let [d (vr.c/vector-3-distance
+              #_(let [d (vr.c/vector-3-distance
                        (vg/matrix->translation (get-in w [:vg/camera-active [vg/Transform :global]]))
                        (vg/matrix->translation (get-in w [:vg.gltf/Sphere [vg/Transform :global]])))
                     [azim elev] (let [cam-transform (get-in w [:vg/camera-active [vg/Transform :global]])
@@ -235,42 +229,46 @@
                                           [:vg.gltf/Camera :vg.gltf/CameraFar])]
             (-> w
                 ;; TODO Use a union or similar here.
-                (update :vg/camera-active disj old-entity)
                 (merge {:vg/camera-active
                         [new-entity
+                         (vf/del old-entity)
                          (vf/ref new-entity [vg/Transform :global])
-                         (vf/ref new-entity vg/Camera)]})))))
+                         (vf/ref new-entity vg/Camera)]})))
+
+          (key (raylib/KEY_M))
+          (-> w
+              (merge
+               {:vg.gltf.anim/Right [(vf/del :vg/active)]
+                :vg.gltf.anim/Left [:vg/active]}
+               (if (contains? (:vg.gltf.anim/CubeDown w) :vg/selected)
+                 {:vg.gltf.anim/CubeDown [(vf/del :vg/active) (vf/del :vg/selected)]
+                  :vg.gltf.anim/CubeUp [:vg/active]}
+                 {:vg.gltf.anim/CubeDown [:vg/active]
+                  :vg.gltf.anim/CubeUp [(vf/del :vg/active) (vf/del :vg/selected)]})))))
 
       (let [key #(vr.c/is-key-down %1)]
         (cond
           (key (raylib/KEY_X))
           (-> w
-              (update :vg.gltf.anim/Idle disj :vg/active)
-              (merge {:vg.gltf.anim/Running [:vg/active]})
+              (merge {:vg.gltf.anim/Running [:vg/active]
+                      :vg.gltf.anim/Idle [(vf/del :vg/active)]})
               (update-in [:vg.gltf/Armature vg/Translation :z] + 0.018))
 
           (key (raylib/KEY_Z))
           (-> w
-              (update :vg.gltf.anim/Idle disj :vg/active)
               (merge {:vg.gltf.anim/Running [:vg/active]
-                      :vg.gltf.anim/Right [(vf/del :vg/active)]
-                      :vg.gltf.anim/Left [:vg/active]})
+                      :vg.gltf.anim/Idle [(vf/del :vg/active)]})
               (update-in [:vg.gltf/Armature vg/Translation :z] - 0.018))
 
           :else
           (-> w
-              (update :vg.gltf.anim/Running disj :vg/active)
-              (merge {:vg.gltf.anim/Idle [:vg/active]}))))
-
-      #_(update-in w [:vg.gltf/Armature vg/Translation :y] inc)
-      #_(get-in w [:vg.gltf/Armature vg/Translation])
+              (merge {:vg.gltf.anim/Idle [:vg/active]
+                      :vg.gltf.anim/Running [(vf/del :vg/active)]}))))
 
       #_(init)
 
       ;; -- Drawing
       (vg/draw-lights w #_default-shader shadowmap-shader depth-rts)
-
-      #_(init)
 
       (vg/with-multipass view-2 {:shaders [[noise-blur-shader {:u_radius (+ 1.0 (rand 1))}]
                                            [dither-shader {:u_offsets (vg/Vector3 (mapv #(* % (+ 0.6 (wobble 0.3)))

@@ -4,6 +4,13 @@
 
  :aliases
  {:dev {:jvm-opts ["--enable-native-access=ALL-UNNAMED"
+                   #_"-XstartOnFirstThread"
+
+                   ;; For tracing panama calls.
+                   #_"-Djextract.trace.downcalls=true"]}
+
+  ;; For macs.
+  :osx {:jvm-opts ["--enable-native-access=ALL-UNNAMED"
                    "-XstartOnFirstThread"
 
                    ;; For tracing panama calls.
