@@ -35,6 +35,13 @@
     - [x] going in loop
     - [x] only once
     - [ ] multiple cubes by clicking (or hovering) on them
+      - [x] we need to register things as a child
+        - [x] fix path issue
+        - [x] fix anim
+        - [x] fix armature
+          - [x] running
+          - [x] idle
+      - [x] fix cube going up anim
       - [ ] manage state machine
       - [ ] use animation multiple times
   - [ ] sound

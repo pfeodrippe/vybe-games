@@ -133,7 +133,12 @@
                 (vg/default-systems w)
                 ;; For dev mode.
                 (vf/progress w (vr.c/get-frame-time)))
+
+          p (fn [k]
+              (vf/path [:vg.gltf/model k]))
+
           _ (do (def w w)
+                (def p p)
                 (def shadowmap-shader shadowmap-shader)
                 (def dither-shader dither-shader))
 
@@ -168,9 +173,24 @@
               (conj e :vg.anim/started)
               (update player :current_time + (* (vr.c/get-frame-time) step))))))
 
-      #_(vf/with-each w [started :vg.anim/started
-                         e :vf/entity]
-          (vf/get-name e))
+      #_(def aaa (vf/with-each w [_ :vg/channel
+                                  e :vf/entity]
+                   (vf/get-path e)))
+
+      (comment
+
+        (vf.c/ecs-lookup-path-w-sep w "vg_gltf_anim/CubeUp")
+        (vf.c/ecs-lookup-symbol w "vg_gltf/myodel.vg_gltf_anim/CubeUp" true true)
+
+        (vf/with-each w [[_ node] [:vg.anim/target-node :*]
+                         [_ c] [:vg.anim/target-component :*]]
+          [node c])
+
+        (vf.c/ecs-lookup-symbol w "ddd" false false)
+
+        (vf/get-symbol w (p :vg.gltf/Light))
+
+        ())
 
       #_ (init)
 
@@ -191,24 +211,24 @@
           (if idx*
             (when (= c vg/Translation)
               #_(let [d (vr.c/vector-3-distance
-                       (vg/matrix->translation (get-in w [:vg/camera-active [vg/Transform :global]]))
-                       (vg/matrix->translation (get-in w [:vg.gltf/Sphere [vg/Transform :global]])))
-                    [azim elev] (let [cam-transform (get-in w [:vg/camera-active [vg/Transform :global]])
-                                      sphere-transform (get-in w [:vg.gltf/Sphere [vg/Transform :global]])
-                                      {:keys [x y z] :as _v} (-> sphere-transform
-                                                                 (vr.c/matrix-multiply (vr.c/matrix-invert cam-transform))
-                                                                 vg/matrix->translation)]
-                                  (if (> z 0)
-                                    [(- (vr.c/atan-2 x z))
-                                     (vr.c/atan-2 y z)
-                                     _v]
-                                    [(vr.c/atan-2 x z)
-                                     (vr.c/atan-2 y z)
-                                     _v]))
-                    amp (if (zero? d)
-                          1
-                          (/ 1 (* d d 1)))]
-                #_(ctl sound-d :azim azim :elev elev :amp amp :distance d)))
+                         (vg/matrix->translation (get-in w [:vg/camera-active [vg/Transform :global]]))
+                         (vg/matrix->translation (get-in w [:vg.gltf/Sphere [vg/Transform :global]])))
+                      [azim elev] (let [cam-transform (get-in w [:vg/camera-active [vg/Transform :global]])
+                                        sphere-transform (get-in w [:vg.gltf/Sphere [vg/Transform :global]])
+                                        {:keys [x y z] :as _v} (-> sphere-transform
+                                                                   (vr.c/matrix-multiply (vr.c/matrix-invert cam-transform))
+                                                                   vg/matrix->translation)]
+                                    (if (> z 0)
+                                      [(- (vr.c/atan-2 x z))
+                                       (vr.c/atan-2 y z)
+                                       _v]
+                                      [(vr.c/atan-2 x z)
+                                       (vr.c/atan-2 y z)
+                                       _v]))
+                      amp (if (zero? d)
+                            1
+                            (/ 1 (* d d 1)))]
+                  #_(ctl sound-d :azim azim :elev elev :amp amp :distance d)))
             (assoc player :current_time 0))
 
           #_(def aa [(into {} (nth values idx))
@@ -220,16 +240,20 @@
 
       #_ (init)
 
+      #_(vf.c/ecs-lookup-symbol w (vf/path [:vg.gltf/model :vg.gltf/Camera]) true false)
+      #_(vf.c/ecs-lookup w (vf/path [:vg.gltf/model :vg.gltf.anim/Left]))
+      #_(vf/get-path w :vg.gltf.anim/Right)
+
       ;; -- Keyboard
       (let [key #(vr.c/is-key-pressed %1)]
         (cond
           (key (raylib/KEY_SPACE))
-          (let [[old-entity new-entity] (if (contains? (:vg/camera-active w) :vg.gltf/CameraFar)
-                                          [:vg.gltf/CameraFar :vg.gltf/Camera]
-                                          [:vg.gltf/Camera :vg.gltf/CameraFar])]
+          (let [[old-entity new-entity] (if (contains? (w (p :vg/camera-active)) (p :vg.gltf/CameraFar))
+                                          [(p :vg.gltf/CameraFar) (p :vg.gltf/Camera)]
+                                          [(p :vg.gltf/Camera) (p :vg.gltf/CameraFar)])]
             (-> w
                 ;; TODO Use a union or similar here.
-                (merge {:vg/camera-active
+                (merge {(p :vg/camera-active)
                         [new-entity
                          (vf/del old-entity)
                          (vf/ref new-entity [vg/Transform :global])
@@ -238,32 +262,32 @@
           (key (raylib/KEY_M))
           (-> w
               (merge
-               {:vg.gltf.anim/Right [(vf/del :vg/active)]
-                :vg.gltf.anim/Left [:vg/active]}
-               (if (contains? (:vg.gltf.anim/CubeDown w) :vg/selected)
-                 {:vg.gltf.anim/CubeDown [(vf/del :vg/active) (vf/del :vg/selected)]
-                  :vg.gltf.anim/CubeUp [:vg/active]}
-                 {:vg.gltf.anim/CubeDown [:vg/active]
-                  :vg.gltf.anim/CubeUp [(vf/del :vg/active) (vf/del :vg/selected)]})))))
+               {(p :vg.gltf.anim/Right) [(vf/del :vg/active)]
+                (p :vg.gltf.anim/Left) [:vg/active]}
+               (if (contains? (w (p :vg.gltf.anim/CubeDown)) :vg/selected)
+                 {(p :vg.gltf.anim/CubeDown) [(vf/del :vg/active) (vf/del :vg/selected)]
+                  (p :vg.gltf.anim/CubeUp) [:vg/active]}
+                 {(p :vg.gltf.anim/CubeDown) [:vg/active]
+                  (p :vg.gltf.anim/CubeUp) [(vf/del :vg/active) (vf/del :vg/selected)]})))))
 
       (let [key #(vr.c/is-key-down %1)]
         (cond
           (key (raylib/KEY_X))
           (-> w
-              (merge {:vg.gltf.anim/Running [:vg/active]
-                      :vg.gltf.anim/Idle [(vf/del :vg/active)]})
-              (update-in [:vg.gltf/Armature vg/Translation :z] + 0.018))
+              (merge {(p :vg.gltf.anim/Running) [:vg/active]
+                      (p :vg.gltf.anim/Idle) [(vf/del :vg/active)]})
+              (update-in [(p :vg.gltf/Armature) vg/Translation :z] + 0.018))
 
           (key (raylib/KEY_Z))
           (-> w
-              (merge {:vg.gltf.anim/Running [:vg/active]
-                      :vg.gltf.anim/Idle [(vf/del :vg/active)]})
-              (update-in [:vg.gltf/Armature vg/Translation :z] - 0.018))
+              (merge {(p :vg.gltf.anim/Running) [:vg/active]
+                      (p :vg.gltf.anim/Idle) [(vf/del :vg/active)]})
+              (update-in [(p :vg.gltf/Armature) vg/Translation :z] - 0.018))
 
           :else
           (-> w
-              (merge {:vg.gltf.anim/Idle [:vg/active]
-                      :vg.gltf.anim/Running [(vf/del :vg/active)]}))))
+              (merge {(p :vg.gltf.anim/Idle) [:vg/active]
+                      (p :vg.gltf.anim/Running) [(vf/del :vg/active)]}))))
 
       #_(init)
 
@@ -275,8 +299,8 @@
                                                                                         [0.02 (+ 0.016 (wobble 0.01))
                                                                                          (+ 0.040 (wobble 0.01))]))}]]}
         (vr.c/clear-background (vr/Color "#A98B39"))
-        (vg/with-camera #_(get-in w [:vg.gltf/Light vg/Camera])
-                        (get-in w [:vg/camera-active vg/Camera])
+        (vg/with-camera #_(get-in w [(p :vg.gltf/Light) vg/Camera])
+                        (get-in w [(p :vg/camera-active) vg/Camera])
                         (vg/draw-scene w)
                         #_(vg/draw-debug w)))
 
