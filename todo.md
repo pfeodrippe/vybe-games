@@ -42,7 +42,10 @@
           - [x] running
           - [x] idle
       - [x] fix cube going up anim
-      - [ ] manage state machine
+      - [ ] make animations more isolated
+        - [ ] blending
+        - [ ] create one per root object
+      - [ ] state machine
       - [ ] use animation multiple times
   - [ ] sound
   - [ ] hover on a object
