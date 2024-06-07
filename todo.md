@@ -31,10 +31,10 @@
     - [x] animation
   - [x] idle/run animation
     - [x] switch between one state and the other
-  - [ ] press `M` (or click/hover) to toggle cube going up/down
+  - [x] press `M` (or click/hover) to toggle cube going up/down
     - [x] going in loop
     - [x] only once
-    - [ ] multiple cubes by clicking (or hovering) on them
+    - [x] multiple cubes
       - [x] we need to register things as a child
         - [x] fix path issue
         - [x] fix anim
@@ -42,16 +42,17 @@
           - [x] running
           - [x] idle
       - [x] fix cube going up anim
-      - [ ] make animations more isolated
-        - [ ] blending
-        - [ ] create one per root object
-      - [ ] state machine
-      - [ ] use animation multiple times
-  - [ ] sound
+      - [x] make animations more isolated
+        - [x] blending
+        - [x] create one per root object
+          - [x] make it a child of the node
+          - [x] find armature and put the animation inside it
+      - [x] use animation multiple times
   - [ ] hover on a object
     - [ ] sound
   - [ ] click on a object
     - [ ] sound
+  - [ ] state machine
 - [ ] put resources in world so we can get rid of `env`
 - [ ] particles
   - [ ] grains in the air (maybe 1 pixel?)

@@ -10,7 +10,6 @@
    [clojure.string :as str]
    [clojure.java.io :as io]
    #_[overtone.live :refer :all]
-   #_[vybe.audio :as va]
    #_[clj-java-decompiler.core :refer [decompile disassemble]])
   (:import
    (org.vybe.flecs flecs)
@@ -118,24 +117,27 @@
 
   ())
 
+(defn lerp
+  [p1 p2]
+  (+ p1 (* 0.6 (- p2 p1))))
+
 #_ (init)
 
 (defn draw
   []
   (vp/with-arena _
-    (let [{:keys [vf/world view-2 shadowmap-shader
+    (let [{:keys [vf/w view-2 shadowmap-shader
                   dither-shader noise-blur-shader
                   depth-rts default-shader kuwahara-shader]}
           env
 
-          w world
           _ (do (vg/run-reloadable-commands!)
                 (vg/default-systems w)
                 ;; For dev mode.
                 (vf/progress w (vr.c/get-frame-time)))
 
-          p (fn [k]
-              (vf/path [:vg.gltf/model k]))
+          p (fn [& ks]
+              (vf/path (vec (concat [:vg.gltf/model] ks))))
 
           _ (do (def w w)
                 (def p p)
@@ -177,21 +179,6 @@
                                   e :vf/entity]
                    (vf/get-path e)))
 
-      (comment
-
-        (vf.c/ecs-lookup-path-w-sep w "vg_gltf_anim/CubeUp")
-        (vf.c/ecs-lookup-symbol w "vg_gltf/myodel.vg_gltf_anim/CubeUp" true true)
-
-        (vf/with-each w [[_ node] [:vg.anim/target-node :*]
-                         [_ c] [:vg.anim/target-component :*]]
-          [(vf/get-name w node) c])
-
-        (vf.c/ecs-lookup-symbol w "ddd" false false)
-
-        (vf/get-symbol w (p :vg.gltf/Light))
-
-        ())
-
       #_ (init)
 
       (vf/with-each w [[_ node] [:vg.anim/target-node :*]
@@ -211,6 +198,7 @@
               idx (max (dec (or idx* (count timeline))) 0)]
           (if idx*
             (when (= c vg/Translation)
+              ;; Play some sound.
               #_(let [d (vr.c/vector-3-distance
                          (vg/matrix->translation (get-in w [:vg/camera-active [vg/Transform :global]]))
                          (vg/matrix->translation (get-in w [:vg.gltf/Sphere [vg/Transform :global]])))
@@ -239,59 +227,40 @@
           #_(def node node)
           #_(vf/make-entity w node)
 
-          #_(merge w {node [(nth values idx)]})
-          #_(merge w {node [[(nth values idx) n]]})
-          (merge w {node {:vg.anim/frame-animation [[(nth values idx) n]]}})))
+          (merge w {node [(nth values idx)]})
 
-      (vf/with-each w [_ :vg.anim/joint
-                       e :vf/entity]
-        #_(merge w {e [a b c]})
-        (let [frame-anim (w (vf/path [e :vg.anim/frame-animation]))
-              translations (-> frame-anim (get [vg/Translation :*]))
-              rotations (-> frame-anim (get [vg/Rotation :*]))
-              scales (-> frame-anim (get [vg/Scale :*]))
-              t1 (first translations)
-              t2 (last translations)
-              r1 (first rotations)
-              r2 (last rotations)
-              s1 (first scales)
-              s2 (last scales)
-              lerp (fn [p1 p2]
-                     (+ p1 (* 0.7 (- p2 p1))))]
-          #_(merge w {e (last translations)})
-          (merge w {e [(vg/Translation [(lerp (:x t1) (:x t2))
-                                        (lerp (:y t1) (:y t2))
-                                        (lerp (:z t1) (:z t2))])
-                       #_(+ (* 0.5 (last translation
-                                         s))
-                            (* 0.5 (last translations)))
-                       (vg/Rotation [(lerp (:x r1) (:x r2))
-                                     (lerp (:y r1) (:y r2))
-                                     (lerp (:z r1) (:z r2))
-                                     (lerp (:w r1) (:w r2))])
-                       (vg/Scale [(lerp (:x s1) (:x s2))
-                                  (lerp (:y s1) (:y s2))
-                                  (lerp (:z s1) (:z s2))])]})
-          (dissoc w (vf/path [e :vg.anim/frame-animation]))))
+          ;; For blending.
+          #_(merge w {node {:vg.anim/frame-animation [[(nth values idx) n]]}})))
 
-      (comment
-
-        (vf/with-each w [_ :vg.anim/joint
+      ;; Blending.
+      #_(vf/with-each w [_ :vg.anim/joint
                          e :vf/entity]
           #_(merge w {e [a b c]})
-          [(-> (w (vf/path [e :vg.anim/frame-animation]))
-               (get [vybe.game/Translation :*
-                     #_(vybe.flecs/path [:vg.gltf/model :vg.gltf.anim/Idle])]))
-           (-> (w (vf/path [e :vg.anim/frame-animation]))
-               (get [vybe.game/Translation (vybe.flecs/path [:vg.gltf/model :vg.gltf.anim/Idle])]))])
-
-        (get-in w [node [vg/Translation (vf/path [:vg.gltf/model :vg.gltf.anim/Running])]])
-        (get-in w [node [vg/Translation (vf/path [(vf/ent w :vg.gltf/model) :vg.gltf.anim/Running])]])
-
-        (vf/with-each w [a [(vf/path [:vg.gltf/model :vg.gltf.anim/Idle]) :*]]
-          a)
-
-        ())
+          (let [frame-anim (w (vf/path [e :vg.anim/frame-animation]))
+                translations (-> frame-anim (get [vg/Translation :*]))
+                rotations (-> frame-anim (get [vg/Rotation :*]))
+                scales (-> frame-anim (get [vg/Scale :*]))
+                t1 (first translations)
+                t2 (last translations)
+                r1 (first rotations)
+                r2 (last rotations)
+                s1 (first scales)
+                s2 (last scales)]
+            #_(merge w {e (last translations)})
+            (merge w {e [(vg/Translation [(lerp (:x t1) (:x t2))
+                                          (lerp (:y t1) (:y t2))
+                                          (lerp (:z t1) (:z t2))])
+                         #_(+ (* 0.5 (last translation
+                                           s))
+                              (* 0.5 (last translations)))
+                         (vg/Rotation [(lerp (:x r1) (:x r2))
+                                       (lerp (:y r1) (:y r2))
+                                       (lerp (:z r1) (:z r2))
+                                       (lerp (:w r1) (:w r2))])
+                         (vg/Scale [(lerp (:x s1) (:x s2))
+                                    (lerp (:y s1) (:y s2))
+                                    (lerp (:z s1) (:z s2))])]})
+            (dissoc w (vf/path [e :vg.anim/frame-animation]))))
 
       #_ (init)
 
@@ -313,32 +282,50 @@
           (key (raylib/KEY_M))
           (-> w
               (merge
-               {(p :vg.gltf.anim/Right) [(vf/del :vg/active)]
-                (p :vg.gltf.anim/Left) [:vg/active]}
-               (if (contains? (w (p :vg.gltf.anim/CubeDown)) :vg/selected)
-                 {(p :vg.gltf.anim/CubeDown) [(vf/del :vg/active) (vf/del :vg/selected)]
-                  (p :vg.gltf.anim/CubeUp) [:vg/active]}
-                 {(p :vg.gltf.anim/CubeDown) [:vg/active]
-                  (p :vg.gltf.anim/CubeUp) [(vf/del :vg/active) (vf/del :vg/selected)]})))))
+               {(p :vg.gltf/Sphere :vg.gltf.anim/Right) [(vf/del :vg/active)]
+                (p :vg.gltf/Sphere :vg.gltf.anim/Left)[:vg/active]}
+               (let [c (fn [k] (p :vg.gltf/Cube.002 k))]
+                 (if (contains? (w (c :vg.gltf.anim/CubeDown)) :vg/selected)
+                   {(c :vg.gltf.anim/CubeDown) [(vf/del :vg/active) (vf/del :vg/selected)]
+                    (c :vg.gltf.anim/CubeUp) [:vg/active]}
+                   {(c :vg.gltf.anim/CubeDown) [:vg/active]
+                    (c :vg.gltf.anim/CubeUp) [(vf/del :vg/active) (vf/del :vg/selected)]}))
+               (let [c (fn [k] (p :vg.gltf/Cube k))]
+                 (if (contains? (w (c :vg.gltf.anim/CubeDown)) :vg/selected)
+                   {(c :vg.gltf.anim/CubeDown) [(vf/del :vg/active) (vf/del :vg/selected)]
+                    (c :vg.gltf.anim/CubeUp) [:vg/active]}
+                   {(c :vg.gltf.anim/CubeDown) [:vg/active]
+                    (c :vg.gltf.anim/CubeUp) [(vf/del :vg/active) (vf/del :vg/selected)]}))))))
 
+      (comment
+
+        (w (p :vg.gltf/Armature))
+
+        (vf/hierarchy-no-path (w :vg.gltf/model))
+        (keys (vf/hierarchy (w (p :vg.gltf/Armature))))
+        (vf/hierarchy-no-path (w (p :vg.gltf/Armature)))
+
+        ())
+
+      ;; Running animation.
       (let [key #(vr.c/is-key-down %1)]
         (cond
           (key (raylib/KEY_X))
           (-> w
-              (merge {(p :vg.gltf.anim/Running) [:vg/active]
-                      (p :vg.gltf.anim/Idle) [(vf/del :vg/active)]})
+              (merge {(p :vg.gltf/Armature :vg.gltf.anim/Running) [:vg/active]
+                      (p :vg.gltf/Armature :vg.gltf.anim/Idle) [(vf/del :vg/active)]})
               (update-in [(p :vg.gltf/Armature) vg/Translation :z] + 0.018))
 
           (key (raylib/KEY_Z))
           (-> w
-              (merge {(p :vg.gltf.anim/Running) [:vg/active]
-                      (p :vg.gltf.anim/Idle) [(vf/del :vg/active)]})
+              (merge {(p :vg.gltf/Armature :vg.gltf.anim/Running) [:vg/active]
+                      (p :vg.gltf/Armature :vg.gltf.anim/Idle) [(vf/del :vg/active)]})
               (update-in [(p :vg.gltf/Armature) vg/Translation :z] - 0.018))
 
           :else
           (-> w
-              (merge {(p :vg.gltf.anim/Idle) [:vg/active]
-                      (p :vg.gltf.anim/Running) [#_(vf/del :vg/active) :vg/active]}))))
+              (merge {(p :vg.gltf/Armature :vg.gltf.anim/Idle) [:vg/active]
+                      (p :vg.gltf/Armature :vg.gltf.anim/Running) [(vf/del :vg/active)]}))))
 
       #_(init)
 
@@ -391,9 +378,9 @@
     (vr.c/draw-rectangle 300 50 100 200 (vr/Color [255 100 10 255])))
 
   (reset! env {})
-  (swap! env merge {:vf/world (-> (vf/make-world)
-                                  (vg/gltf->flecs :flecs (.getPath (io/resource "models.glb")))
-                                  #_(vg/gltf->flecs :limbs "/Users/pfeodrippe/Downloads/models.glb"))})
+  (swap! env merge {:vf/w (-> (vf/make-world)
+                              (vg/gltf->flecs :flecs (.getPath (io/resource "models.glb")))
+                              #_(vg/gltf->flecs :limbs "/Users/pfeodrippe/Downloads/models.glb"))})
 
   (swap! env merge { ;; Create 10 depth render textures for reuse.
                     :depth-rts (pmap #(do % (load-shadowmap-render-texture 600 600))
