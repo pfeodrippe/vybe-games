@@ -184,7 +184,7 @@
 
         (vf/with-each w [[_ node] [:vg.anim/target-node :*]
                          [_ c] [:vg.anim/target-component :*]]
-          [node c])
+          [(vf/get-name w node) c])
 
         (vf.c/ecs-lookup-symbol w "ddd" false false)
 
@@ -203,6 +203,7 @@
                        e :vf/entity
                        [_ n] [:vf/child-of :*]]
         #_(def e e)
+        #_(def kk (vf/get-name w n))
 
         (let [values (vp/arr values timeline_count c)
               timeline (vp/arr timeline timeline_count :float)
@@ -235,14 +236,64 @@
                      (into {} (nth values (if (>= idx (count values))
                                             0
                                             idx)))])
+          #_(def node node)
+          #_(vf/make-entity w node)
 
-          (merge w {node [(nth values idx)]})))
+          #_(merge w {node [(nth values idx)]})
+          #_(merge w {node [[(nth values idx) n]]})
+          (merge w {node {:vg.anim/frame-animation [[(nth values idx) n]]}})))
+
+      (vf/with-each w [_ :vg.anim/joint
+                       e :vf/entity]
+        #_(merge w {e [a b c]})
+        (let [frame-anim (w (vf/path [e :vg.anim/frame-animation]))
+              translations (-> frame-anim (get [vg/Translation :*]))
+              rotations (-> frame-anim (get [vg/Rotation :*]))
+              scales (-> frame-anim (get [vg/Scale :*]))
+              t1 (first translations)
+              t2 (last translations)
+              r1 (first rotations)
+              r2 (last rotations)
+              s1 (first scales)
+              s2 (last scales)
+              lerp (fn [p1 p2]
+                     (+ p1 (* 0.7 (- p2 p1))))]
+          #_(merge w {e (last translations)})
+          (merge w {e [(vg/Translation [(lerp (:x t1) (:x t2))
+                                        (lerp (:y t1) (:y t2))
+                                        (lerp (:z t1) (:z t2))])
+                       #_(+ (* 0.5 (last translation
+                                         s))
+                            (* 0.5 (last translations)))
+                       (vg/Rotation [(lerp (:x r1) (:x r2))
+                                     (lerp (:y r1) (:y r2))
+                                     (lerp (:z r1) (:z r2))
+                                     (lerp (:w r1) (:w r2))])
+                       (vg/Scale [(lerp (:x s1) (:x s2))
+                                  (lerp (:y s1) (:y s2))
+                                  (lerp (:z s1) (:z s2))])]})
+          (dissoc w (vf/path [e :vg.anim/frame-animation]))))
+
+      (comment
+
+        (vf/with-each w [_ :vg.anim/joint
+                         e :vf/entity]
+          #_(merge w {e [a b c]})
+          [(-> (w (vf/path [e :vg.anim/frame-animation]))
+               (get [vybe.game/Translation :*
+                     #_(vybe.flecs/path [:vg.gltf/model :vg.gltf.anim/Idle])]))
+           (-> (w (vf/path [e :vg.anim/frame-animation]))
+               (get [vybe.game/Translation (vybe.flecs/path [:vg.gltf/model :vg.gltf.anim/Idle])]))])
+
+        (get-in w [node [vg/Translation (vf/path [:vg.gltf/model :vg.gltf.anim/Running])]])
+        (get-in w [node [vg/Translation (vf/path [(vf/ent w :vg.gltf/model) :vg.gltf.anim/Running])]])
+
+        (vf/with-each w [a [(vf/path [:vg.gltf/model :vg.gltf.anim/Idle]) :*]]
+          a)
+
+        ())
 
       #_ (init)
-
-      #_(vf.c/ecs-lookup-symbol w (vf/path [:vg.gltf/model :vg.gltf/Camera]) true false)
-      #_(vf.c/ecs-lookup w (vf/path [:vg.gltf/model :vg.gltf.anim/Left]))
-      #_(vf/get-path w :vg.gltf.anim/Right)
 
       ;; -- Keyboard
       (let [key #(vr.c/is-key-pressed %1)]
@@ -287,7 +338,7 @@
           :else
           (-> w
               (merge {(p :vg.gltf.anim/Idle) [:vg/active]
-                      (p :vg.gltf.anim/Running) [(vf/del :vg/active)]}))))
+                      (p :vg.gltf.anim/Running) [#_(vf/del :vg/active) :vg/active]}))))
 
       #_(init)
 
