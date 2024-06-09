@@ -48,6 +48,14 @@
           - [x] make it a child of the node
           - [x] find armature and put the animation inside it
       - [x] use animation multiple times
+  - [ ] use JOLT
+    - [x] import
+    - [x] animate some cubes
+    - [ ] add bounding box from GLTF min/max position values
+    - [ ] support multiple collision layers
+      - [ ] sensor layer?
+    - [ ] contact listener
+    - [ ] raycast
   - [ ] hover on a object
     - [ ] sound
   - [ ] click on a object
