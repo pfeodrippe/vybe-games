@@ -9,11 +9,14 @@
    [clojure.math :as math]
    [clojure.string :as str]
    [clojure.java.io :as io]
+   [vybe.jolt :as vj]
+   [vybe.jolt.c :as vj.c]
    #_[overtone.live :refer :all]
    #_[clj-java-decompiler.core :refer [decompile disassemble]])
   (:import
    (org.vybe.flecs flecs)
-   (org.vybe.raylib raylib)))
+   (org.vybe.raylib raylib)
+   (org.vybe.jolt jolt)))
 
 #_(init)
 
@@ -123,12 +126,16 @@
 
 #_ (init)
 
+(declare physics-system)
+(declare bb)
+
 (defn draw
   []
   (vp/with-arena _
     (let [{:keys [vf/w view-2 shadowmap-shader
                   dither-shader noise-blur-shader
-                  depth-rts default-shader kuwahara-shader]}
+                  depth-rts default-shader kuwahara-shader
+                  cube-mesh cube-material]}
           env
 
           _ (do (vg/run-reloadable-commands!)
@@ -142,7 +149,9 @@
           _ (do (def w w)
                 (def p p)
                 (def shadowmap-shader shadowmap-shader)
-                (def dither-shader dither-shader))
+                (def dither-shader dither-shader)
+                (def cube-mesh cube-mesh)
+                (def cube-material cube-material))
 
           #_ (init)]
 
@@ -267,6 +276,9 @@
       ;; -- Keyboard
       (let [key #(vr.c/is-key-pressed %1)]
         (cond
+          (key (raylib/KEY_C))
+          (vp/with-arena-root _ (bb))
+
           (key (raylib/KEY_SPACE))
           (let [[old-entity new-entity] (if (contains? (w (p :vg/camera-active)) (p :vg.gltf/CameraFar))
                                           [(p :vg.gltf/CameraFar) (p :vg.gltf/Camera)]
@@ -327,37 +339,64 @@
               (merge {(p :vg.gltf/Armature :vg.gltf.anim/Idle) [:vg/active]
                       (p :vg.gltf/Armature :vg.gltf.anim/Running) [(vf/del :vg/active)]}))))
 
+      ;; -- Mouse.
+      (when (vr.c/is-mouse-button-pressed (raylib/MOUSE_BUTTON_LEFT))
+        #_(println (vr.c/vy-get-screen-to-world-ray (vr.c/get-mouse-position)
+                                                    (get-in w [(p :vg/camera-active) vg/Camera]))))
+
       #_(init)
 
-      ;; -- Drawing
-      (vg/draw-lights w #_default-shader shadowmap-shader depth-rts)
+      (vj/update! (vj/init) physics-system (vr.c/get-frame-time))
 
-      (vg/with-multipass view-2 {:shaders [[noise-blur-shader {:u_radius (+ 1.0 (rand 1))}]
-                                           [dither-shader {:u_offsets (vg/Vector3 (mapv #(* % (+ 0.6 (wobble 0.3)))
-                                                                                        [0.02 (+ 0.016 (wobble 0.01))
-                                                                                         (+ 0.040 (wobble 0.01))]))}]]}
-        (vr.c/clear-background (vr/Color "#A98B39"))
-        (vg/with-camera #_(get-in w [(p :vg.gltf/Light) vg/Camera])
-                        (get-in w [(p :vg/camera-active) vg/Camera])
-                        (vg/draw-scene w)
-                        #_(vg/draw-debug w)))
+      ;; TODO This wastes a lot of CPU, let's put it in a system later.
+      #_(merge w
+             {:aa
+              (->> (vj/bodies physics-system)
+                   rest
+                   (filter vj/body-active?)
+                   #_(take 2)
+                   (mapv (fn [{:keys [position rotation id]}]
+                             {(keyword (str "vj-" id)) [(vg/Translation position) (vg/Rotation rotation)
+                                                        (vg/Scale [1 1 1])
+                                                        vg/Transform [vg/Transform :global]
+                                                        cube-mesh cube-material]}))
+                   (into {}))})
 
-      #_(get (:vg.gltf/ball-path w) [vg/Transform :global])
+      #_(dissoc w :aa)
 
-      ;; Draw to the screen.
-      (vg/with-drawing
-        (vr.c/clear-background (vr/Color [255 20 100 255]))
+      (let [draw-scene (fn [w]
+                         (vg/draw-scene w))]
 
-        (vr.c/draw-texture-pro (:texture view-2)
-                               (vr/Rectangle [0 0 600 -600]) (vr/Rectangle [0 0 600 600])
-                               (vr/Vector2 [0 0]) 0 vg/color-white)
+        ;; -- Drawing
+        (vg/draw-lights w #_default-shader shadowmap-shader depth-rts draw-scene)
 
-        #_(vg/with-camera #_(get-in w [:vg.gltf/Light vg/Camera])
-                          (get-in w [:vg/camera-active vg/Camera])
-                          (vg/draw-scene w)
-                          #_(vg/draw-debug w))
+        (vg/with-multipass view-2 {:shaders [[noise-blur-shader {:u_radius (+ 1.0 (rand 1))}]
+                                             [dither-shader {:u_offsets (vg/Vector3 (mapv #(* % (+ 0.6 (wobble 0.3)))
+                                                                                          [0.02 (+ 0.016 (wobble 0.01))
+                                                                                           (+ 0.040 (wobble 0.01))]))}]]}
+          (vr.c/clear-background (vr/Color "#A98B39"))
+          (vg/with-camera #_(get-in w [(p :vg.gltf/Light) vg/Camera])
+                          (get-in w [(p :vg/camera-active) vg/Camera])
+                          (draw-scene w)
+                          #_(vg/draw-debug w)))
 
-        (vr.c/draw-fps 510 570)))))
+        #_ (get (:vg.gltf/ball-path w) [vg/Transform :global])
+
+        ;; Draw to the screen.
+        (vg/with-drawing
+          (vr.c/clear-background (vr/Color [255 20 100 255]))
+
+          (vr.c/draw-texture-pro (:texture view-2)
+                                 (vr/Rectangle [0 0 600 -600]) (vr/Rectangle [0 0 600 600])
+                                 (vr/Vector2 [0 0]) 0 vg/color-white)
+
+          #_(vg/with-camera #_(get-in w [:vg.gltf/Light vg/Camera])
+                            (get-in w [:vg/camera-active vg/Camera])
+                            (draw-scene w)
+                            #_(vg/draw-debug w))
+
+
+          (vr.c/draw-fps 510 570))))))
 
 #_(init)
 #_(vr.c/set-target-fps 10)
@@ -369,9 +408,9 @@
     (vr.c/init-window 600 600 "Opa")
     (vr.c/set-window-state (raylib/FLAG_WINDOW_UNFOCUSED))
     (vr.c/set-target-fps 60)
-    #_(vr.c/set-target-fps 30)
-    #_(vr.c/set-target-fps 10)
-    #_(vr.c/set-target-fps 120)
+    #_ (vr.c/set-target-fps 30)
+    #_ (vr.c/set-target-fps 10)
+    #_ (vr.c/set-target-fps 120)
     (vr.c/set-window-position 1120 200)
     (vr.c/clear-background (vr/Color [10 100 200 255]))
     (vr.c/draw-rectangle 30 50 100 200 (vr/Color [255 100 10 255]))
@@ -380,31 +419,65 @@
   (reset! env {})
   (swap! env merge {:vf/w (-> (vf/make-world)
                               (vg/gltf->flecs :flecs (.getPath (io/resource "models.glb")))
-                              #_(vg/gltf->flecs :limbs "/Users/pfeodrippe/Downloads/models.glb"))})
+                              #_ (vg/gltf->flecs :limbs "/Users/pfeodrippe/Downloads/models.glb"))})
 
-  (swap! env merge { ;; Create 10 depth render textures for reuse.
-                    :depth-rts (pmap #(do % (load-shadowmap-render-texture 600 600))
-                                     (range 10))
+  (let [model (vr.c/load-model-from-mesh (vr.c/gen-mesh-cube 0.5 0.5 0.5))
+        model-materials (vp/arr (:materials model) (:materialCount model) vr/Material)
+        model-meshes (vp/arr (:meshes model) (:meshCount model) vr/Mesh)]
+    (swap! env merge { ;; Create 10 depth render textures for reuse.
+                      :depth-rts (pmap #(do % (load-shadowmap-render-texture 600 600))
+                                       (range 10))
 
-                    :shadowmap-shader (vg/shader-program :shadowmap-shader
-                                                         {::vg/shader.vert "shaders/shadowmap.vs"
-                                                          ::vg/shader.frag "shaders/shadowmap.fs"})
-                    :kuwahara-shader (vg/shader-program :kuwahara-shader
-                                                        {::vg/shader.frag "shaders/kuwahara_2d.fs"})
-                    :dither-shader (vg/shader-program :dither-shader
-                                                      {::vg/shader.frag "shaders/dither.fs"})
-                    :noise-blur-shader (vg/shader-program :noise-blur-shader
-                                                          {::vg/shader.frag "shaders/noise_blur_2d.fs"})
-                    :edge-shader (vg/shader-program :edge-shader
-                                                    {::vg/shader.frag "shaders/edge_2d.fs"})
-                    :process-shader (vg/shader-program :process-shader
-                                                       {::vg/shader.frag "shaders/process_2d.fs"})
-                    :dof-shader (vg/shader-program :dof-shader
-                                                   {::vg/shader.frag "shaders/dof.fs"})
-                    :default-shader (vg/shader-program :default-shader {})
+                      :shadowmap-shader (vg/shader-program :shadowmap-shader
+                                                           {::vg/shader.vert "shaders/shadowmap.vs"
+                                                            ::vg/shader.frag "shaders/shadowmap.fs"})
+                      :kuwahara-shader (vg/shader-program :kuwahara-shader
+                                                          {::vg/shader.frag "shaders/kuwahara_2d.fs"})
+                      :dither-shader (vg/shader-program :dither-shader
+                                                        {::vg/shader.frag "shaders/dither.fs"})
+                      :noise-blur-shader (vg/shader-program :noise-blur-shader
+                                                            {::vg/shader.frag "shaders/noise_blur_2d.fs"})
+                      :edge-shader (vg/shader-program :edge-shader
+                                                      {::vg/shader.frag "shaders/edge_2d.fs"})
+                      :process-shader (vg/shader-program :process-shader
+                                                         {::vg/shader.frag "shaders/process_2d.fs"})
+                      :dof-shader (vg/shader-program :dof-shader
+                                                     {::vg/shader.frag "shaders/dof.fs"})
+                      :default-shader (vg/shader-program :default-shader {})
 
-                    :view-2 (vr.c/load-render-texture 600 600)})
+                      :view-2 (vr.c/load-render-texture 600 600)
+
+                      :cube-mesh (first model-meshes)
+                      :cube-material (first model-materials)}))
+
+  ;; Physics
+  (defn bb []
+    (vj/init)
+    (def physics-system (vj/default-physics-system))
+    (def body-i (vj/body-interface physics-system))
+
+    (vj/add-body body-i (vj/BodyCreationSettings
+                         {:position (vj/Vector4 [0.05 -0.1 -0.5 1])
+                          :rotation (vj/Vector4 [0 0 0 1])
+                          :shape (-> (vj/box-settings (vj/HalfExtent [5 0.1 2.5]))
+                                     vj/shape)}))
+
+    (->> (range 128)
+         (mapv (fn [idx]
+                 (vj/add-body body-i (vj/BodyCreationSettings
+                                      {:position (vj/Vector4 [(- 3 (* idx 0.05))
+                                                              (+ 4.2 (* idx 0.1))
+                                                              (- 5.2 (* idx 0.1))
+                                                              1])
+                                       :rotation (vj/Vector4 [0 0 0 1])
+                                       :shape (-> (vj/box-settings (vj/HalfExtent [0.25 0.25 0.25]))
+                                                  vj/shape)
+                                       :motion_type (jolt/JPC_MOTION_TYPE_DYNAMIC)
+                                       :object_layer :vj.layer/moving}))))))
+
+  (bb)
 
   (alter-var-root #'vr/draw (constantly #'draw)))
+
 #_(alter-var-root #'vr/draw (constantly (fn [] (Thread/sleep 10))))
 #_(init)
