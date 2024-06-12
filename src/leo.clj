@@ -128,6 +128,7 @@
 
 (declare physics-system)
 (declare bb)
+(declare body-i)
 
 (defn draw
   []
@@ -224,6 +225,7 @@
                                        (vr.c/atan-2 y z)
                                        _v]))
                       amp (if (zero? d)
+
                             1
                             (/ 1 (* d d 1)))]
                   #_(ctl sound-d :azim azim :elev elev :amp amp :distance d)))
@@ -317,7 +319,31 @@
         (keys (vf/hierarchy (w (p :vg.gltf/Armature))))
         (vf/hierarchy-no-path (w (p :vg.gltf/Armature)))
 
+        (get-in w [(vf/path [:vg.gltf/model :vg.gltf/Plane])
+                   ])
+
+        (vf/with-each w [_ :vg/ray-casted
+                         material vr/Material
+                         translation vg/Translation]
+          #_(-> material
+                :maps
+                (vp/arr 1 vr/MaterialMap)
+                (nth (raylib/MATERIAL_MAP_DIFFUSE))
+                (assoc :color (vr/Color [200 155 255 1.0])))
+          (update translation))
+
         ())
+
+      #_(vf/with-each w [_ :vg/ray-casted
+                         material vr/Material
+                         translation vg/Translation]
+          #_(-> material
+                :maps
+                (vp/arr 1 vr/MaterialMap)
+                (nth (raylib/MATERIAL_MAP_DIFFUSE))
+                (assoc :color (vr/Color [200 155 255 1.0])))
+          #_(println :a)
+          (update translation :x + 0.2))
 
       ;; Running animation.
       (let [key #(vr.c/is-key-down %1)]
@@ -340,26 +366,44 @@
                       (p :vg.gltf/Armature :vg.gltf.anim/Running) [(vf/del :vg/active)]}))))
 
       ;; -- Mouse.
-      (when (vr.c/is-mouse-button-pressed (raylib/MOUSE_BUTTON_LEFT))
-        #_(println (vr.c/vy-get-screen-to-world-ray (vr.c/get-mouse-position)
-                                                    (get-in w [(p :vg/camera-active) vg/Camera]))))
+      (let [{:keys [position direction]} (-> (vr.c/get-mouse-position)
+                                             (vr.c/vy-get-screen-to-world-ray
+                                              (get-in w [(p :vg/camera-active) vg/Camera])))
+            direction (mapv #(* % 10000) (vals direction))
+            ray-cast (vj/RayCast {:origin (assoc (vg/Vector4 position) :w 1)
+                                  :direction (assoc (vg/Vector4 direction) :w 0)})
+            {:keys [body_id]} (-> (vj/narrow-phase-query physics-system)
+                                  (vj/cast-ray ray-cast))]
+        (when-let [pos (some-> (and body_id
+                                    (get-in w [(vf/path [:aa (str "vj-" body_id)]) vg/Translation]))
+                               vp/clone
+                               (update :y + 0.5))]
+          (merge w {(vf/path [:vg.gltf/model :vg.gltf/Sphere])
+                    [pos]
+
+                    #_ #_:aa {(keyword (str "vj-" body_id))
+                         [:vg/ray-casted]}})))
 
       #_(init)
 
+      ;; Physics.
       (vj/update! (vj/init) physics-system (vr.c/get-frame-time))
 
-      ;; TODO This wastes a lot of CPU, let's put it in a system later.
-      #_(merge w
+      (merge w
              {:aa
               (->> (vj/bodies physics-system)
-                   rest
                    (filter vj/body-active?)
+                   (remove (comp zero? :object_layer))
                    #_(take 2)
-                   (mapv (fn [{:keys [position rotation id]}]
-                             {(keyword (str "vj-" id)) [(vg/Translation position) (vg/Rotation rotation)
-                                                        (vg/Scale [1 1 1])
-                                                        vg/Transform [vg/Transform :global]
-                                                        cube-mesh cube-material]}))
+                   (keep (fn [{:keys [position rotation id]}]
+                           #_{(keyword (str "vj-" id)) [(vg/Translation position) (vg/Rotation rotation)]}
+                           (let [translation (vg/Translation position)]
+                             (if (< (:y translation) -20)
+                               (vj/body-remove body-i id)
+                               {(keyword (str "vj-" id)) [translation (vg/Rotation rotation)
+                                                          (vg/Scale [1 1 1])
+                                                          vg/Transform [vg/Transform :global]
+                                                          cube-mesh cube-material]}))))
                    (into {}))})
 
       #_(dissoc w :aa)
@@ -421,6 +465,8 @@
                               (vg/gltf->flecs :flecs (.getPath (io/resource "models.glb")))
                               #_ (vg/gltf->flecs :limbs "/Users/pfeodrippe/Downloads/models.glb"))})
 
+  (def w (:vf/w env))
+
   (let [model (vr.c/load-model-from-mesh (vr.c/gen-mesh-cube 0.5 0.5 0.5))
         model-materials (vp/arr (:materials model) (:materialCount model) vr/Material)
         model-meshes (vp/arr (:meshes model) (:meshCount model) vr/Mesh)]
@@ -456,15 +502,54 @@
     (def physics-system (vj/default-physics-system))
     (def body-i (vj/body-interface physics-system))
 
-    (vj/add-body body-i (vj/BodyCreationSettings
-                         {:position (vj/Vector4 [0.05 -0.1 -0.5 1])
-                          :rotation (vj/Vector4 [0 0 0 1])
-                          :shape (-> (vj/box-settings (vj/HalfExtent [5 0.1 2.5]))
-                                     vj/shape)}))
+    (when true
+
+      #_(init)
+
+      (vf/with-each w [{aabb-min :min aabb-max :max} vg/Aabb
+                       transform-global [:meta {:flags #{:up}} [vg/Transform :global]]
+                       ;; TODO Derive it from transform-global.
+                       scale [:meta {:flags #{:up}} vg/Scale]
+                       e :vf/entity
+                       w :vf/world]
+        (let [half #(max (/ (- (% aabb-max)
+                               (% aabb-min))
+                            2.0)
+                         0.1)
+              whole #(* (half %) 2)
+              {:keys [x y z]} (vg/matrix->translation transform-global)
+              id (vj/body-add body-i (vj/BodyCreationSettings
+                                      {:position (vj/Vector4 [x (+ y 0) z 1])
+                                       :rotation (vj/Vector4 [0 0 0 1])
+                                       :shape (-> (vj/box-settings (vj/HalfExtent [(half :x) (half :y) (half :z)]))
+                                                  (vj/shape-scale scale)
+                                                  vj/shape)}))
+              model (vr.c/load-model-from-mesh (vr.c/gen-mesh-cube (whole :x) (whole :y) (whole :z)))
+              model-materials (vp/arr (:materials model) (:materialCount model) vr/Material)
+              model-meshes (vp/arr (:meshes model) (:meshCount model) vr/Mesh)]
+          #_(println [(vf/get-name e)
+                      [x y z 1]
+                      [(half :x) (half :y) (half :z)]])
+
+          #_(merge w {:aa {(keyword (str "vj-" id)) [#_(vg/Translation translation) #_(vg/Rotation rotation)
+                                                   (vg/Scale scale)
+                                                   vg/Transform [vg/Transform :global]
+                                                   (first model-meshes) (first model-materials)]}})
+          nil))
+
+      #_(dissoc w :aa)
+
+      ())
+
+    #_(vj/body-add body-i (vj/BodyCreationSettings
+                           {:position (vj/Vector4 [0.05 -0.1 -0.5 1])
+                            :rotation (vj/Vector4 [0 0 0 1])
+                            :shape (-> (vj/box-settings (vj/HalfExtent [5 0.1 2.5]))
+                                       vj/shape)}))
 
     (->> (range 128)
          (mapv (fn [idx]
-                 (vj/add-body body-i (vj/BodyCreationSettings
+                 (vj/body-add body-i (vj/BodyCreationSettings
                                       {:position (vj/Vector4 [(- 3 (* idx 0.05))
                                                               (+ 4.2 (* idx 0.1))
                                                               (- 5.2 (* idx 0.1))
