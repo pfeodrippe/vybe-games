@@ -48,19 +48,23 @@
           - [x] make it a child of the node
           - [x] find armature and put the animation inside it
       - [x] use animation multiple times
-  - [ ] use JOLT
+  - [x] use JOLT
+    - https://jrouwe.github.io/JoltPhysics/index.html#architecture-jolt-physics
     - [x] import
     - [x] animate some cubes
-    - [ ] add bounding box from GLTF min/max position values
-    - [ ] support multiple collision layers
-      - [ ] sensor layer?
-    - [ ] contact listener
-    - [ ] raycast
+    - [x] add bounding box from GLTF min/max position values
+    - [x] use bounding box to create colision bodies
+    - [x] raycast
   - [ ] hover on a object
+    - [ ] glow (or change color)
     - [ ] sound
   - [ ] click on a object
     - [ ] sound
   - [ ] state machine
+- [ ] build clouds with white cubes
+- [ ] support multiple collision layers
+  - [ ] sensor layer?
+- [ ] contact listener
 - [ ] put resources in world so we can get rid of `env`
 - [ ] particles
   - [ ] grains in the air (maybe 1 pixel?)
