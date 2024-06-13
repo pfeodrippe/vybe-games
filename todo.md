@@ -57,6 +57,8 @@
     - [x] raycast
   - [ ] hover on a object
     - [ ] glow (or change color)
+      - [ ] get entity from body id
+    - [ ] support flecs observers
     - [ ] sound
   - [ ] click on a object
     - [ ] sound
