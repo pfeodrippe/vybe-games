@@ -126,10 +126,6 @@
 
 #_ (init)
 
-(declare physics-system)
-(declare bb)
-(declare body-i)
-
 (defn draw
   []
   (vp/with-arena _
@@ -154,12 +150,9 @@
                 (def cube-mesh cube-mesh)
                 (def cube-material cube-material))
 
-          #_ (init)]
+          phys (get-in w [:vg/phys vj/PhysicsSystem])
 
-      #_(when (vr.c/is-gamepad-available 0)
-          (when (vr.c/is-gamepad-button-pressed 0 (raylib/GAMEPAD_BUTTON_RIGHT_FACE_UP))
-            (println :aaa 2))
-          #_(println :aaa (vr.c/get-gamepad-axis-movement 0 0)))
+          #_ (init)]
 
       ;; -- Animation
       (let [step (let [key #(vr.c/is-key-down %1)]
@@ -184,10 +177,6 @@
             (do
               (conj e :vg.anim/started)
               (update player :current_time + (* (vr.c/get-frame-time) step))))))
-
-      #_(def aaa (vf/with-each w [_ :vg/channel
-                                  e :vf/entity]
-                   (vf/get-path e)))
 
       #_ (init)
 
@@ -231,10 +220,6 @@
                   #_(ctl sound-d :azim azim :elev elev :amp amp :distance d)))
             (assoc player :current_time 0))
 
-          #_(def aa [(into {} (nth values idx))
-                     (into {} (nth values (if (>= idx (count values))
-                                            0
-                                            idx)))])
           #_(def node node)
           #_(vf/make-entity w node)
 
@@ -279,7 +264,8 @@
       (let [key #(vr.c/is-key-pressed %1)]
         (cond
           (key (raylib/KEY_C))
-          (vp/with-arena-root _ (bb))
+          #_(vp/with-arena-root _ (bb))
+          nil
 
           (key (raylib/KEY_SPACE))
           (let [[old-entity new-entity] (if (contains? (w (p :vg/camera-active)) (p :vg.gltf/CameraFar))
@@ -310,29 +296,6 @@
                     (c :vg.gltf.anim/CubeUp) [:vg/active]}
                    {(c :vg.gltf.anim/CubeDown) [:vg/active]
                     (c :vg.gltf.anim/CubeUp) [(vf/del :vg/active) (vf/del :vg/selected)]}))))))
-
-      (comment
-
-        (w (p :vg.gltf/Armature))
-
-        (vf/hierarchy-no-path (w :vg.gltf/model))
-        (keys (vf/hierarchy (w (p :vg.gltf/Armature))))
-        (vf/hierarchy-no-path (w (p :vg.gltf/Armature)))
-
-        (get-in w [(vf/path [:vg.gltf/model :vg.gltf/Plane])
-                   ])
-
-        (vf/with-each w [_ :vg/ray-casted
-                         material vr/Material
-                         translation vg/Translation]
-          #_(-> material
-                :maps
-                (vp/arr 1 vr/MaterialMap)
-                (nth (raylib/MATERIAL_MAP_DIFFUSE))
-                (assoc :color (vr/Color [200 155 255 1.0])))
-          (update translation))
-
-        ())
 
       #_(vf/with-each w [_ :vg/ray-casted
                          material vr/Material
@@ -365,33 +328,57 @@
               (merge {(p :vg.gltf/Armature :vg.gltf.anim/Idle) [:vg/active]
                       (p :vg.gltf/Armature :vg.gltf.anim/Running) [(vf/del :vg/active)]}))))
 
+      (comment
+
+        (w (p :vg.gltf/Armature))
+
+        (vf/hierarchy-no-path (w :vg.gltf/model))
+        (keys (vf/hierarchy (w (p :vg.gltf/Armature))))
+        (vf/hierarchy-no-path (w (p :vg.gltf/Armature)))
+
+        (vf/with-each w [translation [:meta {:term {:src {:id (.id (w (vf/path [:vg.gltf/model :vg.gltf/Plane])))}}}
+                                      vg/Translation]]
+          translation)
+
+        (get (w (vf/path [:vg.gltf/model :vg.gltf/Plane])) vg/Translation)
+
+        ())
+
       ;; -- Mouse.
       (let [{:keys [position direction]} (-> (vr.c/get-mouse-position)
                                              (vr.c/vy-get-screen-to-world-ray
                                               (get-in w [(p :vg/camera-active) vg/Camera])))
             direction (mapv #(* % 10000) (vals direction))
-            ray-cast (vj/RayCast {:origin (assoc (vg/Vector4 position) :w 1)
-                                  :direction (assoc (vg/Vector4 direction) :w 0)})
-            {:keys [body_id]} (-> (vj/narrow-phase-query physics-system)
-                                  (vj/cast-ray ray-cast))]
-        (when-let [pos (some-> (and body_id
-                                    (get-in w [(vf/path [:aa (str "vj-" body_id)]) vg/Translation]))
-                               vp/clone
+            body (vj/cast-ray phys position direction)]
+        (when-let [pos (some-> (:position body)
+                               vg/Translation
                                (update :y + 0.5))]
+          #_(def pos pos)
           (merge w {(vf/path [:vg.gltf/model :vg.gltf/Sphere])
                     [pos]
 
                     #_ #_:aa {(keyword (str "vj-" body_id))
-                         [:vg/ray-casted]}})))
+                              [:vg/ray-casted]}})
+          (when (vr.c/is-mouse-button-pressed (raylib/MOUSE_BUTTON_LEFT))
+            (let [e (->> (get-in w [(vf/path [:aa (str "vj-" (:id body))])
+                                    [:vg/refers :_]])
+                         first
+                         last)
+                  c (fn [k] (vf/path [(vf/parent w e) k]))]
+              (merge w (if (contains? (w (c :vg.gltf.anim/CubeDown)) :vg/selected)
+                         {(c :vg.gltf.anim/CubeDown) [(vf/del :vg/active) (vf/del :vg/selected)]
+                          (c :vg.gltf.anim/CubeUp) [:vg/active]}
+                         {(c :vg.gltf.anim/CubeDown) [:vg/active]
+                          (c :vg.gltf.anim/CubeUp) [(vf/del :vg/active) (vf/del :vg/selected)]}))))))
 
       #_(init)
 
       ;; Physics.
-      (vj/update! (vj/init) physics-system (vr.c/get-frame-time))
+      (vj/update! (vj/init) phys (vr.c/get-frame-time))
 
       (merge w
              {:aa
-              (->> (vj/bodies physics-system)
+              (->> (vj/bodies phys)
                    (filter vj/body-active?)
                    (remove (comp zero? :object_layer))
                    #_(take 2)
@@ -399,7 +386,7 @@
                            #_{(keyword (str "vj-" id)) [(vg/Translation position) (vg/Rotation rotation)]}
                            (let [translation (vg/Translation position)]
                              (if (< (:y translation) -20)
-                               (vj/body-remove body-i id)
+                               (vj/body-remove phys id)
                                {(keyword (str "vj-" id)) [translation (vg/Rotation rotation)
                                                           (vg/Scale [1 1 1])
                                                           vg/Transform [vg/Transform :global]
@@ -417,14 +404,11 @@
         (vg/with-multipass view-2 {:shaders [[noise-blur-shader {:u_radius (+ 1.0 (rand 1))}]
                                              [dither-shader {:u_offsets (vg/Vector3 (mapv #(* % (+ 0.6 (wobble 0.3)))
                                                                                           [0.02 (+ 0.016 (wobble 0.01))
-                                                                                           (+ 0.040 (wobble 0.01))]))}]]}
+                                                                                           (+ 0.040 (wobble 0.01))]))}] ]}
           (vr.c/clear-background (vr/Color "#A98B39"))
           (vg/with-camera #_(get-in w [(p :vg.gltf/Light) vg/Camera])
                           (get-in w [(p :vg/camera-active) vg/Camera])
-                          (draw-scene w)
-                          #_(vg/draw-debug w)))
-
-        #_ (get (:vg.gltf/ball-path w) [vg/Transform :global])
+                          (draw-scene w)))
 
         ;; Draw to the screen.
         (vg/with-drawing
@@ -495,72 +479,6 @@
 
                       :cube-mesh (first model-meshes)
                       :cube-material (first model-materials)}))
-
-  ;; Physics
-  (defn bb []
-    (vj/init)
-    (def physics-system (vj/default-physics-system))
-    (def body-i (vj/body-interface physics-system))
-
-    (when true
-
-      #_(init)
-
-      (vf/with-each w [{aabb-min :min aabb-max :max} vg/Aabb
-                       transform-global [:meta {:flags #{:up}} [vg/Transform :global]]
-                       ;; TODO Derive it from transform-global.
-                       scale [:meta {:flags #{:up}} vg/Scale]
-                       e :vf/entity
-                       w :vf/world]
-        (let [half #(max (/ (- (% aabb-max)
-                               (% aabb-min))
-                            2.0)
-                         0.1)
-              whole #(* (half %) 2)
-              {:keys [x y z]} (vg/matrix->translation transform-global)
-              id (vj/body-add body-i (vj/BodyCreationSettings
-                                      {:position (vj/Vector4 [x (+ y 0) z 1])
-                                       :rotation (vj/Vector4 [0 0 0 1])
-                                       :shape (-> (vj/box-settings (vj/HalfExtent [(half :x) (half :y) (half :z)]))
-                                                  (vj/shape-scale scale)
-                                                  vj/shape)}))
-              model (vr.c/load-model-from-mesh (vr.c/gen-mesh-cube (whole :x) (whole :y) (whole :z)))
-              model-materials (vp/arr (:materials model) (:materialCount model) vr/Material)
-              model-meshes (vp/arr (:meshes model) (:meshCount model) vr/Mesh)]
-          #_(println [(vf/get-name e)
-                      [x y z 1]
-                      [(half :x) (half :y) (half :z)]])
-
-          #_(merge w {:aa {(keyword (str "vj-" id)) [#_(vg/Translation translation) #_(vg/Rotation rotation)
-                                                   (vg/Scale scale)
-                                                   vg/Transform [vg/Transform :global]
-                                                   (first model-meshes) (first model-materials)]}})
-          nil))
-
-      #_(dissoc w :aa)
-
-      ())
-
-    #_(vj/body-add body-i (vj/BodyCreationSettings
-                           {:position (vj/Vector4 [0.05 -0.1 -0.5 1])
-                            :rotation (vj/Vector4 [0 0 0 1])
-                            :shape (-> (vj/box-settings (vj/HalfExtent [5 0.1 2.5]))
-                                       vj/shape)}))
-
-    (->> (range 128)
-         (mapv (fn [idx]
-                 (vj/body-add body-i (vj/BodyCreationSettings
-                                      {:position (vj/Vector4 [(- 3 (* idx 0.05))
-                                                              (+ 4.2 (* idx 0.1))
-                                                              (- 5.2 (* idx 0.1))
-                                                              1])
-                                       :rotation (vj/Vector4 [0 0 0 1])
-                                       :shape (-> (vj/box-settings (vj/HalfExtent [0.25 0.25 0.25]))
-                                                  vj/shape)
-                                       :motion_type (jolt/JPC_MOTION_TYPE_DYNAMIC)
-                                       :object_layer :vj.layer/moving}))))))
-
-  (bb)
 
   (alter-var-root #'vr/draw (constantly #'draw)))
 
