@@ -55,6 +55,8 @@
     - [x] add bounding box from GLTF min/max position values
     - [x] use bounding box to create colision bodies
     - [x] raycast
+  - [x] fix collider debug
+  - [ ] update body position of a static object
   - [ ] hover on a object
     - [ ] glow (or change color)
       - [ ] get entity from body id
