@@ -143,14 +143,15 @@
           p (fn [& ks]
               (vf/path (vec (concat [:vg.gltf/model] ks))))
 
+          phys (get-in w [(p :vg/phys) vj/PhysicsSystem])
+
           _ (do (def w w)
                 (def p p)
                 (def shadowmap-shader shadowmap-shader)
                 (def dither-shader dither-shader)
                 (def cube-mesh cube-mesh)
-                (def cube-material cube-material))
-
-          phys (get-in w [:vg/phys vj/PhysicsSystem])
+                (def cube-material cube-material)
+                (def phys phys))
 
           #_ (init)]
 
@@ -267,6 +268,11 @@
           #_(vp/with-arena-root _ (bb))
           nil
 
+          (key (raylib/KEY_D))
+          (merge w {:vg/debug (if (get-in w [:vg/debug :vg/enabled])
+                                [(vf/del :vg/enabled)]
+                                [:vg/enabled])})
+
           (key (raylib/KEY_SPACE))
           (let [[old-entity new-entity] (if (contains? (w (p :vg/camera-active)) (p :vg.gltf/CameraFar))
                                           [(p :vg.gltf/CameraFar) (p :vg.gltf/Camera)]
@@ -330,6 +336,8 @@
 
       (comment
 
+        (w (p :vg.gltf/Cube))
+
         (w (p :vg.gltf/Armature))
 
         (vf/hierarchy-no-path (w :vg.gltf/model))
@@ -352,15 +360,12 @@
             body (vj/cast-ray phys position direction)]
         (when-let [pos (some-> (:position body)
                                vg/Translation
-                               (update :y + 0.5))]
+                               (assoc :y (+ (nth (:bounds_max body) 1) 0.3)))]
           #_(def pos pos)
           (merge w {(vf/path [:vg.gltf/model :vg.gltf/Sphere])
-                    [pos]
-
-                    #_ #_:aa {(keyword (str "vj-" body_id))
-                              [:vg/ray-casted]}})
+                    [pos]})
           (when (vr.c/is-mouse-button-pressed (raylib/MOUSE_BUTTON_LEFT))
-            (let [e (->> (get-in w [(vf/path [:aa (str "vj-" (:id body))])
+            (let [e (->> (get-in w [(vf/path [(p (str "vj-" (:id body)))])
                                     [:vg/refers :_]])
                          first
                          last)
@@ -377,26 +382,27 @@
       (vj/update! (vj/init) phys (vr.c/get-frame-time))
 
       (merge w
-             {:aa
-              (->> (vj/bodies phys)
-                   (filter vj/body-active?)
-                   (remove (comp zero? :object_layer))
-                   #_(take 2)
-                   (keep (fn [{:keys [position rotation id]}]
-                           #_{(keyword (str "vj-" id)) [(vg/Translation position) (vg/Rotation rotation)]}
-                           (let [translation (vg/Translation position)]
-                             (if (< (:y translation) -20)
-                               (vj/body-remove phys id)
-                               {(keyword (str "vj-" id)) [translation (vg/Rotation rotation)
-                                                          (vg/Scale [1 1 1])
-                                                          vg/Transform [vg/Transform :global]
-                                                          cube-mesh cube-material]}))))
-                   (into {}))})
-
-      #_(dissoc w :aa)
+             (->> (vj/bodies phys)
+                  #_(filter vj/body-active?)
+                  #_(remove (comp zero? :object_layer))
+                  #_(take 2)
+                  (keep (fn [{:keys [position rotation id]}]
+                          #_{(keyword (str "vj-" id)) [(vg/Translation position) (vg/Rotation rotation)]}
+                          (let [translation (vg/Translation position)]
+                            (if (< (:y translation) -20)
+                              (vj/body-remove phys id)
+                              {(p (keyword (str "vj-" id)))
+                               [translation (vg/Rotation rotation)
+                                (vg/Scale [1 1 1])
+                                vg/Transform [vg/Transform :global]
+                                #_ #_cube-mesh cube-material]}))))
+                  (into {})))
 
       (let [draw-scene (fn [w]
-                         (vg/draw-scene w))]
+                         #_(vr.c/draw-grid 30 0.5)
+                         (if (get-in w [:vg/debug :vg/enabled])
+                           (vg/draw-debug w)
+                           (vg/draw-scene w)))]
 
         ;; -- Drawing
         (vg/draw-lights w #_default-shader shadowmap-shader depth-rts draw-scene)
@@ -420,9 +426,7 @@
 
           #_(vg/with-camera #_(get-in w [:vg.gltf/Light vg/Camera])
                             (get-in w [:vg/camera-active vg/Camera])
-                            (draw-scene w)
-                            #_(vg/draw-debug w))
-
+                            (draw-scene w))
 
           (vr.c/draw-fps 510 570))))))
 
@@ -449,7 +453,7 @@
                               (vg/gltf->flecs :flecs (.getPath (io/resource "models.glb")))
                               #_ (vg/gltf->flecs :limbs "/Users/pfeodrippe/Downloads/models.glb"))})
 
-  (def w (:vf/w env))
+  #_(def w (:vf/w env))
 
   (let [model (vr.c/load-model-from-mesh (vr.c/gen-mesh-cube 0.5 0.5 0.5))
         model-materials (vp/arr (:materials model) (:materialCount model) vr/Material)
