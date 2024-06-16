@@ -131,8 +131,7 @@
   (vp/with-arena _
     (let [{:keys [vf/w view-2 shadowmap-shader
                   dither-shader noise-blur-shader
-                  depth-rts default-shader kuwahara-shader
-                  cube-mesh cube-material]}
+                  depth-rts default-shader kuwahara-shader]}
           env
 
           _ (do (vg/run-reloadable-commands!)
@@ -141,16 +140,14 @@
                 (vf/progress w (vr.c/get-frame-time)))
 
           p (fn [& ks]
-              (vf/path (vec (concat [:vg.gltf/model] ks))))
+              (vf/path (vec (concat [:my/model] ks))))
 
-          phys (get-in w [(p :vg/phys) vj/PhysicsSystem])
+          phys (get-in w [:vg/phys vj/PhysicsSystem])
 
           _ (do (def w w)
                 (def p p)
                 (def shadowmap-shader shadowmap-shader)
                 (def dither-shader dither-shader)
-                (def cube-mesh cube-mesh)
-                (def cube-material cube-material)
                 (def phys phys))
 
           #_ (init)]
@@ -265,8 +262,25 @@
       (let [key #(vr.c/is-key-pressed %1)]
         (cond
           (key (raylib/KEY_C))
-          #_(vp/with-arena-root _ (bb))
-          nil
+          (merge w
+                 (->> (range 32)
+                      (mapv (fn [idx]
+                              (let [id (vj/body-add phys
+                                                    (vj/BodyCreationSettings
+                                                     {:position (vj/Vector4 [(+ 1 (* idx 0.05))
+                                                                             (+ 4.2 (* idx 0.1))
+                                                                             (- 2.2 (* idx 0.1))
+                                                                             1])
+                                                      :rotation (vj/Vector4 [0 0 0 1])
+                                                      :shape (-> (vj/box-settings (vj/HalfExtent [0.25 0.25 0.25]))
+                                                                 vj/shape)
+                                                      :motion_type (jolt/JPC_MOTION_TYPE_DYNAMIC)
+                                                      :object_layer :vj.layer/moving}))
+                                    {:keys [mesh material]} (vg/gen-cube {:x 0.5 :y 0.5 :z 0.5} (rand-int 10))]
+                                [(vf/path [phys (keyword (str "vj-" id))])
+                                 [mesh material]])))
+                      (into {})))
+
 
           (key (raylib/KEY_D))
           (merge w {:vg/debug (if (get-in w [:vg/debug :vg/enabled])
@@ -315,24 +329,24 @@
           (update translation :x + 0.2))
 
       ;; Running animation.
-      (let [key #(vr.c/is-key-down %1)]
-        (cond
-          (key (raylib/KEY_X))
-          (-> w
-              (merge {(p :vg.gltf/Armature :vg.gltf.anim/Running) [:vg/active]
-                      (p :vg.gltf/Armature :vg.gltf.anim/Idle) [(vf/del :vg/active)]})
-              (update-in [(p :vg.gltf/Armature) vg/Translation :z] + 0.018))
+      #_(let [key #(vr.c/is-key-down %1)]
+          (cond
+            (key (raylib/KEY_X))
+            (-> w
+                (merge {(p :vg.gltf/Armature :vg.gltf.anim/Running) [:vg/active]
+                        (p :vg.gltf/Armature :vg.gltf.anim/Idle) [(vf/del :vg/active)]})
+                (update-in [(p :vg.gltf/Armature) vg/Translation :z] + 0.018))
 
-          (key (raylib/KEY_Z))
-          (-> w
-              (merge {(p :vg.gltf/Armature :vg.gltf.anim/Running) [:vg/active]
-                      (p :vg.gltf/Armature :vg.gltf.anim/Idle) [(vf/del :vg/active)]})
-              (update-in [(p :vg.gltf/Armature) vg/Translation :z] - 0.018))
+            (key (raylib/KEY_Z))
+            (-> w
+                (merge {(p :vg.gltf/Armature :vg.gltf.anim/Running) [:vg/active]
+                        (p :vg.gltf/Armature :vg.gltf.anim/Idle) [(vf/del :vg/active)]})
+                (update-in [(p :vg.gltf/Armature) vg/Translation :z] - 0.018))
 
-          :else
-          (-> w
-              (merge {(p :vg.gltf/Armature :vg.gltf.anim/Idle) [:vg/active]
-                      (p :vg.gltf/Armature :vg.gltf.anim/Running) [(vf/del :vg/active)]}))))
+            :else
+            (-> w
+                (merge {(p :vg.gltf/Armature :vg.gltf.anim/Idle) [:vg/active]
+                        (p :vg.gltf/Armature :vg.gltf.anim/Running) [(vf/del :vg/active)]}))))
 
       (comment
 
@@ -340,17 +354,39 @@
 
         (w (p :vg.gltf/Armature))
 
-        (vf/hierarchy-no-path (w :vg.gltf/model))
+        (vf/hierarchy-no-path (w :my/model))
         (keys (vf/hierarchy (w (p :vg.gltf/Armature))))
         (vf/hierarchy-no-path (w (p :vg.gltf/Armature)))
 
-        (vf/with-each w [translation [:meta {:term {:src {:id (.id (w (vf/path [:vg.gltf/model :vg.gltf/Plane])))}}}
+        (vf/with-each w [translation [:meta {:term {:src {:id (.id (w (vf/path [:my/model :vg.gltf/Plane])))}}}
                                       vg/Translation]]
           translation)
 
-        (get (w (vf/path [:vg.gltf/model :vg.gltf/Plane])) vg/Translation)
+        (get (w (vf/path [:my/model :vg.gltf/Plane])) vg/Translation)
+
+        (w (vf/path [:my/model :vg.gltf/Sphere]))
+
+        (vj/body-ids phys)
+        (mapv :position (vj/bodies phys))
+
+        [[0.032599002 -0.09293218 0.36919773 1.0]
+         [0.9292079 0.19013372 -0.95472574 1.0]
+         [0.8553098 0.80430436 -0.6364111 1.0]
+         [2.335264 0.08289306 -0.6364111 1.0]]
+
+        (vj/bodies-unsafe phys)
+
+        (let [p (vj/Vector4)]
+          (vj.c/jpc-body-get-position (first (vj/bodies phys)) p)
+          p
+          (vj.c/jpc-body-interface-get-position (vj/body-interface phys)
+                                                33554432
+                                                p)
+          p)
 
         ())
+
+      #_ (init)
 
       ;; -- Mouse.
       (let [{:keys [position direction]} (-> (vr.c/get-mouse-position)
@@ -358,32 +394,42 @@
                                               (get-in w [(p :vg/camera-active) vg/Camera])))
             direction (mapv #(* % 10000) (vals direction))
             body (vj/cast-ray phys position direction)]
-        (when-let [pos (some-> (:position body)
-                               vg/Translation
-                               (assoc :y (+ (nth (:bounds_max body) 1) 0.3)))]
-          #_(def pos pos)
-          (merge w {(vf/path [:vg.gltf/model :vg.gltf/Sphere])
-                    [pos]})
-          (when (vr.c/is-mouse-button-pressed (raylib/MOUSE_BUTTON_LEFT))
-            (let [e (->> (get-in w [(vf/path [(p (str "vj-" (:id body)))])
-                                    [:vg/refers :_]])
-                         first
-                         last)
-                  c (fn [k] (vf/path [(vf/parent w e) k]))]
-              (merge w (if (contains? (w (c :vg.gltf.anim/CubeDown)) :vg/selected)
-                         {(c :vg.gltf.anim/CubeDown) [(vf/del :vg/active) (vf/del :vg/selected)]
-                          (c :vg.gltf.anim/CubeUp) [:vg/active]}
-                         {(c :vg.gltf.anim/CubeDown) [:vg/active]
-                          (c :vg.gltf.anim/CubeUp) [(vf/del :vg/active) (vf/del :vg/selected)]}))))))
+        (if-let [pos (some-> (:position body)
+                             vg/Translation
+                             (assoc :y (+ (nth (:bounds_max body) 1) 0.3)))]
+          #_(println :pos pos)
+          #_(println :PARENT (vf/parent (str "vj-" (:id body))))
+
+          (do #_(def a (get-in w [(vf/path [phys (keyword (str "vj-" (:id body)))])
+                                  #_[:vg/refers :_]]))
+              #_(println :pos-1 pos)
+              (when-let [e (some->> (get-in w [(vf/path [phys (keyword (str "vj-" (:id body)))])
+                                               [:vg/refers :_]])
+                                    first
+                                    last
+                                    (vf/make-entity w))]
+                #_(println :pos pos)
+                (if (get e [:vg/raycast :vg/enabled])
+                  (do (merge w {(p :vg.gltf/Sphere)
+                                [pos]})
+                      (when (vr.c/is-mouse-button-pressed (raylib/MOUSE_BUTTON_LEFT))
+                        (let [c (fn [k] (vf/path [(vf/parent w e) k]))]
+                          (merge w (if (contains? (w (c :vg.gltf.anim/CubeDown)) :vg/selected)
+                                     {(c :vg.gltf.anim/CubeDown) [(vf/del :vg/active) (vf/del :vg/selected)]
+                                      (c :vg.gltf.anim/CubeUp) [:vg/active]}
+                                     {(c :vg.gltf.anim/CubeDown) [:vg/active]
+                                      (c :vg.gltf.anim/CubeUp) [(vf/del :vg/active) (vf/del :vg/selected)]})))))
+                  (merge w {(p :vg.gltf/Sphere) [(vg/Translation [-10 -10 -10])]}))))
+          (merge w {(p :vg.gltf/Sphere) [(vg/Translation [-10 -10 -10])]})))
 
       #_(init)
 
       ;; Physics.
-      (vj/update! (vj/init) phys (vr.c/get-frame-time))
+      (vj/update! phys (vr.c/get-frame-time))
 
       (merge w
              (->> (vj/bodies phys)
-                  #_(filter vj/body-active?)
+                  (filter vj/body-active?)
                   #_(remove (comp zero? :object_layer))
                   #_(take 2)
                   (keep (fn [{:keys [position rotation id]}]
@@ -391,11 +437,10 @@
                           (let [translation (vg/Translation position)]
                             (if (< (:y translation) -20)
                               (vj/body-remove phys id)
-                              {(p (keyword (str "vj-" id)))
+                              {(vf/path [phys (keyword (str "vj-" id))])
                                [translation (vg/Rotation rotation)
                                 (vg/Scale [1 1 1])
-                                vg/Transform [vg/Transform :global]
-                                #_ #_cube-mesh cube-material]}))))
+                                vg/Transform [vg/Transform :global]]}))))
                   (into {})))
 
       (let [draw-scene (fn [w]
@@ -449,40 +494,43 @@
     (vr.c/draw-rectangle 300 50 100 200 (vr/Color [255 100 10 255])))
 
   (reset! env {})
-  (swap! env merge {:vf/w (-> (vf/make-world)
-                              (vg/gltf->flecs :flecs (.getPath (io/resource "models.glb")))
-                              #_ (vg/gltf->flecs :limbs "/Users/pfeodrippe/Downloads/models.glb"))})
+  #_(init)
+  (swap! env merge {:vf/w (let [w (vf/make-world)
+                                path (.getPath (io/resource "models.glb"))]
+                            ;; For enabling the REST interface (explorer).
+                            #_(vf.c/ecs-set-id w
+                                               (flecs/FLECS_IDEcsRestID_)
+                                               (flecs/FLECS_IDEcsRestID_)
+                                               (.byteSize (.layout vf/Rest))
+                                               (vf/Rest))
+                            (vg/reloadable {:game-id :my/model :resource-paths [path]}
+                              (-> w
+                                  (vg/load-model :my/model path))))})
 
   #_(def w (:vf/w env))
 
-  (let [model (vr.c/load-model-from-mesh (vr.c/gen-mesh-cube 0.5 0.5 0.5))
-        model-materials (vp/arr (:materials model) (:materialCount model) vr/Material)
-        model-meshes (vp/arr (:meshes model) (:meshCount model) vr/Mesh)]
-    (swap! env merge { ;; Create 10 depth render textures for reuse.
-                      :depth-rts (pmap #(do % (load-shadowmap-render-texture 600 600))
-                                       (range 10))
+  (swap! env merge { ;; Create 10 depth render textures for reuse.
+                    :depth-rts (pmap #(do % (load-shadowmap-render-texture 600 600))
+                                     (range 10))
 
-                      :shadowmap-shader (vg/shader-program :shadowmap-shader
-                                                           {::vg/shader.vert "shaders/shadowmap.vs"
-                                                            ::vg/shader.frag "shaders/shadowmap.fs"})
-                      :kuwahara-shader (vg/shader-program :kuwahara-shader
-                                                          {::vg/shader.frag "shaders/kuwahara_2d.fs"})
-                      :dither-shader (vg/shader-program :dither-shader
-                                                        {::vg/shader.frag "shaders/dither.fs"})
-                      :noise-blur-shader (vg/shader-program :noise-blur-shader
-                                                            {::vg/shader.frag "shaders/noise_blur_2d.fs"})
-                      :edge-shader (vg/shader-program :edge-shader
-                                                      {::vg/shader.frag "shaders/edge_2d.fs"})
-                      :process-shader (vg/shader-program :process-shader
-                                                         {::vg/shader.frag "shaders/process_2d.fs"})
-                      :dof-shader (vg/shader-program :dof-shader
-                                                     {::vg/shader.frag "shaders/dof.fs"})
-                      :default-shader (vg/shader-program :default-shader {})
+                    :shadowmap-shader (vg/shader-program :shadowmap-shader
+                                                         {::vg/shader.vert "shaders/shadowmap.vs"
+                                                          ::vg/shader.frag "shaders/shadowmap.fs"})
+                    :kuwahara-shader (vg/shader-program :kuwahara-shader
+                                                        {::vg/shader.frag "shaders/kuwahara_2d.fs"})
+                    :dither-shader (vg/shader-program :dither-shader
+                                                      {::vg/shader.frag "shaders/dither.fs"})
+                    :noise-blur-shader (vg/shader-program :noise-blur-shader
+                                                          {::vg/shader.frag "shaders/noise_blur_2d.fs"})
+                    :edge-shader (vg/shader-program :edge-shader
+                                                    {::vg/shader.frag "shaders/edge_2d.fs"})
+                    :process-shader (vg/shader-program :process-shader
+                                                       {::vg/shader.frag "shaders/process_2d.fs"})
+                    :dof-shader (vg/shader-program :dof-shader
+                                                   {::vg/shader.frag "shaders/dof.fs"})
+                    :default-shader (vg/shader-program :default-shader {})
 
-                      :view-2 (vr.c/load-render-texture 600 600)
-
-                      :cube-mesh (first model-meshes)
-                      :cube-material (first model-materials)}))
+                    :view-2 (vr.c/load-render-texture 600 600)})
 
   (alter-var-root #'vr/draw (constantly #'draw)))
 

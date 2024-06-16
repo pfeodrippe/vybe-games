@@ -26,7 +26,7 @@
   - [x] use it on game
   - [x] active camera should be the one with the sound
   - [x] switch using space key
-- [ ] object appearance
+- [ ] anim + physics + colliders
   - [x] cube
     - [x] animation
   - [x] idle/run animation
@@ -56,7 +56,16 @@
     - [x] use bounding box to create colision bodies
     - [x] raycast
   - [x] fix collider debug
-  - [ ] update body position of a static object
+  - [x] update body position of a static object
+    - [x] disable plane raycast
+    - [x] observer to check for mesh updates, adding/updating the associated collider?
+      - use EcsOnSet
+    - [x] fix crash when reloading the observers
+    - [x] fix body values
+    - [x] update for each frame
+  - [ ] datalog query
+  - [x] observer for removing body when ecs body is removed
+  - [ ] support custom collider from GLTF (blender)
   - [ ] hover on a object
     - [ ] glow (or change color)
       - [ ] get entity from body id
