@@ -1,6 +1,6 @@
 {:deps
  {io.github.pfeodrippe/vybe {:local/root "../vybe"
-                             #_ #_:mvn/version "0.1.12"}}
+                             #_ #_:mvn/version "0.1.65"}}
 
  :aliases
  {:dev {:jvm-opts ["--enable-native-access=ALL-UNNAMED"

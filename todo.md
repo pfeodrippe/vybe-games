@@ -63,7 +63,12 @@
     - [x] fix crash when reloading the observers
     - [x] fix body values
     - [x] update for each frame
+  - [x] check how to update kinematic entities
+    - using movekinematic
   - [ ] datalog query
+    - [x] pair
+    - [x] non-pair
+    - [ ] query scope
   - [x] observer for removing body when ecs body is removed
   - [ ] support custom collider from GLTF (blender)
   - [ ] hover on a object
@@ -75,6 +80,7 @@
     - [ ] sound
   - [ ] state machine
 - [ ] build clouds with white cubes
+- [x] add physics debug drawing
 - [ ] support multiple collision layers
   - [ ] sensor layer?
 - [ ] contact listener

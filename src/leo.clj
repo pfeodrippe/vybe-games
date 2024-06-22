@@ -134,10 +134,10 @@
                   depth-rts default-shader kuwahara-shader]}
           env
 
-          _ (do (vg/run-reloadable-commands!)
-                (vg/default-systems w)
-                ;; For dev mode.
-                (vf/progress w (vr.c/get-frame-time)))
+          _ (do ;; For dev mode.
+              (vg/run-reloadable-commands!)
+              (vg/default-systems w)
+              (vf/progress w (vr.c/get-frame-time)))
 
           p (fn [& ks]
               (vf/path (vec (concat [:my/model] ks))))
@@ -277,10 +277,11 @@
                                                       :motion_type (jolt/JPC_MOTION_TYPE_DYNAMIC)
                                                       :object_layer :vj.layer/moving}))
                                     {:keys [mesh material]} (vg/gen-cube {:x 0.5 :y 0.5 :z 0.5} (rand-int 10))]
+                                #_(println :AAAA (vg/BodyPointer {:p (vj/body-get phys id)}))
+                                #_(vj/optimize-broad-phase phys)
                                 [(vf/path [phys (keyword (str "vj-" id))])
-                                 [mesh material]])))
+                                 [mesh material [(vg/Int id) :vj/body-id]]])))
                       (into {})))
-
 
           (key (raylib/KEY_D))
           (merge w {:vg/debug (if (get-in w [:vg/debug :vg/enabled])
@@ -358,23 +359,20 @@
         (keys (vf/hierarchy (w (p :vg.gltf/Armature))))
         (vf/hierarchy-no-path (w (p :vg.gltf/Armature)))
 
-        (vf/with-each w [translation [:meta {:term {:src {:id (.id (w (vf/path [:my/model :vg.gltf/Plane])))}}}
-                                      vg/Translation]]
-          translation)
+        (count (vj/bodies phys))
+        (count (vf/with-each w [translation vg/Translation] translation))
 
         (get (w (vf/path [:my/model :vg.gltf/Plane])) vg/Translation)
 
         (w (vf/path [:my/model :vg.gltf/Sphere]))
 
         (vj/body-ids phys)
-        (mapv :position (vj/bodies phys))
+        (mapv :motion_type (vj/bodies phys))
 
-        [[0.032599002 -0.09293218 0.36919773 1.0]
-         [0.9292079 0.19013372 -0.95472574 1.0]
-         [0.8553098 0.80430436 -0.6364111 1.0]
-         [2.335264 0.08289306 -0.6364111 1.0]]
+        (vf/with-each w [_ :vg/dynamic])
 
-        (vj/bodies-unsafe phys)
+        (let [body (second (take 2 (drop 2 (vj/bodies phys))))]
+          (vj/body-move body (vg/Vector3 [0 1 0]) 1/60))
 
         (let [p (vj/Vector4)]
           (vj.c/jpc-body-get-position (first (vj/bodies phys)) p)
@@ -420,23 +418,34 @@
                                      {(c :vg.gltf.anim/CubeDown) [:vg/active]
                                       (c :vg.gltf.anim/CubeUp) [(vf/del :vg/active) (vf/del :vg/selected)]})))))
                   (merge w {(p :vg.gltf/Sphere) [(vg/Translation [-10 -10 -10])]}))))
-          (merge w {(p :vg.gltf/Sphere) [(vg/Translation [-10 -10 -10])]})))
+          (when-not (= (get-in w [(p :vg.gltf/Sphere) vg/Translation])
+                       (vg/Translation [-10 -10 -10]))
+            (merge w {(p :vg.gltf/Sphere) [(vg/Translation [-10 -10 -10])]}))))
 
       #_(init)
 
-      ;; Physics.
+      ;; -- Physics.
       (vj/update! phys (vr.c/get-frame-time))
 
+      ;; Update model meshes from the Jolt bodies.
+      (vf/with-each w [translation [:meta {:flags #{:up} :inout :out} vg/Translation]
+                       rotation [:meta {:flags #{:up} :inout :out} vg/Rotation]
+                       _ [:meta {:flags #{:up}} :vg/dynamic]
+                       {id :i} [vg/Int :vj/body-id]]
+        (merge rotation (vg/Rotation (:rotation (vj/body-get phys id))))
+        (merge translation (vg/Translation (:position (vj/body-get phys id)))))
+
+      ;; Update jolt meshes (for debugging).
       (merge w
              (->> (vj/bodies phys)
-                  (filter vj/body-active?)
+                  #_(filter vj/body-active?)
                   #_(remove (comp zero? :object_layer))
                   #_(take 2)
                   (keep (fn [{:keys [position rotation id]}]
                           #_{(keyword (str "vj-" id)) [(vg/Translation position) (vg/Rotation rotation)]}
                           (let [translation (vg/Translation position)]
                             (if (< (:y translation) -20)
-                              (vj/body-remove phys id)
+                              (dissoc w (vf/path [phys (keyword (str "vj-" id))]))
                               {(vf/path [phys (keyword (str "vj-" id))])
                                [translation (vg/Rotation rotation)
                                 (vg/Scale [1 1 1])
@@ -457,9 +466,8 @@
                                                                                           [0.02 (+ 0.016 (wobble 0.01))
                                                                                            (+ 0.040 (wobble 0.01))]))}] ]}
           (vr.c/clear-background (vr/Color "#A98B39"))
-          (vg/with-camera #_(get-in w [(p :vg.gltf/Light) vg/Camera])
-                          (get-in w [(p :vg/camera-active) vg/Camera])
-                          (draw-scene w)))
+          (vg/with-camera (get-in w [(p :vg/camera-active) vg/Camera])
+            (draw-scene w)))
 
         ;; Draw to the screen.
         (vg/with-drawing
@@ -469,9 +477,8 @@
                                  (vr/Rectangle [0 0 600 -600]) (vr/Rectangle [0 0 600 600])
                                  (vr/Vector2 [0 0]) 0 vg/color-white)
 
-          #_(vg/with-camera #_(get-in w [:vg.gltf/Light vg/Camera])
-                            (get-in w [:vg/camera-active vg/Camera])
-                            (draw-scene w))
+          #_(vg/with-camera (get-in w [:vg/camera-active vg/Camera])
+              (draw-scene w))
 
           (vr.c/draw-fps 510 570))))))
 
