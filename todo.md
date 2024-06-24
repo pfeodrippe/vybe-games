@@ -65,12 +65,13 @@
     - [x] update for each frame
   - [x] check how to update kinematic entities
     - using movekinematic
-  - [ ] datalog query
+  - [x] datalog query
     - [x] pair
     - [x] non-pair
-    - [ ] query scope
+    - [x] query scope
   - [x] observer for removing body when ecs body is removed
-  - [ ] support custom collider from GLTF (blender)
+  - [ ] fix dynamic
+  - [ ] fix Blender linked data
   - [ ] hover on a object
     - [ ] glow (or change color)
       - [ ] get entity from body id
@@ -83,6 +84,7 @@
 - [x] add physics debug drawing
 - [ ] support multiple collision layers
   - [ ] sensor layer?
+- [ ] support custom collider from GLTF (blender)
 - [ ] contact listener
 - [ ] put resources in world so we can get rid of `env`
 - [ ] particles
