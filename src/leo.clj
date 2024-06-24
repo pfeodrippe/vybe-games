@@ -367,9 +367,11 @@
         (w (vf/path [:my/model :vg.gltf/Sphere]))
 
         (vj/body-ids phys)
-        (mapv :motion_type (vj/bodies phys))
+        (mapv :position (vj/bodies phys))
 
-        (vf/with-each w [_ :vg/dynamic])
+        (count (vf/with-each w [_ :vg/dynamic
+                                e :vf/entity]
+                 (vf/get-name e)))
 
         (let [body (second (take 2 (drop 2 (vj/bodies phys))))]
           (vj/body-move body (vg/Vector3 [0 1 0]) 1/60))
@@ -432,20 +434,27 @@
                        rotation [:meta {:flags #{:up} :inout :out} vg/Rotation]
                        _ [:meta {:flags #{:up}} :vg/dynamic]
                        {id :i} [vg/Int :vj/body-id]]
-        (merge rotation (vg/Rotation (:rotation (vj/body-get phys id))))
-        (merge translation (vg/Translation (:position (vj/body-get phys id)))))
+        (let [pos (vj/body-position phys id)
+              rot (vj/body-rotation phys id)]
+          (when (and pos rot)
+            (merge rotation (vg/Rotation rot))
+            (merge translation (vg/Translation pos))))
+        #_(when-let [body (vj/body-get phys id)]
+          (merge rotation (vg/Rotation (:rotation body)))
+          (merge translation (vg/Translation (:position body)))))
 
       ;; Update jolt meshes (for debugging).
       (merge w
-             (->> (vj/bodies phys)
-                  #_(filter vj/body-active?)
-                  #_(remove (comp zero? :object_layer))
+             (->> (vj/body-ids phys)
+                  #_(filter (partial vj/body-active? phys))
                   #_(take 2)
-                  (keep (fn [{:keys [position rotation id]}]
-                          #_{(keyword (str "vj-" id)) [(vg/Translation position) (vg/Rotation rotation)]}
-                          (let [translation (vg/Translation position)]
+                  (keep (fn [id]
+                          (let [position (vj/body-position phys id)
+                                rotation (vj/body-rotation phys id)
+                                translation (vg/Translation position)]
                             (if (< (:y translation) -20)
-                              (dissoc w (vf/path [phys (keyword (str "vj-" id))]))
+                              (do (println :REMOVVVV id :position position :rotation rotation)
+                                  (dissoc w (vf/path [phys (keyword (str "vj-" id))])))
                               {(vf/path [phys (keyword (str "vj-" id))])
                                [translation (vg/Rotation rotation)
                                 (vg/Scale [1 1 1])
