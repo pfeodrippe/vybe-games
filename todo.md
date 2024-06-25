@@ -70,8 +70,10 @@
     - [x] non-pair
     - [x] query scope
   - [x] observer for removing body when ecs body is removed
-  - [ ] fix dynamic
-  - [ ] fix Blender linked data
+  - [x] fix dynamic
+  - [ ] fix mesh collision transform
+  - [ ] meshes from the model are not being removed
+  - [ ] fix why raycast is not working when adding multiple cubes
   - [ ] hover on a object
     - [ ] glow (or change color)
       - [ ] get entity from body id
@@ -84,6 +86,7 @@
 - [x] add physics debug drawing
 - [ ] support multiple collision layers
   - [ ] sensor layer?
+- [ ] fix Blender linked data
 - [ ] support custom collider from GLTF (blender)
 - [ ] contact listener
 - [ ] put resources in world so we can get rid of `env`
