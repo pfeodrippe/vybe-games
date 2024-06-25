@@ -453,7 +453,7 @@
                                 rotation (vj/body-rotation phys id)
                                 translation (vg/Translation position)]
                             (if (< (:y translation) -20)
-                              (do (println :REMOVVVV id :position position :rotation rotation)
+                              (do #_(println :REMOVVVV id :position position :rotation rotation)
                                   (dissoc w (vf/path [phys (keyword (str "vj-" id))])))
                               {(vf/path [phys (keyword (str "vj-" id))])
                                [translation (vg/Rotation rotation)
