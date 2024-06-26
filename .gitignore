@@ -20,3 +20,4 @@ results
 do_not_commit_me
 bin/flecs.h
 bin/flecs.c
+.calva

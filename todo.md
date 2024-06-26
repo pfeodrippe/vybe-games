@@ -71,7 +71,11 @@
     - [x] query scope
   - [x] observer for removing body when ecs body is removed
   - [x] fix dynamic
-  - [ ] fix mesh collision transform
+  - [x] fix mesh collision transform
+    - [x] use is-a for for mesh primitives
+    - [x] cubes are not being deleted
+    - [x] fix raycast
+  - [x] throw exception if we are modifying pointer, but they are not writable
   - [ ] meshes from the model are not being removed
   - [ ] fix why raycast is not working when adding multiple cubes
   - [ ] hover on a object
@@ -81,11 +85,13 @@
     - [ ] sound
   - [ ] click on a object
     - [ ] sound
-  - [ ] state machine
+- [ ] time-series charts to see which systems were active
+- [ ] use same type for vector3/vector4 etc
 - [ ] build clouds with white cubes
 - [x] add physics debug drawing
 - [ ] support multiple collision layers
   - [ ] sensor layer?
+- [ ] state machine
 - [ ] fix Blender linked data
 - [ ] support custom collider from GLTF (blender)
 - [ ] contact listener
