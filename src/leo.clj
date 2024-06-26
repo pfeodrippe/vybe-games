@@ -163,9 +163,9 @@
 
                      :else
                      1))]
-        (vf/with-each w [player vg/AnimationPlayer
+        (vf/with-each w [player [:inout vg/AnimationPlayer]
                          _ :vg/active
-                         loop [:maybe :vg.anim/loop]
+                         _loop [:maybe :vg.anim/loop]
                          started [:maybe :vg.anim/started]
                          e :vf/entity]
           (if (and started (== (:current_time player) 0))
@@ -181,7 +181,8 @@
       (vf/with-each w [[_ node] [:vg.anim/target-node :*]
                        [_ c] [:vg.anim/target-component :*]
                        {:keys [timeline_count values timeline]} vg/AnimationChannel
-                       player [:meta {:flags #{:up :cascade}}
+                       player [:meta {:flags #{:up :cascade}
+                                      :inout :inout}
                                vg/AnimationPlayer]
                        _ [:meta {:flags #{:up :cascade}} :vg/active]
                        e :vf/entity
@@ -362,6 +363,8 @@
         (count (vj/bodies phys))
         (count (vf/with-each w [translation vg/Translation] translation))
 
+        (count (vf/with-each w [transform [vg/Transform :global]] transform))
+
         (get (w (vf/path [:my/model :vg.gltf/Plane])) vg/Translation)
 
         (w (vf/path [:my/model :vg.gltf/Sphere]))
@@ -369,20 +372,12 @@
         (vj/body-ids phys)
         (mapv :position (vj/bodies phys))
 
-        (count (vf/with-each w [_ :vg/dynamic
-                                e :vf/entity]
-                 (vf/get-name e)))
+        (vf/with-each w [#_ #_i [vg/Int :vj/body-id]
+                         #_ #_phys [:src :vg/phys vj/PhysicsSystem]
+                         [_ mesh-entity] [:vg/refers :*]]
+          (vf/get-name w mesh-entity))
 
-        (let [body (second (take 2 (drop 2 (vj/bodies phys))))]
-          (vj/body-move body (vg/Vector3 [0 1 0]) 1/60))
-
-        (let [p (vj/Vector4)]
-          (vj.c/jpc-body-get-position (first (vj/bodies phys)) p)
-          p
-          (vj.c/jpc-body-interface-get-position (vj/body-interface phys)
-                                                33554432
-                                                p)
-          p)
+        (w (vf/path [phys (keyword (str "vj-" (first (vj/body-ids phys))))]))
 
         ())
 
@@ -413,7 +408,8 @@
                   (do (merge w {(p :vg.gltf/Sphere)
                                 [pos]})
                       (when (vr.c/is-mouse-button-pressed (raylib/MOUSE_BUTTON_LEFT))
-                        (let [c (fn [k] (vf/path [(vf/parent w e) k]))]
+                        #_(println :AAAA (vf/get-name e))
+                        (let [c (fn [k] (vf/path [e k]))]
                           (merge w (if (contains? (w (c :vg.gltf.anim/CubeDown)) :vg/selected)
                                      {(c :vg.gltf.anim/CubeDown) [(vf/del :vg/active) (vf/del :vg/selected)]
                                       (c :vg.gltf.anim/CubeUp) [:vg/active]}
@@ -425,23 +421,21 @@
             (merge w {(p :vg.gltf/Sphere) [(vg/Translation [-10 -10 -10])]}))))
 
       #_(init)
+      #_(vr.c/set-target-fps 60)
 
       ;; -- Physics.
       (vj/update! phys (vr.c/get-frame-time))
 
       ;; Update model meshes from the Jolt bodies.
-      (vf/with-each w [translation [:meta {:flags #{:up} :inout :out} vg/Translation]
-                       rotation [:meta {:flags #{:up} :inout :out} vg/Rotation]
-                       _ [:meta {:flags #{:up}} :vg/dynamic]
+      (vf/with-each w [translation [:meta {:inout :out} vg/Translation]
+                       rotation [:meta {:inout :out} vg/Rotation]
+                       _ :vg/dynamic
                        {id :i} [vg/Int :vj/body-id]]
         (let [pos (vj/body-position phys id)
               rot (vj/body-rotation phys id)]
           (when (and pos rot)
             (merge rotation (vg/Rotation rot))
-            (merge translation (vg/Translation pos))))
-        #_(when-let [body (vj/body-get phys id)]
-          (merge rotation (vg/Rotation (:rotation body)))
-          (merge translation (vg/Translation (:position body)))))
+            (merge translation (vg/Translation pos)))))
 
       ;; Update jolt meshes (for debugging).
       (merge w
@@ -454,6 +448,7 @@
                                 translation (vg/Translation position)]
                             (if (< (:y translation) -20)
                               (do #_(println :REMOVVVV id :position position :rotation rotation)
+                                  #_(println (w (vf/path [phys (keyword (str "vj-" id))])))
                                   (dissoc w (vf/path [phys (keyword (str "vj-" id))])))
                               {(vf/path [phys (keyword (str "vj-" id))])
                                [translation (vg/Rotation rotation)
