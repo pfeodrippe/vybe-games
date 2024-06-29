@@ -76,8 +76,12 @@
     - [x] cubes are not being deleted
     - [x] fix raycast
   - [x] throw exception if we are modifying pointer, but they are not writable
-  - [ ] meshes from the model are not being removed
-  - [ ] fix why raycast is not working when adding multiple cubes
+  - [x] fix kinematic body not being removed
+  - [x] rotate physic objects on load
+  - [ ] meshes from the model are not being removed (put a parent on the dynamic objects to check this)
+  - [ ] fix parent object transform for the bodies
+  - [ ] fix why it takes so much time on the first load when we have many objects
+  - [x] fix why raycast is not working when adding multiple cubes
   - [ ] hover on a object
     - [ ] glow (or change color)
       - [ ] get entity from body id
@@ -106,6 +110,7 @@
   - [ ] zoom sound
   - [ ] near sound
 - [ ] make animation programmable
+- [ ] separate update physics system into a system (for kinematic only) and a observer (`add`)
 
 - [ ] animation blending
 - [ ] how to represent animations?

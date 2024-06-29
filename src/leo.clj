@@ -360,10 +360,12 @@
         (keys (vf/hierarchy (w (p :vg.gltf/Armature))))
         (vf/hierarchy-no-path (w (p :vg.gltf/Armature)))
 
+
+        (init)
+
         (count (vj/bodies phys))
         (count (vf/with-each w [translation vg/Translation] translation))
 
-        (count (vf/with-each w [transform [vg/Transform :global]] transform))
 
         (get (w (vf/path [:my/model :vg.gltf/Plane])) vg/Translation)
 
