@@ -78,7 +78,7 @@
   - [x] throw exception if we are modifying pointer, but they are not writable
   - [x] fix kinematic body not being removed
   - [x] rotate physic objects on load
-  - [ ] why the hell raycast is not working again?
+  - [x] why the hell raycast is not working again?
   - [ ] meshes from the model are not being removed (put a parent on the dynamic objects to check this)
   - [ ] fix parent object transform for the bodies
   - [ ] fix why it takes so much time on the first load when we have many objects

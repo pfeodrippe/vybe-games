@@ -278,7 +278,7 @@
                                                         :object_layer :vj.layer/moving}))
                                     {:keys [mesh material]} (vg/gen-cube {:x 0.5 :y 0.5 :z 0.5} (rand-int 10))]
                                 [(vf/path [phys (keyword (str "vj-" (:id body)))])
-                                 [mesh material body]])))
+                                 [mesh material body phys]])))
                       (into {})))
 
           (key (raylib/KEY_D))
@@ -361,6 +361,7 @@
         (init)
 
         (count (vj/bodies phys))
+        (count (vj/bodies-active phys))
         (count (vf/with-each w [translation vg/Translation] translation))
 
 
@@ -439,9 +440,7 @@
 
       ;; Update jolt meshes (for debugging).
       (merge w
-             (->> (vj/bodies phys)
-                  #_(filter (partial vj/body-active? phys))
-                  #_(take 2)
+             (->> (vj/bodies-active phys)
                   (keep (fn [body]
                           (let [position (vj/position body)
                                 rotation (vj/rotation body)
