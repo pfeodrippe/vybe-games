@@ -266,22 +266,19 @@
           (merge w
                  (->> (range 32)
                       (mapv (fn [idx]
-                              (let [id (vj/body-add phys
-                                                    (vj/BodyCreationSettings
-                                                     {:position (vj/Vector4 [(+ 1 (* idx 0.05))
-                                                                             (+ 4.2 (* idx 0.1))
-                                                                             (- 2.2 (* idx 0.1))
-                                                                             1])
-                                                      :rotation (vj/Vector4 [0 0 0 1])
-                                                      :shape (-> (vj/box-settings (vj/HalfExtent [0.25 0.25 0.25]))
-                                                                 vj/shape)
-                                                      :motion_type (jolt/JPC_MOTION_TYPE_DYNAMIC)
-                                                      :object_layer :vj.layer/moving}))
+                              (let [body (vj/body-add phys
+                                                      (vj/BodyCreationSettings
+                                                       {:position (vj/Vector4 [(+ 1 (* idx 0.05))
+                                                                               (+ 4.2 (* idx 0.1))
+                                                                               (- 2.2 (* idx 0.1))
+                                                                               1])
+                                                        :rotation (vj/Vector4 [0 0 0 1])
+                                                        :shape (vj/box (vj/HalfExtent [0.25 0.25 0.25]))
+                                                        :motion_type (jolt/JPC_MOTION_TYPE_DYNAMIC)
+                                                        :object_layer :vj.layer/moving}))
                                     {:keys [mesh material]} (vg/gen-cube {:x 0.5 :y 0.5 :z 0.5} (rand-int 10))]
-                                #_(println :AAAA (vg/BodyPointer {:p (vj/body-get phys id)}))
-                                #_(vj/optimize-broad-phase phys)
-                                [(vf/path [phys (keyword (str "vj-" id))])
-                                 [mesh material [(vg/Int id) :vj/body-id]]])))
+                                [(vf/path [phys (keyword (str "vj-" (:id body)))])
+                                 [mesh material body]])))
                       (into {})))
 
           (key (raylib/KEY_D))
@@ -391,9 +388,10 @@
                                               (get-in w [(p :vg/camera-active) vg/Camera])))
             direction (mapv #(* % 10000) (vals direction))
             body (vj/cast-ray phys position direction)]
-        (if-let [pos (some-> (:position body)
+        (if-let [pos (some-> (vj/position body)
                              vg/Translation
-                             (assoc :y (+ (nth (:bounds_max body) 1) 0.3)))]
+                             (assoc :y (+ (:y (:max (vj/world-bounds body)))
+                                          0.3)))]
           #_(println :pos pos)
           #_(println :PARENT (vf/parent (str "vj-" (:id body))))
 
@@ -432,27 +430,27 @@
       (vf/with-each w [translation [:meta {:inout :out} vg/Translation]
                        rotation [:meta {:inout :out} vg/Rotation]
                        _ :vg/dynamic
-                       {id :i} [vg/Int :vj/body-id]]
-        (let [pos (vj/body-position phys id)
-              rot (vj/body-rotation phys id)]
+                       body vj/VyBody]
+        (let [pos (vj/position body)
+              rot (vj/rotation body)]
           (when (and pos rot)
             (merge rotation (vg/Rotation rot))
             (merge translation (vg/Translation pos)))))
 
       ;; Update jolt meshes (for debugging).
       (merge w
-             (->> (vj/body-ids phys)
+             (->> (vj/bodies phys)
                   #_(filter (partial vj/body-active? phys))
                   #_(take 2)
-                  (keep (fn [id]
-                          (let [position (vj/body-position phys id)
-                                rotation (vj/body-rotation phys id)
+                  (keep (fn [body]
+                          (let [position (vj/position body)
+                                rotation (vj/rotation body)
                                 translation (vg/Translation position)]
                             (if (< (:y translation) -20)
                               (do #_(println :REMOVVVV id :position position :rotation rotation)
                                   #_(println (w (vf/path [phys (keyword (str "vj-" id))])))
-                                  (dissoc w (vf/path [phys (keyword (str "vj-" id))])))
-                              {(vf/path [phys (keyword (str "vj-" id))])
+                                  (dissoc w (vf/path [phys (keyword (str "vj-" (:id body)))])))
+                              {(vf/path [phys (keyword (str "vj-" (:id body)))])
                                [translation (vg/Rotation rotation)
                                 (vg/Scale [1 1 1])
                                 vg/Transform [vg/Transform :global]]}))))
