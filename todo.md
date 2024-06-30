@@ -79,9 +79,9 @@
   - [x] fix kinematic body not being removed
   - [x] rotate physic objects on load
   - [x] why the hell raycast is not working again?
-  - [ ] meshes from the model are not being removed (put a parent on the dynamic objects to check this)
-  - [ ] fix parent object transform for the bodies
-  - [ ] fix why it takes so much time on the first load when we have many objects
+  - [x] meshes from the model are not being removed (put a parent on the dynamic objects to check this)
+  - [x] fix why it takes so much time on the first load when we have many objects
+    - [x] use instances in queries
   - [x] fix why raycast is not working when adding multiple cubes
   - [ ] hover on a object
     - [ ] glow (or change color)
@@ -90,8 +90,11 @@
     - [ ] sound
   - [ ] click on a object
     - [ ] sound
-- [ ] time-series charts to see which systems were active
+- [ ] time-series charts for monitoring
+  - [ ] systems/observers triggering
+  - [ ]
 - [ ] use same type for vector3/vector4 etc
+- [ ] fix parent object transform for the physic bodies
 - [ ] build clouds with white cubes
 - [x] add physics debug drawing
 - [ ] support multiple collision layers

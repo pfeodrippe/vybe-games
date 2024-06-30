@@ -503,46 +503,49 @@
     (vr.c/draw-rectangle 30 50 100 200 (vr/Color [255 100 10 255]))
     (vr.c/draw-rectangle 300 50 100 200 (vr/Color [255 100 10 255])))
 
-  (reset! env {})
-  #_(init)
-  (swap! env merge {:vf/w (let [w (vf/make-world)
-                                path (.getPath (io/resource "models.glb"))]
-                            ;; For enabling the REST interface (explorer).
-                            #_(vf.c/ecs-set-id w
-                                               (flecs/FLECS_IDEcsRestID_)
-                                               (flecs/FLECS_IDEcsRestID_)
-                                               (.byteSize (.layout vf/Rest))
-                                               (vf/Rest))
-                            (vg/reloadable {:game-id :my/model :resource-paths [path]}
-                              (-> w
-                                  (vg/load-model :my/model path))))})
+  ;; Run the entire initialization in the main thread so we don't have some
+  ;; slowness at the start of the game.
+  (vr/t
+    (reset! env {})
+    #_ (init)
+    (swap! env merge {:vf/w (let [w (vf/make-world)
+                                  path (.getPath (io/resource "models.glb"))]
+                              ;; For enabling the REST interface (explorer).
+                              #_(vf.c/ecs-set-id w
+                                                 (flecs/FLECS_IDEcsRestID_)
+                                                 (flecs/FLECS_IDEcsRestID_)
+                                                 (.byteSize (.layout vf/Rest))
+                                                 (vf/Rest))
+                              (vg/reloadable {:game-id :my/model :resource-paths [path]}
+                                (-> w
+                                    (vg/load-model :my/model path))))})
 
-  #_(def w (:vf/w env))
+    #_ (def w (:vf/w env))
 
-  (swap! env merge { ;; Create 10 depth render textures for reuse.
-                    :depth-rts (pmap #(do % (load-shadowmap-render-texture 600 600))
-                                     (range 10))
+    (swap! env merge { ;; Create 10 depth render textures for reuse.
+                      :depth-rts (mapv #(do % (load-shadowmap-render-texture 600 600))
+                                       (range 10))
 
-                    :shadowmap-shader (vg/shader-program :shadowmap-shader
-                                                         {::vg/shader.vert "shaders/shadowmap.vs"
-                                                          ::vg/shader.frag "shaders/shadowmap.fs"})
-                    :kuwahara-shader (vg/shader-program :kuwahara-shader
-                                                        {::vg/shader.frag "shaders/kuwahara_2d.fs"})
-                    :dither-shader (vg/shader-program :dither-shader
-                                                      {::vg/shader.frag "shaders/dither.fs"})
-                    :noise-blur-shader (vg/shader-program :noise-blur-shader
-                                                          {::vg/shader.frag "shaders/noise_blur_2d.fs"})
-                    :edge-shader (vg/shader-program :edge-shader
-                                                    {::vg/shader.frag "shaders/edge_2d.fs"})
-                    :process-shader (vg/shader-program :process-shader
-                                                       {::vg/shader.frag "shaders/process_2d.fs"})
-                    :dof-shader (vg/shader-program :dof-shader
-                                                   {::vg/shader.frag "shaders/dof.fs"})
-                    :default-shader (vg/shader-program :default-shader {})
+                      :shadowmap-shader (vg/shader-program :shadowmap-shader
+                                                           {::vg/shader.vert "shaders/shadowmap.vs"
+                                                            ::vg/shader.frag "shaders/shadowmap.fs"})
+                      :kuwahara-shader (vg/shader-program :kuwahara-shader
+                                                          {::vg/shader.frag "shaders/kuwahara_2d.fs"})
+                      :dither-shader (vg/shader-program :dither-shader
+                                                        {::vg/shader.frag "shaders/dither.fs"})
+                      :noise-blur-shader (vg/shader-program :noise-blur-shader
+                                                            {::vg/shader.frag "shaders/noise_blur_2d.fs"})
+                      :edge-shader (vg/shader-program :edge-shader
+                                                      {::vg/shader.frag "shaders/edge_2d.fs"})
+                      :process-shader (vg/shader-program :process-shader
+                                                         {::vg/shader.frag "shaders/process_2d.fs"})
+                      :dof-shader (vg/shader-program :dof-shader
+                                                     {::vg/shader.frag "shaders/dof.fs"})
+                      :default-shader (vg/shader-program :default-shader {})
 
-                    :view-2 (vr.c/load-render-texture 600 600)})
+                      :view-2 (vr.c/load-render-texture 600 600)})
 
-  (alter-var-root #'vr/draw (constantly #'draw)))
+    (alter-var-root #'vr/draw (constantly #'draw))))
 
 #_(alter-var-root #'vr/draw (constantly (fn [] (Thread/sleep 10))))
 #_(init)
