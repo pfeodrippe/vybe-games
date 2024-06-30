@@ -127,363 +127,362 @@
 #_ (init)
 
 (defn draw
-  []
-  (vp/with-arena _
-    (let [{:keys [vf/w view-2 shadowmap-shader
-                  dither-shader noise-blur-shader
-                  depth-rts default-shader kuwahara-shader]}
-          env
+  [delta-time]
+  (let [{:keys [vf/w view-2 shadowmap-shader
+                dither-shader noise-blur-shader
+                depth-rts default-shader kuwahara-shader]}
+        env
 
-          _ (do ;; For dev mode.
-              (vg/run-reloadable-commands!)
-              (vg/default-systems w)
-              (vf/progress w (vr.c/get-frame-time)))
+        _ (do ;; For dev mode.
+            (vg/run-reloadable-commands!)
+            (vg/default-systems w)
+            (vf/progress w (vr.c/get-frame-time)))
 
-          p (fn [& ks]
-              (vf/path (vec (concat [:my/model] ks))))
+        p (fn [& ks]
+            (vf/path (vec (concat [:my/model] ks))))
 
-          phys (get-in w [:vg/phys vj/PhysicsSystem])
+        phys (get-in w [:vg/phys vj/PhysicsSystem])
 
-          _ (do (def w w)
-                (def p p)
-                (def shadowmap-shader shadowmap-shader)
-                (def dither-shader dither-shader)
-                (def phys phys))
+        _ (do (def w w)
+              (def p p)
+              (def shadowmap-shader shadowmap-shader)
+              (def dither-shader dither-shader)
+              (def phys phys))
 
-          #_ (init)]
+        #_ (init)]
 
-      ;; -- Animation
-      (let [step (let [key #(vr.c/is-key-down %1)]
-                   (cond
-                     (key (raylib/KEY_W))
-                     1.5
+    ;; -- Animation
+    (let [step (let [key #(vr.c/is-key-down %1)]
+                 (cond
+                   (key (raylib/KEY_W))
+                   1.5
 
-                     (key (raylib/KEY_S))
-                     -1.5
+                   (key (raylib/KEY_S))
+                   -1.5
 
-                     :else
-                     1))]
-        (vf/with-each w [player [:inout vg/AnimationPlayer]
-                         _ :vg/active
-                         _loop [:maybe :vg.anim/loop]
-                         started [:maybe :vg.anim/started]
-                         e :vf/entity]
-          (if (and started (== (:current_time player) 0))
-            (-> e
-                (disj :vg/active :vg.anim/started)
-                (conj :vg/selected))
-            (do
-              (conj e :vg.anim/started)
-              (update player :current_time + (* (vr.c/get-frame-time) step))))))
+                   :else
+                   1))]
+      (vf/with-each w [player [:inout vg/AnimationPlayer]
+                       _ :vg/active
+                       _loop [:maybe :vg.anim/loop]
+                       started [:maybe :vg.anim/started]
+                       e :vf/entity]
+        (if (and started (== (:current_time player) 0))
+          (-> e
+              (disj :vg/active :vg.anim/started)
+              (conj :vg/selected))
+          (do
+            (conj e :vg.anim/started)
+            (update player :current_time + (* delta-time step))))))
 
-      #_ (init)
+    #_ (init)
 
-      (vf/with-each w [[_ node] [:vg.anim/target-node :*]
-                       [_ c] [:vg.anim/target-component :*]
-                       {:keys [timeline_count values timeline]} vg/AnimationChannel
-                       player [:meta {:flags #{:up :cascade}
-                                      :inout :inout}
-                               vg/AnimationPlayer]
-                       _ [:meta {:flags #{:up :cascade}} :vg/active]
-                       e :vf/entity
-                       [_ n] [:vf/child-of :*]]
-        #_(def e e)
-        #_(def kk (vf/get-name w n))
+    (vf/with-each w [[_ node] [:vg.anim/target-node :*]
+                     [_ c] [:vg.anim/target-component :*]
+                     {:keys [timeline_count values timeline]} vg/AnimationChannel
+                     player [:meta {:flags #{:up :cascade}
+                                    :inout :inout}
+                             vg/AnimationPlayer]
+                     _ [:meta {:flags #{:up :cascade}} :vg/active]
+                     e :vf/entity
+                     [_ n] [:vf/child-of :*]]
+      #_(def e e)
+      #_(def kk (vf/get-name w n))
 
-        (let [values (vp/arr values timeline_count c)
-              timeline (vp/arr timeline timeline_count :float)
-              idx* (first (indices #(>= % (:current_time player)) timeline))
-              idx (max (dec (or idx* (count timeline))) 0)]
-          (if idx*
-            (when (= c vg/Translation)
-              ;; Play some sound.
-              #_(let [d (vr.c/vector-3-distance
-                         (vg/matrix->translation (get-in w [:vg/camera-active [vg/Transform :global]]))
-                         (vg/matrix->translation (get-in w [:vg.gltf/Sphere [vg/Transform :global]])))
-                      [azim elev] (let [cam-transform (get-in w [:vg/camera-active [vg/Transform :global]])
-                                        sphere-transform (get-in w [:vg.gltf/Sphere [vg/Transform :global]])
-                                        {:keys [x y z] :as _v} (-> sphere-transform
-                                                                   (vr.c/matrix-multiply (vr.c/matrix-invert cam-transform))
-                                                                   vg/matrix->translation)]
-                                    (if (> z 0)
-                                      [(- (vr.c/atan-2 x z))
-                                       (vr.c/atan-2 y z)
-                                       _v]
-                                      [(vr.c/atan-2 x z)
-                                       (vr.c/atan-2 y z)
-                                       _v]))
-                      amp (if (zero? d)
+      (let [values (vp/arr values timeline_count c)
+            timeline (vp/arr timeline timeline_count :float)
+            idx* (first (indices #(>= % (:current_time player)) timeline))
+            idx (max (dec (or idx* (count timeline))) 0)]
+        (if idx*
+          (when (= c vg/Translation)
+            ;; Play some sound.
+            #_(let [d (vr.c/vector-3-distance
+                       (vg/matrix->translation (get-in w [:vg/camera-active [vg/Transform :global]]))
+                       (vg/matrix->translation (get-in w [:vg.gltf/Sphere [vg/Transform :global]])))
+                    [azim elev] (let [cam-transform (get-in w [:vg/camera-active [vg/Transform :global]])
+                                      sphere-transform (get-in w [:vg.gltf/Sphere [vg/Transform :global]])
+                                      {:keys [x y z] :as _v} (-> sphere-transform
+                                                                 (vr.c/matrix-multiply (vr.c/matrix-invert cam-transform))
+                                                                 vg/matrix->translation)]
+                                  (if (> z 0)
+                                    [(- (vr.c/atan-2 x z))
+                                     (vr.c/atan-2 y z)
+                                     _v]
+                                    [(vr.c/atan-2 x z)
+                                     (vr.c/atan-2 y z)
+                                     _v]))
+                    amp (if (zero? d)
 
-                            1
-                            (/ 1 (* d d 1)))]
-                  #_(ctl sound-d :azim azim :elev elev :amp amp :distance d)))
-            (assoc player :current_time 0))
+                          1
+                          (/ 1 (* d d 1)))]
+                #_(ctl sound-d :azim azim :elev elev :amp amp :distance d)))
+          (assoc player :current_time 0))
 
-          #_(def node node)
-          #_(vf/make-entity w node)
+        #_(def node node)
+        #_(vf/make-entity w node)
 
-          (merge w {node [(nth values idx)]})
+        (merge w {node [(nth values idx)]})
 
-          ;; For blending.
-          #_(merge w {node {:vg.anim/frame-animation [[(nth values idx) n]]}})))
+        ;; For blending.
+        #_(merge w {node {:vg.anim/frame-animation [[(nth values idx) n]]}})))
 
-      ;; Blending.
-      #_(vf/with-each w [_ :vg.anim/joint
-                         e :vf/entity]
-          #_(merge w {e [a b c]})
-          (let [frame-anim (w (vf/path [e :vg.anim/frame-animation]))
-                translations (-> frame-anim (get [vg/Translation :*]))
-                rotations (-> frame-anim (get [vg/Rotation :*]))
-                scales (-> frame-anim (get [vg/Scale :*]))
-                t1 (first translations)
-                t2 (last translations)
-                r1 (first rotations)
-                r2 (last rotations)
-                s1 (first scales)
-                s2 (last scales)]
-            #_(merge w {e (last translations)})
-            (merge w {e [(vg/Translation [(lerp (:x t1) (:x t2))
-                                          (lerp (:y t1) (:y t2))
-                                          (lerp (:z t1) (:z t2))])
-                         #_(+ (* 0.5 (last translation
-                                           s))
-                              (* 0.5 (last translations)))
-                         (vg/Rotation [(lerp (:x r1) (:x r2))
-                                       (lerp (:y r1) (:y r2))
-                                       (lerp (:z r1) (:z r2))
-                                       (lerp (:w r1) (:w r2))])
-                         (vg/Scale [(lerp (:x s1) (:x s2))
-                                    (lerp (:y s1) (:y s2))
-                                    (lerp (:z s1) (:z s2))])]})
-            (dissoc w (vf/path [e :vg.anim/frame-animation]))))
+    ;; Blending.
+    #_(vf/with-each w [_ :vg.anim/joint
+                       e :vf/entity]
+        #_(merge w {e [a b c]})
+        (let [frame-anim (w (vf/path [e :vg.anim/frame-animation]))
+              translations (-> frame-anim (get [vg/Translation :*]))
+              rotations (-> frame-anim (get [vg/Rotation :*]))
+              scales (-> frame-anim (get [vg/Scale :*]))
+              t1 (first translations)
+              t2 (last translations)
+              r1 (first rotations)
+              r2 (last rotations)
+              s1 (first scales)
+              s2 (last scales)]
+          #_(merge w {e (last translations)})
+          (merge w {e [(vg/Translation [(lerp (:x t1) (:x t2))
+                                        (lerp (:y t1) (:y t2))
+                                        (lerp (:z t1) (:z t2))])
+                       #_(+ (* 0.5 (last translation
+                                         s))
+                            (* 0.5 (last translations)))
+                       (vg/Rotation [(lerp (:x r1) (:x r2))
+                                     (lerp (:y r1) (:y r2))
+                                     (lerp (:z r1) (:z r2))
+                                     (lerp (:w r1) (:w r2))])
+                       (vg/Scale [(lerp (:x s1) (:x s2))
+                                  (lerp (:y s1) (:y s2))
+                                  (lerp (:z s1) (:z s2))])]})
+          (dissoc w (vf/path [e :vg.anim/frame-animation]))))
 
-      #_ (init)
+    #_ (init)
 
-      ;; -- Keyboard
-      (let [key #(vr.c/is-key-pressed %1)]
-        (cond
-          (key (raylib/KEY_C))
-          (merge w
-                 (->> (range 32)
-                      (mapv (fn [idx]
-                              (let [body (vj/body-add phys
-                                                      (vj/BodyCreationSettings
-                                                       {:position (vj/Vector4 [(+ 1 (* idx 0.05))
-                                                                               (+ 4.2 (* idx 0.1))
-                                                                               (- 2.2 (* idx 0.1))
-                                                                               1])
-                                                        :rotation (vj/Vector4 [0 0 0 1])
-                                                        :shape (vj/box (vj/HalfExtent [0.25 0.25 0.25]))
-                                                        :motion_type (jolt/JPC_MOTION_TYPE_DYNAMIC)
-                                                        :object_layer :vj.layer/moving}))
-                                    {:keys [mesh material]} (vg/gen-cube {:x 0.5 :y 0.5 :z 0.5} (rand-int 10))]
-                                [(vf/path [phys (keyword (str "vj-" (:id body)))])
-                                 [mesh material body phys]])))
-                      (into {})))
+    ;; -- Keyboard
+    (let [key #(vr.c/is-key-pressed %1)]
+      (cond
+        (key (raylib/KEY_C))
+        (merge w
+               (->> (range 32)
+                    (mapv (fn [idx]
+                            (let [body (vj/body-add phys
+                                                    (vj/BodyCreationSettings
+                                                     {:position (vj/Vector4 [(+ 1 (* idx 0.05))
+                                                                             (+ 4.2 (* idx 0.1))
+                                                                             (- 2.2 (* idx 0.1))
+                                                                             1])
+                                                      :rotation (vj/Vector4 [0 0 0 1])
+                                                      :shape (vj/box (vj/HalfExtent [0.25 0.25 0.25]))
+                                                      :motion_type (jolt/JPC_MOTION_TYPE_DYNAMIC)
+                                                      :object_layer :vj.layer/moving}))
+                                  {:keys [mesh material]} (vg/gen-cube {:x 0.5 :y 0.5 :z 0.5} (rand-int 10))]
+                              [(vf/path [phys (keyword (str "vj-" (:id body)))])
+                               [mesh material body phys]])))
+                    (into {})))
 
-          (key (raylib/KEY_D))
-          (merge w {:vg/debug (if (get-in w [:vg/debug :vg/enabled])
-                                [(vf/del :vg/enabled)]
-                                [:vg/enabled])})
+        (key (raylib/KEY_D))
+        (merge w {:vg/debug (if (get-in w [:vg/debug :vg/enabled])
+                              [(vf/del :vg/enabled)]
+                              [:vg/enabled])})
 
-          (key (raylib/KEY_SPACE))
-          (let [[old-entity new-entity] (if (contains? (w (p :vg/camera-active)) (p :vg.gltf/CameraFar))
-                                          [(p :vg.gltf/CameraFar) (p :vg.gltf/Camera)]
-                                          [(p :vg.gltf/Camera) (p :vg.gltf/CameraFar)])]
-            (-> w
-                ;; TODO Use a union or similar here.
-                (merge {(p :vg/camera-active)
-                        [new-entity
-                         (vf/del old-entity)
-                         (vf/ref new-entity [vg/Transform :global])
-                         (vf/ref new-entity vg/Camera)]})))
-
-          (key (raylib/KEY_M))
+        (key (raylib/KEY_SPACE))
+        (let [[old-entity new-entity] (if (contains? (w (p :vg/camera-active)) (p :vg.gltf/CameraFar))
+                                        [(p :vg.gltf/CameraFar) (p :vg.gltf/Camera)]
+                                        [(p :vg.gltf/Camera) (p :vg.gltf/CameraFar)])]
           (-> w
-              (merge
-               {(p :vg.gltf/Sphere :vg.gltf.anim/Right) [(vf/del :vg/active)]
-                (p :vg.gltf/Sphere :vg.gltf.anim/Left)[:vg/active]}
-               (let [c (fn [k] (p :vg.gltf/Cube.002 k))]
-                 (if (contains? (w (c :vg.gltf.anim/CubeDown)) :vg/selected)
-                   {(c :vg.gltf.anim/CubeDown) [(vf/del :vg/active) (vf/del :vg/selected)]
-                    (c :vg.gltf.anim/CubeUp) [:vg/active]}
-                   {(c :vg.gltf.anim/CubeDown) [:vg/active]
-                    (c :vg.gltf.anim/CubeUp) [(vf/del :vg/active) (vf/del :vg/selected)]}))
-               (let [c (fn [k] (p :vg.gltf/Cube k))]
-                 (if (contains? (w (c :vg.gltf.anim/CubeDown)) :vg/selected)
-                   {(c :vg.gltf.anim/CubeDown) [(vf/del :vg/active) (vf/del :vg/selected)]
-                    (c :vg.gltf.anim/CubeUp) [:vg/active]}
-                   {(c :vg.gltf.anim/CubeDown) [:vg/active]
-                    (c :vg.gltf.anim/CubeUp) [(vf/del :vg/active) (vf/del :vg/selected)]}))))))
+              ;; TODO Use a union or similar here.
+              (merge {(p :vg/camera-active)
+                      [new-entity
+                       (vf/del old-entity)
+                       (vf/ref new-entity [vg/Transform :global])
+                       (vf/ref new-entity vg/Camera)]})))
 
-      #_(vf/with-each w [_ :vg/ray-casted
-                         material vr/Material
-                         translation vg/Translation]
-          #_(-> material
-                :maps
-                (vp/arr 1 vr/MaterialMap)
-                (nth (raylib/MATERIAL_MAP_DIFFUSE))
-                (assoc :color (vr/Color [200 155 255 1.0])))
-          #_(println :a)
-          (update translation :x + 0.2))
+        (key (raylib/KEY_M))
+        (-> w
+            (merge
+             {(p :vg.gltf/Sphere :vg.gltf.anim/Right) [(vf/del :vg/active)]
+              (p :vg.gltf/Sphere :vg.gltf.anim/Left)[:vg/active]}
+             (let [c (fn [k] (p :vg.gltf/Cube.002 k))]
+               (if (contains? (w (c :vg.gltf.anim/CubeDown)) :vg/selected)
+                 {(c :vg.gltf.anim/CubeDown) [(vf/del :vg/active) (vf/del :vg/selected)]
+                  (c :vg.gltf.anim/CubeUp) [:vg/active]}
+                 {(c :vg.gltf.anim/CubeDown) [:vg/active]
+                  (c :vg.gltf.anim/CubeUp) [(vf/del :vg/active) (vf/del :vg/selected)]}))
+             (let [c (fn [k] (p :vg.gltf/Cube k))]
+               (if (contains? (w (c :vg.gltf.anim/CubeDown)) :vg/selected)
+                 {(c :vg.gltf.anim/CubeDown) [(vf/del :vg/active) (vf/del :vg/selected)]
+                  (c :vg.gltf.anim/CubeUp) [:vg/active]}
+                 {(c :vg.gltf.anim/CubeDown) [:vg/active]
+                  (c :vg.gltf.anim/CubeUp) [(vf/del :vg/active) (vf/del :vg/selected)]}))))))
 
-      ;; Running animation.
-      #_(let [key #(vr.c/is-key-down %1)]
-          (cond
-            (key (raylib/KEY_X))
-            (-> w
-                (merge {(p :vg.gltf/Armature :vg.gltf.anim/Running) [:vg/active]
-                        (p :vg.gltf/Armature :vg.gltf.anim/Idle) [(vf/del :vg/active)]})
-                (update-in [(p :vg.gltf/Armature) vg/Translation :z] + 0.018))
+    #_(vf/with-each w [_ :vg/ray-casted
+                       material vr/Material
+                       translation vg/Translation]
+        #_(-> material
+              :maps
+              (vp/arr 1 vr/MaterialMap)
+              (nth (raylib/MATERIAL_MAP_DIFFUSE))
+              (assoc :color (vr/Color [200 155 255 1.0])))
+        #_(println :a)
+        (update translation :x + 0.2))
 
-            (key (raylib/KEY_Z))
-            (-> w
-                (merge {(p :vg.gltf/Armature :vg.gltf.anim/Running) [:vg/active]
-                        (p :vg.gltf/Armature :vg.gltf.anim/Idle) [(vf/del :vg/active)]})
-                (update-in [(p :vg.gltf/Armature) vg/Translation :z] - 0.018))
+    ;; Running animation.
+    #_(let [key #(vr.c/is-key-down %1)]
+        (cond
+          (key (raylib/KEY_X))
+          (-> w
+              (merge {(p :vg.gltf/Armature :vg.gltf.anim/Running) [:vg/active]
+                      (p :vg.gltf/Armature :vg.gltf.anim/Idle) [(vf/del :vg/active)]})
+              (update-in [(p :vg.gltf/Armature) vg/Translation :z] + 0.018))
 
-            :else
-            (-> w
-                (merge {(p :vg.gltf/Armature :vg.gltf.anim/Idle) [:vg/active]
-                        (p :vg.gltf/Armature :vg.gltf.anim/Running) [(vf/del :vg/active)]}))))
+          (key (raylib/KEY_Z))
+          (-> w
+              (merge {(p :vg.gltf/Armature :vg.gltf.anim/Running) [:vg/active]
+                      (p :vg.gltf/Armature :vg.gltf.anim/Idle) [(vf/del :vg/active)]})
+              (update-in [(p :vg.gltf/Armature) vg/Translation :z] - 0.018))
 
-      (comment
+          :else
+          (-> w
+              (merge {(p :vg.gltf/Armature :vg.gltf.anim/Idle) [:vg/active]
+                      (p :vg.gltf/Armature :vg.gltf.anim/Running) [(vf/del :vg/active)]}))))
 
-        (w (p :vg.gltf/Cube))
+    (comment
 
-        (w (p :vg.gltf/Armature))
+      (w (p :vg.gltf/Cube))
 
-        (vf/hierarchy-no-path (w :my/model))
-        (keys (vf/hierarchy (w (p :vg.gltf/Armature))))
-        (vf/hierarchy-no-path (w (p :vg.gltf/Armature)))
+      (w (p :vg.gltf/Armature))
 
-
-        (init)
-
-        (count (vj/bodies phys))
-        (count (vj/bodies-active phys))
-        (count (vf/with-each w [translation vg/Translation] translation))
+      (vf/hierarchy-no-path (w :my/model))
+      (keys (vf/hierarchy (w (p :vg.gltf/Armature))))
+      (vf/hierarchy-no-path (w (p :vg.gltf/Armature)))
 
 
-        (get (w (vf/path [:my/model :vg.gltf/Plane])) vg/Translation)
+      (init)
 
-        (w (vf/path [:my/model :vg.gltf/Sphere]))
+      (count (vj/bodies phys))
+      (count (vj/bodies-active phys))
+      (count (vf/with-each w [translation vg/Translation] translation))
 
-        (vj/body-ids phys)
-        (mapv :position (vj/bodies phys))
 
-        (vf/with-each w [#_ #_i [vg/Int :vj/body-id]
-                         #_ #_phys [:src :vg/phys vj/PhysicsSystem]
-                         [_ mesh-entity] [:vg/refers :*]]
-          (vf/get-name w mesh-entity))
+      (get (w (vf/path [:my/model :vg.gltf/Plane])) vg/Translation)
 
-        (w (vf/path [phys (keyword (str "vj-" (first (vj/body-ids phys))))]))
+      (w (vf/path [:my/model :vg.gltf/Sphere]))
 
-        ())
+      (vj/body-ids phys)
+      (mapv :position (vj/bodies phys))
 
-      #_ (init)
+      (vf/with-each w [#_ #_i [vg/Int :vj/body-id]
+                       #_ #_phys [:src :vg/phys vj/PhysicsSystem]
+                       [_ mesh-entity] [:vg/refers :*]]
+        (vf/get-name w mesh-entity))
 
-      ;; -- Mouse.
-      (let [{:keys [position direction]} (-> (vr.c/get-mouse-position)
-                                             (vr.c/vy-get-screen-to-world-ray
-                                              (get-in w [(p :vg/camera-active) vg/Camera])))
-            direction (mapv #(* % 10000) (vals direction))
-            body (vj/cast-ray phys position direction)]
-        (if-let [pos (some-> (vj/position body)
-                             vg/Translation
-                             (assoc :y (+ (:y (:max (vj/world-bounds body)))
-                                          0.3)))]
-          #_(println :pos pos)
-          #_(println :PARENT (vf/parent (str "vj-" (:id body))))
+      (w (vf/path [phys (keyword (str "vj-" (first (vj/body-ids phys))))]))
 
-          (do #_(def a (get-in w [(vf/path [phys (keyword (str "vj-" (:id body)))])
-                                  #_[:vg/refers :_]]))
-              #_(println :pos-1 pos)
-              (when-let [e (some->> (get-in w [(vf/path [phys (keyword (str "vj-" (:id body)))])
-                                               [:vg/refers :_]])
-                                    first
-                                    last
-                                    (vf/make-entity w))]
-                #_(println :pos pos)
-                (if (get e [:vg/raycast :vg/enabled])
-                  (do (merge w {(p :vg.gltf/Sphere)
-                                [pos]})
-                      (when (vr.c/is-mouse-button-pressed (raylib/MOUSE_BUTTON_LEFT))
-                        #_(println :AAAA (vf/get-name e))
-                        (let [c (fn [k] (vf/path [e k]))]
-                          (merge w (if (contains? (w (c :vg.gltf.anim/CubeDown)) :vg/selected)
-                                     {(c :vg.gltf.anim/CubeDown) [(vf/del :vg/active) (vf/del :vg/selected)]
-                                      (c :vg.gltf.anim/CubeUp) [:vg/active]}
-                                     {(c :vg.gltf.anim/CubeDown) [:vg/active]
-                                      (c :vg.gltf.anim/CubeUp) [(vf/del :vg/active) (vf/del :vg/selected)]})))))
-                  (merge w {(p :vg.gltf/Sphere) [(vg/Translation [-10 -10 -10])]}))))
-          (when-not (= (get-in w [(p :vg.gltf/Sphere) vg/Translation])
-                       (vg/Translation [-10 -10 -10]))
-            (merge w {(p :vg.gltf/Sphere) [(vg/Translation [-10 -10 -10])]}))))
+      ())
 
-      #_(init)
-      #_(vr.c/set-target-fps 60)
+    #_ (init)
 
-      ;; -- Physics.
-      (vj/update! phys (vr.c/get-frame-time))
+    ;; -- Mouse.
+    (let [{:keys [position direction]} (-> (vr.c/get-mouse-position)
+                                           (vr.c/vy-get-screen-to-world-ray
+                                            (get-in w [(p :vg/camera-active) vg/Camera])))
+          direction (mapv #(* % 10000) (vals direction))
+          body (vj/cast-ray phys position direction)]
+      (if-let [pos (some-> (vj/position body)
+                           vg/Translation
+                           (assoc :y (+ (:y (:max (vj/world-bounds body)))
+                                        0.3)))]
+        #_(println :pos pos)
+        #_(println :PARENT (vf/parent (str "vj-" (:id body))))
 
-      ;; Update model meshes from the Jolt bodies.
-      (vf/with-each w [translation [:meta {:inout :out} vg/Translation]
-                       rotation [:meta {:inout :out} vg/Rotation]
-                       _ :vg/dynamic
-                       body vj/VyBody]
-        (let [pos (vj/position body)
-              rot (vj/rotation body)]
-          (when (and pos rot)
-            (merge rotation (vg/Rotation rot))
-            (merge translation (vg/Translation pos)))))
+        (do #_(def a (get-in w [(vf/path [phys (keyword (str "vj-" (:id body)))])
+                                #_[:vg/refers :_]]))
+            #_(println :pos-1 pos)
+            (when-let [e (some->> (get-in w [(vf/path [phys (keyword (str "vj-" (:id body)))])
+                                             [:vg/refers :_]])
+                                  first
+                                  last
+                                  (vf/make-entity w))]
+              #_(println :pos pos)
+              (if (get e [:vg/raycast :vg/enabled])
+                (do (merge w {(p :vg.gltf/Sphere)
+                              [pos]})
+                    (when (vr.c/is-mouse-button-pressed (raylib/MOUSE_BUTTON_LEFT))
+                      #_(println :AAAA (vf/get-name e))
+                      (let [c (fn [k] (vf/path [e k]))]
+                        (merge w (if (contains? (w (c :vg.gltf.anim/CubeDown)) :vg/selected)
+                                   {(c :vg.gltf.anim/CubeDown) [(vf/del :vg/active) (vf/del :vg/selected)]
+                                    (c :vg.gltf.anim/CubeUp) [:vg/active]}
+                                   {(c :vg.gltf.anim/CubeDown) [:vg/active]
+                                    (c :vg.gltf.anim/CubeUp) [(vf/del :vg/active) (vf/del :vg/selected)]})))))
+                (merge w {(p :vg.gltf/Sphere) [(vg/Translation [-10 -10 -10])]}))))
+        (when-not (= (get-in w [(p :vg.gltf/Sphere) vg/Translation])
+                     (vg/Translation [-10 -10 -10]))
+          (merge w {(p :vg.gltf/Sphere) [(vg/Translation [-10 -10 -10])]}))))
 
-      ;; Update jolt meshes (for debugging).
-      (merge w
-             (->> (vj/bodies-active phys)
-                  (keep (fn [body]
-                          (let [position (vj/position body)
-                                rotation (vj/rotation body)
-                                translation (vg/Translation position)]
-                            (if (< (:y translation) -20)
-                              (do #_(println :REMOVVVV id :position position :rotation rotation)
-                                  #_(println (w (vf/path [phys (keyword (str "vj-" id))])))
-                                  (dissoc w (vf/path [phys (keyword (str "vj-" (:id body)))])))
-                              {(vf/path [phys (keyword (str "vj-" (:id body)))])
-                               [translation (vg/Rotation rotation)
-                                (vg/Scale [1 1 1])
-                                vg/Transform [vg/Transform :global]]}))))
-                  (into {})))
+    #_(init)
+    #_(vr.c/set-target-fps 60)
 
-      (let [draw-scene (fn [w]
-                         #_(vr.c/draw-grid 30 0.5)
-                         (if (get-in w [:vg/debug :vg/enabled])
-                           (vg/draw-debug w)
-                           (vg/draw-scene w)))]
+    ;; -- Physics.
+    (vj/update! phys delta-time)
 
-        ;; -- Drawing
-        (vg/draw-lights w #_default-shader shadowmap-shader depth-rts draw-scene)
+    ;; Update model meshes from the Jolt bodies.
+    (vf/with-each w [translation [:meta {:inout :out} vg/Translation]
+                     rotation [:meta {:inout :out} vg/Rotation]
+                     _ :vg/dynamic
+                     body vj/VyBody]
+      (let [pos (vj/position body)
+            rot (vj/rotation body)]
+        (when (and pos rot)
+          (merge rotation (vg/Rotation rot))
+          (merge translation (vg/Translation pos)))))
 
-        (vg/with-multipass view-2 {:shaders [[noise-blur-shader {:u_radius (+ 1.0 (rand 1))}]
-                                             [dither-shader {:u_offsets (vg/Vector3 (mapv #(* % (+ 0.6 (wobble 0.3)))
-                                                                                          [0.02 (+ 0.016 (wobble 0.01))
-                                                                                           (+ 0.040 (wobble 0.01))]))}] ]}
-          (vr.c/clear-background (vr/Color "#A98B39"))
-          (vg/with-camera (get-in w [(p :vg/camera-active) vg/Camera])
-            (draw-scene w)))
+    ;; Update jolt meshes (for debugging).
+    (merge w
+           (->> (vj/bodies-active phys)
+                (keep (fn [body]
+                        (let [position (vj/position body)
+                              rotation (vj/rotation body)
+                              translation (vg/Translation position)]
+                          (if (< (:y translation) -20)
+                            (do #_(println :REMOVVVV id :position position :rotation rotation)
+                                #_(println (w (vf/path [phys (keyword (str "vj-" id))])))
+                                (dissoc w (vf/path [phys (keyword (str "vj-" (:id body)))])))
+                            {(vf/path [phys (keyword (str "vj-" (:id body)))])
+                             [translation (vg/Rotation rotation)
+                              (vg/Scale [1 1 1])
+                              vg/Transform [vg/Transform :global]]}))))
+                (into {})))
 
-        ;; Draw to the screen.
-        (vg/with-drawing
-          (vr.c/clear-background (vr/Color [255 20 100 255]))
+    (let [draw-scene (fn [w]
+                       #_(vr.c/draw-grid 30 0.5)
+                       (if (get-in w [:vg/debug :vg/enabled])
+                         (vg/draw-debug w)
+                         (vg/draw-scene w)))]
 
-          (vr.c/draw-texture-pro (:texture view-2)
-                                 (vr/Rectangle [0 0 600 -600]) (vr/Rectangle [0 0 600 600])
-                                 (vr/Vector2 [0 0]) 0 vg/color-white)
+      ;; -- Drawing
+      (vg/draw-lights w #_default-shader shadowmap-shader depth-rts draw-scene)
 
-          #_(vg/with-camera (get-in w [:vg/camera-active vg/Camera])
-              (draw-scene w))
+      (vg/with-multipass view-2 {:shaders [[noise-blur-shader {:u_radius (+ 1.0 (rand 1))}]
+                                           [dither-shader {:u_offsets (vg/Vector3 (mapv #(* % (+ 0.6 (wobble 0.3)))
+                                                                                        [0.02 (+ 0.016 (wobble 0.01))
+                                                                                         (+ 0.040 (wobble 0.01))]))}] ]}
+        (vr.c/clear-background (vr/Color "#A98B39"))
+        (vg/with-camera (get-in w [(p :vg/camera-active) vg/Camera])
+          (draw-scene w)))
 
-          (vr.c/draw-fps 510 570))))))
+      ;; Draw to the screen.
+      (vg/with-drawing
+        (vr.c/clear-background (vr/Color [255 20 100 255]))
+
+        (vr.c/draw-texture-pro (:texture view-2)
+                               (vr/Rectangle [0 0 600 -600]) (vr/Rectangle [0 0 600 600])
+                               (vr/Vector2 [0 0]) 0 vg/color-white)
+
+        #_(vg/with-camera (get-in w [:vg/camera-active vg/Camera])
+            (draw-scene w))
+
+        (vr.c/draw-fps 510 570)))))
 
 #_(init)
 #_(vr.c/set-target-fps 10)
@@ -503,49 +502,48 @@
     (vr.c/draw-rectangle 30 50 100 200 (vr/Color [255 100 10 255]))
     (vr.c/draw-rectangle 300 50 100 200 (vr/Color [255 100 10 255])))
 
+
   ;; Run the entire initialization in the main thread so we don't have some
   ;; slowness at the start of the game.
-  (vr/t
-    (reset! env {})
-    #_ (init)
-    (swap! env merge {:vf/w (let [w (vf/make-world)
-                                  path (.getPath (io/resource "models.glb"))]
-                              ;; For enabling the REST interface (explorer).
-                              #_(vf.c/ecs-set-id w
-                                                 (flecs/FLECS_IDEcsRestID_)
-                                                 (flecs/FLECS_IDEcsRestID_)
-                                                 (.byteSize (.layout vf/Rest))
-                                                 (vf/Rest))
-                              (vg/reloadable {:game-id :my/model :resource-paths [path]}
-                                (-> w
-                                    (vg/load-model :my/model path))))})
+  (vg/start!
+   #'draw
+   (fn []
+     (reset! env {})
+     #_ (init)
+     (swap! env merge {:vf/w (let [w (vf/make-world)
+                                   path (.getPath (io/resource "models.glb"))]
+                               ;; For enabling the REST interface (explorer).
+                               #_(vf.c/ecs-set-id w
+                                                  (flecs/FLECS_IDEcsRestID_)
+                                                  (flecs/FLECS_IDEcsRestID_)
+                                                  (.byteSize (.layout vf/Rest))
+                                                  (vf/Rest))
+                               (vg/reloadable {:game-id :my/model :resource-paths [path]}
+                                 (-> w
+                                     (vg/load-model :my/model path))))})
 
-    #_ (def w (:vf/w env))
+     #_ (def w (:vf/w env))
 
-    (swap! env merge { ;; Create 10 depth render textures for reuse.
-                      :depth-rts (mapv #(do % (load-shadowmap-render-texture 600 600))
-                                       (range 10))
+     (swap! env merge { ;; Create 10 depth render textures for reuse.
+                       :depth-rts (mapv #(do % (load-shadowmap-render-texture 600 600))
+                                        (range 10))
 
-                      :shadowmap-shader (vg/shader-program :shadowmap-shader
-                                                           {::vg/shader.vert "shaders/shadowmap.vs"
-                                                            ::vg/shader.frag "shaders/shadowmap.fs"})
-                      :kuwahara-shader (vg/shader-program :kuwahara-shader
-                                                          {::vg/shader.frag "shaders/kuwahara_2d.fs"})
-                      :dither-shader (vg/shader-program :dither-shader
-                                                        {::vg/shader.frag "shaders/dither.fs"})
-                      :noise-blur-shader (vg/shader-program :noise-blur-shader
-                                                            {::vg/shader.frag "shaders/noise_blur_2d.fs"})
-                      :edge-shader (vg/shader-program :edge-shader
-                                                      {::vg/shader.frag "shaders/edge_2d.fs"})
-                      :process-shader (vg/shader-program :process-shader
-                                                         {::vg/shader.frag "shaders/process_2d.fs"})
-                      :dof-shader (vg/shader-program :dof-shader
-                                                     {::vg/shader.frag "shaders/dof.fs"})
-                      :default-shader (vg/shader-program :default-shader {})
+                       :shadowmap-shader (vg/shader-program :shadowmap-shader
+                                                            {::vg/shader.vert "shaders/shadowmap.vs"
+                                                             ::vg/shader.frag "shaders/shadowmap.fs"})
+                       :kuwahara-shader (vg/shader-program :kuwahara-shader
+                                                           {::vg/shader.frag "shaders/kuwahara_2d.fs"})
+                       :dither-shader (vg/shader-program :dither-shader
+                                                         {::vg/shader.frag "shaders/dither.fs"})
+                       :noise-blur-shader (vg/shader-program :noise-blur-shader
+                                                             {::vg/shader.frag "shaders/noise_blur_2d.fs"})
+                       :edge-shader (vg/shader-program :edge-shader
+                                                       {::vg/shader.frag "shaders/edge_2d.fs"})
+                       :process-shader (vg/shader-program :process-shader
+                                                          {::vg/shader.frag "shaders/process_2d.fs"})
+                       :dof-shader (vg/shader-program :dof-shader
+                                                      {::vg/shader.frag "shaders/dof.fs"})
+                       :default-shader (vg/shader-program :default-shader {})
 
-                      :view-2 (vr.c/load-render-texture 600 600)})
-
-    (alter-var-root #'vr/draw (constantly #'draw))))
-
-#_(alter-var-root #'vr/draw (constantly (fn [] (Thread/sleep 10))))
+                       :view-2 (vr.c/load-render-texture 600 600)}))))
 #_(init)

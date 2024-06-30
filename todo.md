@@ -83,6 +83,7 @@
   - [x] fix why it takes so much time on the first load when we have many objects
     - [x] use instances in queries
   - [x] fix why raycast is not working when adding multiple cubes
+  - [x] create vg wrapper for init and draw
   - [ ] hover on a object
     - [ ] glow (or change color)
       - [ ] get entity from body id
