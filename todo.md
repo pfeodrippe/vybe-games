@@ -85,26 +85,35 @@
   - [x] fix why raycast is not working when adding multiple cubes
   - [x] create vg wrapper for init and draw
   - [ ] hover on a object
-    - [ ] glow (or change color)
-      - [ ] get entity from body id
-    - [ ] support flecs observers
+    - [x] send an event
+    - [x] handle event with observer
+    - [x] fix observer hot reload
+    - [x] jolt contact listener
+      - [x] build contact listener
+      - [x] send it to an observer
+    - [ ] send mouse hover to an observer
     - [ ] sound
   - [ ] click on a object
     - [ ] sound
-- [ ] time-series charts for monitoring
-  - [ ] systems/observers triggering
-  - [ ]
-- [ ] use same type for vector3/vector4 etc
+- [ ] maybe run flecs in commands if sent from the REPL
+  - [ ] add JVM property for PRD usage so we can disable these
+- [x] add physics debug drawing
 - [ ] fix parent object transform for the physic bodies
 - [ ] build clouds with white cubes
-- [x] add physics debug drawing
+- [ ] time-series charts for monitoring
+  - [ ] systems/observers triggering
+  - [ ] events
+  - [ ] run flecs commands in the main thread only so we don't have weirdness
+  - [ ] collisions
+  - [ ] make monitors out of queries
+    - [ ] use `ecs_metric` or `ecs_world_stats`
 - [ ] support multiple collision layers
   - [ ] sensor layer?
 - [ ] state machine
 - [ ] fix Blender linked data
 - [ ] make vg/Rotation always normalized
 - [ ] support custom collider from GLTF (blender)
-- [ ] contact listener
+- [ ] use same type for vector3/vector4 etc
 - [ ] put resources in world so we can get rid of `env`
 - [ ] particles
   - [ ] grains in the air (maybe 1 pixel?)
@@ -129,3 +138,4 @@
 
 - [ ] blue's bird
 - [ ] overly afficionated fox
+- [ ] environment manipulation as game mechanic

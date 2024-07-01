@@ -239,7 +239,8 @@
       (cond
         (key (raylib/KEY_C))
         (merge w
-               (->> (range 32)
+               (->> (range 16 17)
+                    #_(range 32)
                     (mapv (fn [idx]
                             (let [body (vj/body-add phys
                                                     (vj/BodyCreationSettings
@@ -252,7 +253,7 @@
                                                       :motion_type (jolt/JPC_MOTION_TYPE_DYNAMIC)
                                                       :object_layer :vj.layer/moving}))
                                   {:keys [mesh material]} (vg/gen-cube {:x 0.5 :y 0.5 :z 0.5} (rand-int 10))]
-                              [(vf/path [phys (keyword (str "vj-" (:id body)))])
+                              [(vf/path [:vg/phys (keyword (str "vj-" (:id body)))])
                                [mesh material body phys]])))
                     (into {})))
 
@@ -352,7 +353,7 @@
                        [_ mesh-entity] [:vg/refers :*]]
         (vf/get-name w mesh-entity))
 
-      (w (vf/path [phys (keyword (str "vj-" (first (vj/body-ids phys))))]))
+      (w (vf/path [:vg/phys (keyword (str "vj-" (first (vj/body-ids phys))))]))
 
       ())
 
@@ -368,36 +369,52 @@
                            vg/Translation
                            (assoc :y (+ (:y (:max (vj/world-bounds body)))
                                         0.3)))]
-        #_(println :pos pos)
-        #_(println :PARENT (vf/parent (str "vj-" (:id body))))
 
-        (do #_(def a (get-in w [(vf/path [phys (keyword (str "vj-" (:id body)))])
-                                #_[:vg/refers :_]]))
-            #_(println :pos-1 pos)
-            (when-let [e (some->> (get-in w [(vf/path [phys (keyword (str "vj-" (:id body)))])
-                                             [:vg/refers :_]])
-                                  first
-                                  last
-                                  (vf/make-entity w))]
-              #_(println :pos pos)
-              (if (get e [:vg/raycast :vg/enabled])
-                (do (merge w {(p :vg.gltf/Sphere)
-                              [pos]})
-                    (when (vr.c/is-mouse-button-pressed (raylib/MOUSE_BUTTON_LEFT))
-                      #_(println :AAAA (vf/get-name e))
-                      (let [c (fn [k] (vf/path [e k]))]
-                        (merge w (if (contains? (w (c :vg.gltf.anim/CubeDown)) :vg/selected)
-                                   {(c :vg.gltf.anim/CubeDown) [(vf/del :vg/active) (vf/del :vg/selected)]
-                                    (c :vg.gltf.anim/CubeUp) [:vg/active]}
-                                   {(c :vg.gltf.anim/CubeDown) [:vg/active]
-                                    (c :vg.gltf.anim/CubeUp) [(vf/del :vg/active) (vf/del :vg/selected)]})))))
-                (merge w {(p :vg.gltf/Sphere) [(vg/Translation [-10 -10 -10])]}))))
+        (when-let [[_ e] (-> (get-in w [(vf/path [:vg/phys (keyword (str "vj-" (:id body)))])
+                                        [:vg/refers :_]])
+                             first)]
+          #_(println :pos pos)
+          (if (get-in w [e [:vg/raycast :vg/enabled]])
+            (do (merge w {(p :vg.gltf/Sphere)
+                          [pos]})
+                (when (vr.c/is-mouse-button-pressed (raylib/MOUSE_BUTTON_LEFT))
+                  #_(println :AAAA (vf/get-name e))
+                  (let [c (fn [k] (vf/path [e k]))]
+                    (merge w
+                           (if (contains? (w (c :vg.gltf.anim/CubeDown)) :vg/selected)
+                             {(c :vg.gltf.anim/CubeDown) [(vf/del :vg/active) (vf/del :vg/selected)]
+                              (c :vg.gltf.anim/CubeUp) [:vg/active]}
+                             {(c :vg.gltf.anim/CubeDown) [:vg/active]
+                              (c :vg.gltf.anim/CubeUp) [(vf/del :vg/active) (vf/del :vg/selected)]})
+                           #_{:vg/mouse [[:vg/mouse-clicked e]]}))))
+            (merge w {(p :vg.gltf/Sphere) [(vg/Translation [-10 -10 -10])]})))
         (when-not (= (get-in w [(p :vg.gltf/Sphere) vg/Translation])
                      (vg/Translation [-10 -10 -10]))
           (merge w {(p :vg.gltf/Sphere) [(vg/Translation [-10 -10 -10])]}))))
 
     #_(init)
     #_(vr.c/set-target-fps 60)
+
+    (vf/with-observer w [:vf/name :observer/on-contact-added
+                         :vf/events #{vg/OnContactAdded}
+                         _ :_
+                         it :vf/iter
+                         e :vf/entity]
+      (println :contact (vf/get-name e) (vp/p->map (:param it) vg/OnContactAdded)))
+
+    (comment
+
+      (vr/t (doseq [_ (range 10)] (vf/event! w :ddenti :afa)))
+
+      (vf/with-each w [e :vf/entity
+                       _ (flecs/EcsObserver)]
+        (vf/get-name e))
+
+      (vf/alive? (:observer/on-click w)))
+
+    ()
+
+    #_(conj (:observer/ondfd-click w) :fffddd)
 
     ;; -- Physics.
     (vj/update! phys delta-time)
@@ -422,9 +439,9 @@
                               translation (vg/Translation position)]
                           (if (< (:y translation) -20)
                             (do #_(println :REMOVVVV id :position position :rotation rotation)
-                                #_(println (w (vf/path [phys (keyword (str "vj-" id))])))
-                                (dissoc w (vf/path [phys (keyword (str "vj-" (:id body)))])))
-                            {(vf/path [phys (keyword (str "vj-" (:id body)))])
+                                #_(println (w (vf/path [:vg/phys (keyword (str "vj-" id))])))
+                                (dissoc w (vf/path [:vg/phys (keyword (str "vj-" (:id body)))])))
+                            {(vf/path [:vg/phys (keyword (str "vj-" (:id body)))])
                              [translation (vg/Rotation rotation)
                               (vg/Scale [1 1 1])
                               vg/Transform [vg/Transform :global]]}))))
