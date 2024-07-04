@@ -159,7 +159,7 @@
                      player [:meta {:flags #{:up :cascade}
                                     :inout :inout}
                              vg/AnimationPlayer]
-                     _ [:meta {:flags #{:up :cascade}} :vg/active]
+                     _ [:meta {:flags #{:up}} :vg/active]
                      e :vf/entity
                      [_ n] [:vf/child-of :*]]
       #_(def e e)
@@ -239,16 +239,19 @@
       (cond
         (key (raylib/KEY_C))
         (merge w
-               (->> (range 16 17)
+               (->> (range 10 24)
                     #_(range 32)
                     (mapv (fn [idx]
                             (let [body (vj/body-add phys
                                                     (vj/BodyCreationSettings
-                                                     {:position (vj/Vector4 [(+ 1 (* idx 0.05))
-                                                                             (+ 4.2 (* idx 0.1))
+                                                     {:position (vj/Vector4 [(+ -1 (* idx 0.1))
+                                                                             (+ 4.2 (* idx 0.2))
                                                                              (- 2.2 (* idx 0.1))
                                                                              1])
-                                                      :rotation (vj/Vector4 [0 0 0 1])
+                                                      :rotation (vr.c/vector-4-normalize
+                                                                 (vr.c/quaternion-from-axis-angle
+                                                                  (vj/Vector3 [1 1 0])
+                                                                  (* 0.5 idx)))
                                                       :shape (vj/box (vj/HalfExtent [0.25 0.25 0.25]))
                                                       :motion_type (jolt/JPC_MOTION_TYPE_DYNAMIC)
                                                       :object_layer :vj.layer/moving}))
@@ -393,6 +396,9 @@
           (merge w {(p :vg.gltf/Sphere) [(vg/Translation [-10 -10 -10])]}))))
 
     #_(init)
+
+    #_(vf.c/ecs-log-set-level 3)
+
     #_(vr.c/set-target-fps 60)
 
     (vf/with-observer w [:vf/name :observer/on-contact-added
@@ -400,7 +406,9 @@
                          _ :_
                          it :vf/iter
                          e :vf/entity]
-      (println :contact (vf/get-name e) (vp/p->map (:param it) vg/OnContactAdded)))
+      (let [{:keys [body-1 body-2]} (->> (vp/p->map (:param it) vg/OnContactAdded)
+                                         :body-1)]
+        [(:id body-1) (:id body-2)]))
 
     (comment
 
@@ -414,16 +422,18 @@
 
     ()
 
-    #_(conj (:observer/ondfd-click w) :fffddd)
+    #_(init)
 
     ;; -- Physics.
-    (vj/update! phys delta-time)
+    (vf/with-deferred w
+      (vj/update! phys delta-time))
 
     ;; Update model meshes from the Jolt bodies.
     (vf/with-each w [translation [:meta {:inout :out} vg/Translation]
                      rotation [:meta {:inout :out} vg/Rotation]
                      _ :vg/dynamic
                      body vj/VyBody]
+      #_(println :aaaa 323)
       (let [pos (vj/position body)
             rot (vj/rotation body)]
         (when (and pos rot)

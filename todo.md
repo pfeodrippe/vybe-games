@@ -91,6 +91,8 @@
     - [x] jolt contact listener
       - [x] build contact listener
       - [x] send it to an observer
+    - [ ] fix
+      - [ ] `on-contact-added` should be called with a lock, probably
     - [ ] send mouse hover to an observer
     - [ ] sound
   - [ ] click on a object
