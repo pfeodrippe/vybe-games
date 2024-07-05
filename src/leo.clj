@@ -110,15 +110,18 @@
   (let [{:keys [render-texture shadowmap-shader dither-shader noise-blur-shader]}
         w
 
-        _ (do ;; For dev mode.
+        _ (do ;; For dev mode, you can run this.
             (vg/run-reloadable-commands!)
+            ;; This will set and reevaluate the default systems (you can call this
+            ;; during setup if you are not going to modify any of these later).
             (vg/default-systems w)
+            ;; Progress the run, systems will run here.
             (vf/progress w (vr.c/get-frame-time)))
 
         p (fn [& ks]
             (vf/path (vec (concat [:my/model] ks))))
 
-        phys (get-in w [:vg/phys vj/PhysicsSystem])
+        phys (get-in w [(vg/root) vj/PhysicsSystem])
 
         _ (do (def w w)
               (def p p)
@@ -138,7 +141,7 @@
 
                    :else
                    1))]
-      (vf/with-each w [player [:inout vg/AnimationPlayer]
+      (vf/with-each w [player [:mut vg/AnimationPlayer]
                        _ :vg/active
                        _loop [:maybe :vg.anim/loop]
                        started [:maybe :vg.anim/started]
@@ -157,7 +160,7 @@
                      [_ c] [:vg.anim/target-component :*]
                      {:keys [timeline_count values timeline]} vg/AnimationChannel
                      player [:meta {:flags #{:up :cascade}
-                                    :inout :inout}
+                                    :inout :mut}
                              vg/AnimationPlayer]
                      _ [:meta {:flags #{:up}} :vg/active]
                      e :vf/entity
@@ -256,8 +259,7 @@
                                                       :motion_type (jolt/JPC_MOTION_TYPE_DYNAMIC)
                                                       :object_layer :vj.layer/moving}))
                                   {:keys [mesh material]} (vg/gen-cube {:x 0.5 :y 0.5 :z 0.5} (rand-int 10))]
-                              [(vf/path [:vg/phys (keyword (str "vj-" (:id body)))])
-                               [mesh material body phys]])))
+                              [(vg/body-path body) [mesh material body phys]])))
                     (into {})))
 
         (key (raylib/KEY_D))
@@ -266,16 +268,15 @@
                               [:vg/enabled])})
 
         (key (raylib/KEY_SPACE))
-        (let [[old-entity new-entity] (if (contains? (w (p :vg/camera-active)) (p :vg.gltf/CameraFar))
-                                        [(p :vg.gltf/CameraFar) (p :vg.gltf/Camera)]
-                                        [(p :vg.gltf/Camera) (p :vg.gltf/CameraFar)])]
-          (-> w
-              ;; TODO Use a union or similar here.
-              (merge {(p :vg/camera-active)
-                      [new-entity
-                       (vf/del old-entity)
-                       (vf/ref new-entity [vg/Transform :global])
-                       (vf/ref new-entity vg/Camera)]})))
+        (vf/with-each w [_ :vg/camera-active
+                         e :vf/entity]
+          (if (= e (w (p :vg.gltf/CameraFar)))
+            (assoc w (p :vg.gltf/Camera) [:vg/camera-active])
+            (assoc w (p :vg.gltf/CameraFar) [:vg/camera-active]))
+          #_(println :aa (= e (vf/ent w (p :vg.gltf/CameraFar))))
+          #_(if (contains? (= e (vf/ent w (p :vg.gltf/CameraFar))))
+              [(p :vg.gltf/CameraFar) (p :vg.gltf/Camera)]
+              [(p :vg.gltf/Camera) (p :vg.gltf/CameraFar)]))
 
         (key (raylib/KEY_M))
         (-> w
@@ -351,76 +352,35 @@
       (vj/body-ids phys)
       (mapv :position (vj/bodies phys))
 
-      (vf/with-each w [#_ #_i [vg/Int :vj/body-id]
-                       #_ #_phys [:src :vg/phys vj/PhysicsSystem]
-                       [_ mesh-entity] [:vg/refers :*]]
-        (vf/get-name w mesh-entity))
-
-      (w (vf/path [:vg/phys (keyword (str "vj-" (first (vj/body-ids phys))))]))
-
       ())
 
     #_ (init)
 
-    ;; -- Mouse.
-    (let [{:keys [position direction]} (-> (vr.c/get-mouse-position)
-                                           (vr.c/vy-get-screen-to-world-ray
-                                            (get-in w [(p :vg/camera-active) vg/Camera])))
-          direction (mapv #(* % 10000) (vals direction))
-          body (vj/cast-ray phys position direction)]
-      (if-let [pos (some-> (vj/position body)
-                           vg/Translation
-                           (assoc :y (+ (:y (:max (vj/world-bounds body)))
-                                        0.3)))]
+    ;; -- Raycast.
+    (vf/with-observer w [:vf/name :observer/on-raycast-click
+                         _ [:event :vg/on-click]
+                         {:keys [id]} [:filter vg/Eid]]
+      (let [c (fn [k] (vf/path [id k]))]
+        (merge w
+               (if (contains? (w (c :vg.gltf.anim/CubeDown)) :vg/selected)
+                 {(c :vg.gltf.anim/CubeDown) [(vf/del :vg/active) (vf/del :vg/selected)]
+                  (c :vg.gltf.anim/CubeUp) [:vg/active]}
+                 {(c :vg.gltf.anim/CubeDown) [:vg/active]
+                  (c :vg.gltf.anim/CubeUp) [(vf/del :vg/active) (vf/del :vg/selected)]}))))
 
-        (when-let [[_ e] (-> (get-in w [(vf/path [:vg/phys (keyword (str "vj-" (:id body)))])
-                                        [:vg/refers :_]])
-                             first)]
-          #_(println :pos pos)
-          (if (get-in w [e [:vg/raycast :vg/enabled]])
-            (do (merge w {(p :vg.gltf/Sphere)
-                          [pos]})
-                (when (vr.c/is-mouse-button-pressed (raylib/MOUSE_BUTTON_LEFT))
-                  #_(println :AAAA (vf/get-name e))
-                  (let [c (fn [k] (vf/path [e k]))]
-                    (merge w
-                           (if (contains? (w (c :vg.gltf.anim/CubeDown)) :vg/selected)
-                             {(c :vg.gltf.anim/CubeDown) [(vf/del :vg/active) (vf/del :vg/selected)]
-                              (c :vg.gltf.anim/CubeUp) [:vg/active]}
-                             {(c :vg.gltf.anim/CubeDown) [:vg/active]
-                              (c :vg.gltf.anim/CubeUp) [(vf/del :vg/active) (vf/del :vg/selected)]})
-                           #_{:vg/mouse [[:vg/mouse-clicked e]]}))))
-            (merge w {(p :vg.gltf/Sphere) [(vg/Translation [-10 -10 -10])]})))
-        (when-not (= (get-in w [(p :vg.gltf/Sphere) vg/Translation])
-                     (vg/Translation [-10 -10 -10]))
-          (merge w {(p :vg.gltf/Sphere) [(vg/Translation [-10 -10 -10])]}))))
+    (vf/with-observer w [:vf/name :observer/on-raycast-hover
+                         _ [:event :vg/on-hover]
+                         body [:filter vj/VyBody]]
+      (merge w {(p :vg.gltf/Sphere) [(assoc (-> body vj/position vg/Translation)
+                                            :y (+ (:y (:max (vj/world-bounds body)))
+                                                  0.3))]}))
 
     #_(init)
-
     #_(vf.c/ecs-log-set-level 3)
 
-    #_(vr.c/set-target-fps 60)
-
-    (vf/with-observer w [:vf/name :observer/on-contact-added
-                         :vf/events #{vg/OnContactAdded}
-                         _ :_
-                         it :vf/iter
-                         e :vf/entity]
-      (let [{:keys [body-1 body-2]} (->> (vp/p->map (:param it) vg/OnContactAdded)
-                                         :body-1)]
-        [(:id body-1) (:id body-2)]))
-
-    (comment
-
-      (vr/t (doseq [_ (range 10)] (vf/event! w :ddenti :afa)))
-
-      (vf/with-each w [e :vf/entity
-                       _ (flecs/EcsObserver)]
-        (vf/get-name e))
-
-      (vf/alive? (:observer/on-click w)))
-
-    ()
+    #_(vf/with-observer w [:vf/name :observer/on-contact-added
+                           {:keys [body-1 body-2]} [:event vg/OnContactAdded]]
+        #_(println [(:id body-1) (:id body-2)]))
 
     #_(init)
 
@@ -429,8 +389,8 @@
       (vj/update! phys delta-time))
 
     ;; Update model meshes from the Jolt bodies.
-    (vf/with-each w [translation [:meta {:inout :out} vg/Translation]
-                     rotation [:meta {:inout :out} vg/Rotation]
+    (vf/with-each w [translation [:mut vg/Translation]
+                     rotation [:mut vg/Rotation]
                      _ :vg/dynamic
                      body vj/VyBody]
       #_(println :aaaa 323)
@@ -450,11 +410,11 @@
                           (if (< (:y translation) -20)
                             (do #_(println :REMOVVVV id :position position :rotation rotation)
                                 #_(println (w (vf/path [:vg/phys (keyword (str "vj-" id))])))
-                                (dissoc w (vf/path [:vg/phys (keyword (str "vj-" (:id body)))])))
-                            {(vf/path [:vg/phys (keyword (str "vj-" (:id body)))])
+                                (dissoc w (vg/body-path body)))
+                            [(vg/body-path body)
                              [translation (vg/Rotation rotation)
                               (vg/Scale [1 1 1])
-                              vg/Transform [vg/Transform :global]]}))))
+                              vg/Transform [vg/Transform :global]]]))))
                 (into {})))
 
     (let [draw-scene (fn [w]
@@ -473,10 +433,12 @@
                                                                    [(get dither-shader vg/Shader)
                                                                     {:u_offsets (vg/Vector3 (mapv #(* % (+ 0.6 (wobble 0.3)))
                                                                                                   [0.02 (+ 0.016 (wobble 0.01))
-                                                                                                   (+ 0.040 (wobble 0.01))]))}] ]}
+                                                                                                   (+ 0.040 (wobble 0.01))]))}]]}
         (vr.c/clear-background (vr/Color "#A98B39"))
-        (vg/with-camera (get-in w [(p :vg/camera-active) vg/Camera])
-          (draw-scene w)))
+        (vf/with-each w [_ :vg/camera-active
+                         camera vg/Camera]
+          (vg/with-camera camera
+            (draw-scene w))))
 
       ;; Draw to the screen.
       (vg/with-drawing

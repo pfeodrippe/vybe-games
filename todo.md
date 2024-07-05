@@ -91,9 +91,13 @@
     - [x] jolt contact listener
       - [x] build contact listener
       - [x] send it to an observer
-    - [ ] fix
-      - [ ] `on-contact-added` should be called with a lock, probably
-    - [ ] send mouse hover to an observer
+    - [x] fix
+      - [x] `on-contact-added` should be called with a lock, probably
+    - [x] add :event
+    - [x] raycast events
+      - [x] create :vf/unique trait so we can have components that can be attached to only one  entity
+      - [x] get active camera
+      - [x] read raycast events
     - [ ] sound
   - [ ] click on a object
     - [ ] sound
@@ -109,14 +113,17 @@
   - [ ] collisions
   - [ ] make monitors out of queries
     - [ ] use `ecs_metric` or `ecs_world_stats`
+  - [ ] system ordering
 - [ ] support multiple collision layers
   - [ ] sensor layer?
 - [ ] state machine
 - [ ] fix Blender linked data
+- [ ] listener for body activation/deactivation
 - [ ] make vg/Rotation always normalized
 - [ ] support custom collider from GLTF (blender)
 - [ ] use same type for vector3/vector4 etc
-- [ ] put resources in world so we can get rid of `env`
+- [x] put resources in world so we can get rid of `env`
+- [ ] check if we can fix the `merge` issue with flecs world
 - [ ] particles
   - [ ] grains in the air (maybe 1 pixel?)
   - [ ] represents wind?
