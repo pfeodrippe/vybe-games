@@ -11,6 +11,9 @@
    [clojure.java.io :as io]
    [vybe.jolt :as vj]
    [vybe.jolt.c :as vj.c]
+   [overtone.sc.machinery.server.connection :as ov.conn]
+   [vybe.util :as vy.u]
+   #_[overtone.core :refer :all]
    #_[overtone.live :refer :all]
    #_[clj-java-decompiler.core :refer [decompile disassemble]])
   (:import
@@ -18,9 +21,32 @@
    (org.vybe.raylib raylib)
    (org.vybe.jolt jolt)))
 
+(defonce *audio-enabled? (atom false))
+
+(defn audio-enable!
+  []
+  (try
+    (ov.conn/scsynth-path)
+    (when-not @*audio-enabled?
+      (require '[overtone.core :refer :all])
+      (eval '(boot-server))
+      (reset! *audio-enabled? true))
+    (catch Exception e#
+      (vy.u/debug e#))))
+
+;; Try to enable audio.
+(audio-enable!)
+
+(defmacro sound
+  "Macro used to wrap audio calls so we can use it safely for users who
+  have overtone installed."
+  [& body]
+  (when @*audio-enabled?
+    `(do ~@body)))
+
 #_(init)
 
-#_(l/demo 0.2 (l/sin-osc 800))
+#_ (sound (demo 0.2 (sin-osc 400)))
 
 (set! *warn-on-reflection* true)
 
@@ -75,6 +101,8 @@
     #_ (def sound-d (directional [:tail later-g] :in my-bus :out_bus 0)))
 
 (comment
+
+  (boot-server)
 
   (def b (sample "/Users/pfeodrippe/Library/Application Support/ATK/sounds/stereo/Aurora_Surgit-Dies_Irae.wav"))
 
@@ -358,8 +386,10 @@
 
     ;; -- Raycast.
     (vf/with-observer w [:vf/name :observer/on-raycast-click
-                         _ [:event :vg/on-click]
+                         _ [:event :vg.raycast/on-click]
                          {:keys [id]} [:filter vg/Eid]]
+      (sound (demo 0.2 (mapv (comp sin-osc midi->hz)
+                             (repeatedly 3 #(+ (rand-int 20) 55)))))
       (let [c (fn [k] (vf/path [id k]))]
         (merge w
                (if (contains? (w (c :vg.gltf.anim/CubeDown)) :vg/selected)
@@ -369,11 +399,20 @@
                   (c :vg.gltf.anim/CubeUp) [(vf/del :vg/active) (vf/del :vg/selected)]}))))
 
     (vf/with-observer w [:vf/name :observer/on-raycast-hover
-                         _ [:event :vg/on-hover]
+                         _ [:event :vg.raycast/on-hover]
                          body [:filter vj/VyBody]]
       (merge w {(p :vg.gltf/Sphere) [(assoc (-> body vj/position vg/Translation)
                                             :y (+ (:y (:max (vj/world-bounds body)))
                                                   0.3))]}))
+
+    (vf/with-observer w [:vf/name :observer/on-raycast-enter
+                         _ [:event :vg.raycast/on-enter]
+                         body [:filter vj/VyBody]]
+      (sound (demo 0.1 (sin-osc (midi->hz (+ (rand-int 20) 50))))))
+
+    (vf/with-observer w [:vf/name :observer/on-raycast-leave
+                         _ [:event :vg.raycast/on-leave]]
+      (merge w {(p :vg.gltf/Sphere) [(vg/Translation [-100 -100 -100])]}))
 
     #_(init)
     #_(vf.c/ecs-log-set-level 3)
