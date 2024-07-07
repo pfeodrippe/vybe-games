@@ -26,7 +26,7 @@
   - [x] use it on game
   - [x] active camera should be the one with the sound
   - [x] switch using space key
-- [ ] anim + physics + colliders
+- [x] anim + physics + colliders
   - [x] cube
     - [x] animation
   - [x] idle/run animation
@@ -98,9 +98,9 @@
       - [x] create :vf/unique trait so we can have components that can be attached to only one  entity
       - [x] get active camera
       - [x] read raycast events
-    - [ ] sound
-  - [ ] click on a object
-    - [ ] sound
+    - [x] sound
+  - [x] click on a object
+    - [x] sound
 - [ ] maybe run flecs in commands if sent from the REPL
   - [ ] add JVM property for PRD usage so we can disable these
 - [x] add physics debug drawing
