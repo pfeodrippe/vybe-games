@@ -32,10 +32,11 @@
       (eval '(boot-server))
       (reset! *audio-enabled? true))
     (catch Exception e#
-      (vy.u/debug e#))))
+      (println e#)
+      (println "\n\n ----- WARNING -----\nIf you want audio working for this game, download SuperCollider at\nhttps://supercollider.github.io/downloads.html"))))
 
 ;; Try to enable audio.
-(audio-enable!)
+#_(audio-enable!)
 
 (defmacro sound
   "Macro used to wrap audio calls so we can use it safely for users who
@@ -170,14 +171,16 @@
                    :else
                    1))]
       (vf/with-each w [player [:mut vg/AnimationPlayer]
-                       _ :vg/active
+                       _ :vg.anim/active
                        _loop [:maybe :vg.anim/loop]
                        started [:maybe :vg.anim/started]
+                       stop [:maybe :vg.anim/stop]
                        e :vf/entity]
-        (if (and started (== (:current_time player) 0))
-          (-> e
-              (disj :vg/active :vg.anim/started)
-              (conj :vg/selected))
+        (if stop
+          (do (assoc player :current_time 0)
+              (-> e
+                  (disj :vg.anim/active :vg.anim/started :vg.anim/stop)
+                  (conj :vg/selected)))
           (do
             (conj e :vg.anim/started)
             (update player :current_time + (* delta-time step))))))
@@ -190,11 +193,12 @@
                      player [:meta {:flags #{:up :cascade}
                                     :inout :mut}
                              vg/AnimationPlayer]
-                     _ [:meta {:flags #{:up}} :vg/active]
+                     parent-e [:vf/entity {:flags #{:up}} :vg.anim/active]
                      e :vf/entity
                      [_ n] [:vf/child-of :*]]
       #_(def e e)
       #_(def kk (vf/get-name w n))
+      #_(println :aaa (vf/get-name parent-e))
 
       (let [values (vp/arr values timeline_count c)
             timeline (vp/arr timeline timeline_count :float)
@@ -223,7 +227,7 @@
                           1
                           (/ 1 (* d d 1)))]
                 #_(ctl sound-d :azim azim :elev elev :amp amp :distance d)))
-          (assoc player :current_time 0))
+          (conj parent-e :vg.anim/stop))
 
         #_(def node node)
         #_(vf/make-entity w node)
@@ -309,20 +313,21 @@
         (key (raylib/KEY_M))
         (-> w
             (merge
-             {(p :vg.gltf/Sphere :vg.gltf.anim/Right) [(vf/del :vg/active)]
-              (p :vg.gltf/Sphere :vg.gltf.anim/Left)[:vg/active]}
-             (let [c (fn [k] (p :vg.gltf/Cube.002 k))]
-               (if (contains? (w (c :vg.gltf.anim/CubeDown)) :vg/selected)
-                 {(c :vg.gltf.anim/CubeDown) [(vf/del :vg/active) (vf/del :vg/selected)]
-                  (c :vg.gltf.anim/CubeUp) [:vg/active]}
-                 {(c :vg.gltf.anim/CubeDown) [:vg/active]
-                  (c :vg.gltf.anim/CubeUp) [(vf/del :vg/active) (vf/del :vg/selected)]}))
-             (let [c (fn [k] (p :vg.gltf/Cube k))]
-               (if (contains? (w (c :vg.gltf.anim/CubeDown)) :vg/selected)
-                 {(c :vg.gltf.anim/CubeDown) [(vf/del :vg/active) (vf/del :vg/selected)]
-                  (c :vg.gltf.anim/CubeUp) [:vg/active]}
-                 {(c :vg.gltf.anim/CubeDown) [:vg/active]
-                  (c :vg.gltf.anim/CubeUp) [(vf/del :vg/active) (vf/del :vg/selected)]}))))))
+             {#_ #_ (p :vg.gltf/Sphere :vg.gltf.anim/Right) [(vf/del :vg.anim/active)]
+              #_ #_ (p :vg.gltf/Sphere :vg.gltf.anim/Left)[:vg.anim/active]
+              (p :vg.gltf/CameraFar :vg.gltf.anim/CameraFarAction) [:vg.anim/active]}
+             #_(let [c (fn [k] (p :vg.gltf/Cube.002 k))]
+                 (if (contains? (w (c :vg.gltf.anim/CubeDown)) :vg/selected)
+                   {(c :vg.gltf.anim/CubeDown) [(vf/del :vg.anim/active) (vf/del :vg/selected)]
+                    (c :vg.gltf.anim/CubeUp) [:vg.anim/active]}
+                   {(c :vg.gltf.anim/CubeDown) [:vg.anim/active]
+                    (c :vg.gltf.anim/CubeUp) [(vf/del :vg.anim/active) (vf/del :vg/selected)]}))
+             #_(let [c (fn [k] (p :vg.gltf/Cube k))]
+                 (if (contains? (w (c :vg.gltf.anim/CubeDown)) :vg/selected)
+                   {(c :vg.gltf.anim/CubeDown) [(vf/del :vg.anim/active) (vf/del :vg/selected)]
+                    (c :vg.gltf.anim/CubeUp) [:vg.anim/active]}
+                   {(c :vg.gltf.anim/CubeDown) [:vg.anim/active]
+                    (c :vg.gltf.anim/CubeUp) [(vf/del :vg.anim/active) (vf/del :vg/selected)]}))))))
 
     #_(vf/with-each w [_ :vg/ray-casted
                        material vr/Material
@@ -340,20 +345,20 @@
         (cond
           (key (raylib/KEY_X))
           (-> w
-              (merge {(p :vg.gltf/Armature :vg.gltf.anim/Running) [:vg/active]
-                      (p :vg.gltf/Armature :vg.gltf.anim/Idle) [(vf/del :vg/active)]})
+              (merge {(p :vg.gltf/Armature :vg.gltf.anim/Running) [:vg.anim/active]
+                      (p :vg.gltf/Armature :vg.gltf.anim/Idle) [(vf/del :vg.anim/active)]})
               (update-in [(p :vg.gltf/Armature) vg/Translation :z] + 0.018))
 
           (key (raylib/KEY_Z))
           (-> w
-              (merge {(p :vg.gltf/Armature :vg.gltf.anim/Running) [:vg/active]
-                      (p :vg.gltf/Armature :vg.gltf.anim/Idle) [(vf/del :vg/active)]})
+              (merge {(p :vg.gltf/Armature :vg.gltf.anim/Running) [:vg.anim/active]
+                      (p :vg.gltf/Armature :vg.gltf.anim/Idle) [(vf/del :vg.anim/active)]})
               (update-in [(p :vg.gltf/Armature) vg/Translation :z] - 0.018))
 
           :else
           (-> w
-              (merge {(p :vg.gltf/Armature :vg.gltf.anim/Idle) [:vg/active]
-                      (p :vg.gltf/Armature :vg.gltf.anim/Running) [(vf/del :vg/active)]}))))
+              (merge {(p :vg.gltf/Armature :vg.gltf.anim/Idle) [:vg.anim/active]
+                      (p :vg.gltf/Armature :vg.gltf.anim/Running) [(vf/del :vg.anim/active)]}))))
 
     (comment
 
@@ -384,19 +389,29 @@
 
     #_ (init)
 
+    ;; Camera systems.
+    (vf/with-system w [:vf/name :system/update-camera
+                       _ :vg/camera-active
+                       camera [:mut vg/Camera]
+                       translation vg/Translation
+                       rotation vg/Rotation]
+      (-> camera
+          (assoc-in [:camera :position] translation)
+          (assoc-in [:rotation] rotation)))
+
     ;; -- Raycast.
     (vf/with-observer w [:vf/name :observer/on-raycast-click
                          _ [:event :vg.raycast/on-click]
                          {:keys [id]} [:filter vg/Eid]]
-      (sound (demo 0.2 (mapv (comp sin-osc midi->hz)
-                             (repeatedly 3 #(+ (rand-int 20) 55)))))
+      #_(sound (demo 0.2 (mapv (comp sin-osc midi->hz)
+                               (repeatedly 3 #(+ (rand-int 20) 55)))))
       (let [c (fn [k] (vf/path [id k]))]
         (merge w
                (if (contains? (w (c :vg.gltf.anim/CubeDown)) :vg/selected)
-                 {(c :vg.gltf.anim/CubeDown) [(vf/del :vg/active) (vf/del :vg/selected)]
-                  (c :vg.gltf.anim/CubeUp) [:vg/active]}
-                 {(c :vg.gltf.anim/CubeDown) [:vg/active]
-                  (c :vg.gltf.anim/CubeUp) [(vf/del :vg/active) (vf/del :vg/selected)]}))))
+                 {(c :vg.gltf.anim/CubeDown) [(vf/del :vg.anim/active) (vf/del :vg/selected)]
+                  (c :vg.gltf.anim/CubeUp) [:vg.anim/active]}
+                 {(c :vg.gltf.anim/CubeDown) [:vg.anim/active]
+                  (c :vg.gltf.anim/CubeUp) [(vf/del :vg.anim/active) (vf/del :vg/selected)]}))))
 
     (vf/with-observer w [:vf/name :observer/on-raycast-hover
                          _ [:event :vg.raycast/on-hover]
@@ -408,7 +423,7 @@
     (vf/with-observer w [:vf/name :observer/on-raycast-enter
                          _ [:event :vg.raycast/on-enter]
                          body [:filter vj/VyBody]]
-      (sound (demo 0.1 (sin-osc (midi->hz (+ (rand-int 20) 50))))))
+      #_(sound (demo 0.1 (sin-osc (midi->hz (+ (rand-int 20) 50))))))
 
     (vf/with-observer w [:vf/name :observer/on-raycast-leave
                          _ [:event :vg.raycast/on-leave]]
@@ -475,7 +490,7 @@
                                                                                                    (+ 0.040 (wobble 0.01))]))}]]}
         (vr.c/clear-background (vr/Color "#A98B39"))
         (vf/with-each w [_ :vg/camera-active
-                         camera vg/Camera]
+                         camera [:mut vg/Camera]]
           (vg/with-camera camera
             (draw-scene w))))
 
@@ -529,11 +544,26 @@
 
 (comment
 
+  (get (w (p :vg.gltf/CameraFar)) vg/Translation)
+  (get (w (p :vg.gltf/CameraFar)) vg/Rotation)
+
   ;; For enabling the REST interface (explorer).
-  (vf.c/ecs-set-id w
-                   (flecs/FLECS_IDEcsRestID_)
-                   (flecs/FLECS_IDEcsRestID_)
-                   (.byteSize (.layout vf/Rest))
-                   (vf/Rest))
+  (vr/t
+    (vf.c/ecs-set-id w
+                     (flecs/FLECS_IDEcsRestID_)
+                     (flecs/FLECS_IDEcsRestID_)
+                     (.byteSize (.layout vf/Rest))
+                     (vf/Rest)))
+
+  (import 'org.vybe.flecs.ecs_module_action_t)
+  (import 'org.vybe.flecs.ecs_module_action_t$Function)
+
+  (defn aaa []
+    (vr/t
+      (vf.c/ecs-import w
+                       (flecs/FlecsRestImport$address)
+                       #_(vp/with-apply ecs_module_action_t
+                           [_ _world])
+                       "FlecsRest")))
 
   ())

@@ -101,11 +101,6 @@
     - [x] sound
   - [x] click on a object
     - [x] sound
-- [ ] maybe run flecs in commands if sent from the REPL
-  - [ ] add JVM property for PRD usage so we can disable these
-- [x] add physics debug drawing
-- [ ] fix parent object transform for the physic bodies
-- [ ] build clouds with white cubes
 - [ ] time-series charts for monitoring
   - [ ] systems/observers triggering
   - [ ] events
@@ -114,6 +109,21 @@
   - [ ] make monitors out of queries
     - [ ] use `ecs_metric` or `ecs_world_stats`
   - [ ] system ordering
+- [ ] small game
+  - [ ] try to open a box, but it’s from someone else
+  - [ ] Try to move a pillar, but it’s public property
+  - [ ] Buy a stolen gun
+  - [ ] shoot some monster
+  - [ ] Monster’s family appears crying
+  - [ ] A procissão begins
+  - [ ] you are judged and sentenced to prison
+    - this is the end
+  - A follow up to this may be a multiplayer game
+- [ ] maybe run flecs in commands if sent from the REPL
+  - [ ] add JVM property for PRD usage so we can disable these
+- [x] add physics debug drawing
+- [ ] fix parent object transform for the physic bodies
+- [ ] build clouds with white cubes
 - [ ] support multiple collision layers
   - [ ] sensor layer?
 - [ ] state machine
