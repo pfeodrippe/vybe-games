@@ -126,8 +126,27 @@
   ())
 
 (defn lerp
-  [p1 p2]
-  (+ p1 (* 0.6 (- p2 p1))))
+  ([a b]
+   (lerp a b 0.6))
+  ([a b t]
+   (+ a (* t (- b a)))))
+
+(defn lerp-p
+  [p1 p2 t]
+  (let [c (vp/component p1)]
+    (c (cond
+         (vp/layout-equal? c vg/Vector3)
+         (vr.c/vector-3-lerp p1 p2 t)
+
+         (vp/layout-equal? c vg/Rotation)
+         (vr.c/quaternion-slerp p1 p2 t)
+
+         :else
+         (mapv (fn [field]
+                 (lerp (get p1 field)
+                       (get p2 field)
+                       t))
+               (keys p1))))))
 
 #_ (init)
 
@@ -203,7 +222,13 @@
       (let [values (vp/arr values timeline_count c)
             timeline (vp/arr timeline timeline_count :float)
             idx* (first (indices #(>= % (:current_time player)) timeline))
-            idx (max (dec (or idx* (count timeline))) 0)]
+            idx (max (dec (or idx* (count timeline))) 0)
+            t (when idx*
+                (/ (- (:current_time player)
+                      (nth timeline idx))
+                   (- (nth timeline (inc idx))
+                      (nth timeline idx))))]
+
         (if idx*
           (when (= c vg/Translation)
             ;; Play some sound.
@@ -229,10 +254,11 @@
                 #_(ctl sound-d :azim azim :elev elev :amp amp :distance d)))
           (conj parent-e :vg.anim/stop))
 
-        #_(def node node)
-        #_(vf/make-entity w node)
-
-        (merge w {node [(nth values idx)]})
+        (merge w {node [(if t
+                          (lerp-p (nth values idx)
+                                  (nth values (inc idx))
+                                  t)
+                          (nth values idx))]})
 
         ;; For blending.
         #_(merge w {node {:vg.anim/frame-animation [[(nth values idx) n]]}})))
@@ -389,16 +415,6 @@
 
     #_ (init)
 
-    ;; Camera systems.
-    (vf/with-system w [:vf/name :system/update-camera
-                       _ :vg/camera-active
-                       camera [:mut vg/Camera]
-                       translation vg/Translation
-                       rotation vg/Rotation]
-      (-> camera
-          (assoc-in [:camera :position] translation)
-          (assoc-in [:rotation] rotation)))
-
     ;; -- Raycast.
     (vf/with-observer w [:vf/name :observer/on-raycast-click
                          _ [:event :vg.raycast/on-click]
@@ -429,6 +445,27 @@
                          _ [:event :vg.raycast/on-leave]]
       (merge w {(p :vg.gltf/Sphere) [(vg/Translation [-100 -100 -100])]}))
 
+    ;; Camera systems.
+    (vf/with-system w [:vf/name :system/update-camera
+                       _ :vg/camera-active
+                       camera [:mut vg/Camera]
+                       translation vg/Translation
+                       rotation vg/Rotation
+                       e :vf/entity]
+      (let [cam-pos (get-in camera [:camera :position])
+            vel (vg/Velocity (mapv #(/ % delta-time)
+                                   [(- (:x translation)
+                                       (:x cam-pos))
+                                    (- (:y translation)
+                                       (:y cam-pos))
+                                    (- (:z translation)
+                                       (:z cam-pos))]))]
+        (conj e vel))
+
+      (-> camera
+          (assoc-in [:camera :position] translation)
+          (assoc-in [:rotation] rotation)))
+
     #_(init)
     #_(vf.c/ecs-log-set-level 3)
 
@@ -447,7 +484,6 @@
                      rotation [:mut vg/Rotation]
                      _ :vg/dynamic
                      body vj/VyBody]
-      #_(println :aaaa 323)
       (let [pos (vj/position body)
             rot (vj/rotation body)]
         (when (and pos rot)
@@ -480,17 +516,23 @@
       ;; -- Drawing
       (vg/draw-lights w #_default-shader (get shadowmap-shader vg/Shader) draw-scene)
 
-      (vg/with-multipass (get render-texture vr/RenderTexture2D) {:shaders
-                                                                  [[(get noise-blur-shader vg/Shader)
-                                                                    {:u_radius (+ 1.0 (rand 1))}]
+      (vf/with-each w [_ :vg/camera-active
+                       camera [:mut vg/Camera]
+                       velocity [:maybe vg/Velocity]
+                       e :vf/entity]
+        #_(println :e (vf/get-name e) :aaa (vr.c/vector-3-length velocity))
+        (vg/with-multipass (get render-texture vr/RenderTexture2D) {:shaders
+                                                                    [[(get noise-blur-shader vg/Shader)
+                                                                      {:u_radius (+ 1.0
+                                                                                    #_(* (vr.c/vector-3-length velocity) 0.1)
+                                                                                    (rand 1))}]
 
-                                                                   [(get dither-shader vg/Shader)
-                                                                    {:u_offsets (vg/Vector3 (mapv #(* % (+ 0.6 (wobble 0.3)))
-                                                                                                  [0.02 (+ 0.016 (wobble 0.01))
-                                                                                                   (+ 0.040 (wobble 0.01))]))}]]}
-        (vr.c/clear-background (vr/Color "#A98B39"))
-        (vf/with-each w [_ :vg/camera-active
-                         camera [:mut vg/Camera]]
+                                                                     [(get dither-shader vg/Shader)
+                                                                      {:u_offsets (vg/Vector3 (mapv #(* % (+ 0.6
+                                                                                                             (wobble 0.3)))
+                                                                                                    [0.02 (+ 0.016 (wobble 0.01))
+                                                                                                     (+ 0.040 (wobble 0.01))]))}]]}
+          (vr.c/clear-background (vr/Color "#A98B39"))
           (vg/with-camera camera
             (draw-scene w))))
 
