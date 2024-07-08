@@ -101,6 +101,7 @@
     - [x] sound
   - [x] click on a object
     - [x] sound
+- [x] interpolate animation
 - [ ] time-series charts for monitoring
   - [ ] systems/observers triggering
   - [ ] events
@@ -109,6 +110,7 @@
   - [ ] make monitors out of queries
     - [ ] use `ecs_metric` or `ecs_world_stats`
   - [ ] system ordering
+- [ ] document tags + components
 - [ ] small game
   - [ ] try to open a box, but it’s from someone else
   - [ ] Try to move a pillar, but it’s public property
