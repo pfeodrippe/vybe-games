@@ -102,15 +102,20 @@
   - [x] click on a object
     - [x] sound
 - [x] interpolate animation
-- [ ] time-series charts for monitoring
-  - [ ] systems/observers triggering
-  - [ ] events
-  - [ ] run flecs commands in the main thread only so we don't have weirdness
-  - [ ] collisions
-  - [ ] make monitors out of queries
-    - [ ] use `ecs_metric` or `ecs_world_stats`
-  - [ ] system ordering
-- [ ] document tags + components
+- [x] time-series charts for monitoring
+  - [x] how to visualize the data?
+    - clerk
+  - [x] systems triggering
+  - [x] observers triggering
+  - [-] charts derived from queries
+- [-] add ability to use a keyword as a pair
+  - not really needed
+- [x] document tags + components
+  - [x] move components to vybe.type
+  - [x] docstring for components
+  - [x] flecs tags
+  - [x] game tags
+  - [x] clerk docs
 - [ ] small game
   - [ ] try to open a box, but it’s from someone else
   - [ ] Try to move a pillar, but it’s public property
@@ -133,6 +138,7 @@
 - [ ] listener for body activation/deactivation
 - [ ] make vg/Rotation always normalized
 - [ ] support custom collider from GLTF (blender)
+- [ ] run flecs commands in the main thread only so we don't have weirdness
 - [ ] use same type for vector3/vector4 etc
 - [x] put resources in world so we can get rid of `env`
 - [ ] check if we can fix the `merge` issue with flecs world
