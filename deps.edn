@@ -1,6 +1,11 @@
 {:deps
- {io.github.pfeodrippe/vybe {:local/root "../vybe"
-                             #_ #_:mvn/version "0.1.75"}}
+ {io.github.pfeodrippe/vybe {:mvn/version "0.1.98"} #_{:local/root "../vybe"}
+
+  ;; Clerk does not work out of the box for Java 22 projects at the moment,
+  ;; so we patch it.
+  io.github.nextjournal/markdown {:git/sha "6683c48dfdb23404a23057817b6ac3acf0310bca"}
+  io.github.nextjournal/clerk {:mvn/version "0.16.1016"
+                               :exclusions [io.github.nextjournal/markdown]}}
 
  :aliases
  {:dev {:jvm-opts ["--enable-native-access=ALL-UNNAMED"
