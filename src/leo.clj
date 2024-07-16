@@ -154,21 +154,47 @@
 (def screen-width 600)
 (def screen-height 600)
 
+(defn update-jolt-meshes
+  [w phys]
+  ;; Update jolt meshes (for debugging).
+  (merge w
+         (->> (vj/bodies-active phys)
+              #_(vj/bodies phys)
+              (keep (fn [body]
+                      (let [position (vj/position body)
+                            rotation (vj/rotation body)
+                            translation (vt/Translation position)]
+                        (if (< (:y translation) -20)
+                          (do #_(println :REMOVVVV id :position position :rotation rotation)
+                              #_(println (w (vf/path [:vg/phys (keyword (str "vj-" id))])))
+                              (dissoc w (vg/body-path body)))
+                          [(vg/body-path body)
+                           [translation (vt/Rotation rotation)
+                            (vt/Scale [1 1 1])
+                            vt/Transform [vt/Transform :global]]]))))
+              (into {}))
+
+         #_(init)))
+
 (defn draw
   [w delta-time]
-  ;; This will set and reevaluate the default systems (you can call this
-  ;; during setup if you are not going to modify any of these later).
-  (vg/default-systems w)
-  ;; Progress by running the systems.
-  (vf/progress w delta-time)
-
   (let [{:keys [render-texture shadowmap-shader dither-shader noise-blur-shader]}
         w
 
+        phys (get-in w [(vg/root) vj/PhysicsSystem])
+
+        _ (do
+            ;; This will set and reevaluate the default systems (you can call this
+            ;; during setup if you are not going to modify any of these later).
+            (vg/default-systems w)
+            (vf/with-deferred w
+              (vj/update! phys delta-time))
+            (update-jolt-meshes w phys)
+            ;; Progress by running the systems.
+            (vf/progress w delta-time))
+
         p (fn [& ks]
             (vf/path (vec (concat [:my/model] ks))))
-
-        phys (get-in w [(vg/root) vj/PhysicsSystem])
 
         _ (do (def w w)
               (def p p)
@@ -189,9 +215,9 @@
                    :else
                    1))]
       (vf/with-each w [player [:mut vt/AnimationPlayer]
+                       {speed :v} [:maybe {:flags #{:up}} [vt/Scalar :vg.anim/speed]]
                        _ :vg.anim/active
                        _loop [:maybe :vg.anim/loop]
-                       started [:maybe :vg.anim/started]
                        stop [:maybe :vg.anim/stop]
                        e :vf/entity]
         (if stop
@@ -201,7 +227,7 @@
                   (conj :vg/selected)))
           (do
             (conj e :vg.anim/started)
-            (update player :current_time + (* delta-time step))))))
+            (update player :current_time + (* delta-time step (or speed 1)))))))
 
     #_ (init)
 
@@ -293,6 +319,11 @@
           (dissoc w (vf/path [e :vg.anim/frame-animation]))))
 
     #_ (init)
+
+    (vf/with-each w [_ :vg.gltf.anim/my-cubeAction.005
+                     _ :vg/animation
+                     e :vf/entity]
+      (conj e :vg.anim/active))
 
     ;; -- Keyboard
     (let [key #(vr.c/is-key-pressed %1)
@@ -485,15 +516,12 @@
         #_(println [(:id body-1) (:id body-2)]))
 
     ;; -- Physics.
-    (vf/with-deferred w
-      (vj/update! phys delta-time))
-
     ;; Update model meshes from the Jolt bodies.
     (vf/with-system w [:vf/name :system/update-model-meshes
                        translation [:out vt/Translation]
                        rotation [:out vt/Rotation]
                        body vj/VyBody
-                       :vf/always true  ; TODO We shouldn't need this if we get the activate/deactivate events
+                       :vf/always true ; TODO We shouldn't need this if we get the activate/deactivate events
                        #_ #_:vf/disabled true
                        _ :vg/dynamic
                        it :vf/iter]
@@ -503,30 +531,14 @@
           (merge rotation (vt/Rotation rot))
           (merge translation (vt/Translation pos)))))
 
-    ;; Update jolt meshes (for debugging).
-    (merge w
-           (->> (vj/bodies-active phys)
-                (keep (fn [body]
-                        (let [position (vj/position body)
-                              rotation (vj/rotation body)
-                              translation (vt/Translation position)]
-                          (if (< (:y translation) -20)
-                            (do #_(println :REMOVVVV id :position position :rotation rotation)
-                                #_(println (w (vf/path [:vg/phys (keyword (str "vj-" id))])))
-                                (dissoc w (vg/body-path body)))
-                            [(vg/body-path body)
-                             [translation (vt/Rotation rotation)
-                              (vt/Scale [1 1 1])
-                              vt/Transform [vt/Transform :global]]]))))
-                (into {})))
-
-    #_(init)
-
-    (let [draw-scene (fn [w]
-                       #_(vr.c/draw-grid 30 0.5)
-                       (if (get-in w [:vg/debug :vg/enabled])
-                         (vg/draw-debug w)
-                         (vg/draw-scene w)))]
+    (let [draw-scene (do (fn [w]
+                           #_(vr.c/draw-grid 30 0.5)
+                           (if (get-in w [:vg/debug :vg/enabled])
+                             (vg/draw-debug w)
+                             (vg/draw-scene w)))
+                         #_(fn [w]
+                             (vg/draw-debug w)
+                             (vg/draw-scene w)))]
 
       ;; -- Drawing
       (vg/draw-lights w #_default-shader (get shadowmap-shader vt/Shader) draw-scene)
