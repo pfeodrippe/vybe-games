@@ -13,7 +13,6 @@
    [vybe.jolt.c :as vj.c]
    [overtone.sc.machinery.server.connection :as ov.conn]
    [vybe.util :as vy.u]
-   [vybe.clerk :as vc]
    [vybe.type :as vt]
    #_[overtone.core :refer :all]
    #_[overtone.live :refer :all]
@@ -583,11 +582,9 @@
     (vr.c/draw-rectangle 300 50 100 200 (vr/Color [255 100 10 255])))
 
   #_ (init)
-  #_(vf/debug-level! 3)
-  (vy.u/debug-set! true)
-  (vc/init! {})
 
   (let [w (vf/make-world)]
+    (vg/debug-init! w)
     (vg/start! w screen-width screen-height #'draw
                (fn [w]
                  (-> w
@@ -596,8 +593,7 @@
                      (vg/shader-program :dither-shader "shaders/dither.fs")
                      (vg/shader-program :noise-blur-shader "shaders/noise_blur_2d.fs")
                      (vg/shader-program :default-shader)
-                     (merge {:render-texture [(vr/RenderTexture2D (vr.c/load-render-texture screen-width screen-height))]})
-                     vf/rest-enable!)))))
+                     (merge {:render-texture [(vr/RenderTexture2D (vr.c/load-render-texture screen-width screen-height))]}))))))
 #_(init)
 
 #_(vr/t (vf/rest-enable! w))
