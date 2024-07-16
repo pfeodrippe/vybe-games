@@ -584,7 +584,9 @@
   #_ (init)
 
   (let [w (vf/make-world)]
-    (vg/debug-init! w)
+    ;; If you want to enable debugging (debug messages + clerk + flecs explorer),
+    ;; uncomment line below.
+    #_(vg/debug-init! w)
     (vg/start! w screen-width screen-height #'draw
                (fn [w]
                  (-> w
