@@ -1,5 +1,5 @@
 {:deps
- {io.github.pfeodrippe/vybe {:mvn/version "0.1.98"} #_{:local/root "../vybe"}
+ {io.github.pfeodrippe/vybe #_{:mvn/version "0.1.98"} {:local/root "../vybe"}
 
   ;; Clerk does not work out of the box for Java 22 projects at the moment,
   ;; so we patch it.

@@ -116,8 +116,18 @@
   - [x] flecs tags
   - [x] game tags
   - [x] clerk docs
-- [ ] small game
+- [x] small game
+  - [-] fix scaled rotation
+    - [x] are we able to use the latest c++ jolt?
+      - yes
+    - [-] rotations is still borked
+    - just scale this shit and move on
   - [ ] try to open a box, but it’s from someone else
+    - [ ] build simple character
+    - [ ] box
+      - [ ] build
+      - [ ] animation
+    - [ ] box opening sound
   - [ ] Try to move a pillar, but it’s public property
   - [ ] Buy a stolen gun
   - [ ] shoot some monster
@@ -126,6 +136,9 @@
   - [ ] you are judged and sentenced to prison
     - this is the end
   - A follow up to this may be a multiplayer game
+- [ ] list animations in clerk
+- [ ] list defcomps docs in clerk
+- [ ] support soft bodies
 - [ ] maybe run flecs in commands if sent from the REPL
   - [ ] add JVM property for PRD usage so we can disable these
 - [x] add physics debug drawing
