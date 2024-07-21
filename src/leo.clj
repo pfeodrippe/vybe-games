@@ -320,7 +320,9 @@
 
     #_ (init)
 
-    (vf/with-each w [_ :vg.gltf.anim/my-cubeAction.005
+    (vf/with-each w [_ [:or
+                        :vg.gltf.anim/my-cubeAction.005
+                        :vg.gltf.anim/ProjectAction]
                      _ :vg/animation
                      e :vf/entity]
       (conj e :vg.anim/active))
