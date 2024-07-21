@@ -116,6 +116,36 @@
   - [x] flecs tags
   - [x] game tags
   - [x] clerk docs
+- [ ] compile to multiple OSs
+  - [x] create github workflow
+    - [x] macos
+      - [x] workflow
+      - [x] test
+    - [x] linux
+      - [x] workflow
+      - [x] test
+    - [x] windows
+      - [x] workflow
+      - [x] test
+  - [x] publish one classifier package per OS
+    - [x] osx
+    - [x] linux
+    - [x] windows
+  - [ ] build sample game uberjar
+  - [ ] distribute it to matt
+- [ ] small game for leo
+  - [ ] click on objects to have them emit some sound
+    - [ ] they can sound with an unexpected sound
+    - [ ] the player has to match the object with the sound
+  - [ ] dialogue system
+  - [ ] macarena
+  - [ ] boi
+  - [ ] owl
+  - [ ] dog
+  - [ ] cat
+  - [ ] vampire
+  - [ ] arrota/peida
+- [ ] check if we want to upgrade raylib (there are some issues)
 - [x] small game
   - [-] fix scaled rotation
     - [x] are we able to use the latest c++ jolt?
