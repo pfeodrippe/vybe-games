@@ -131,7 +131,10 @@
     - [x] osx
     - [x] linux
     - [x] windows
-  - [ ] build sample game uberjar
+  - [ ] build sample game as an uberjar
+    - [ ] run it locally
+    - [ ] try to run it on Flavinha's
+  - [ ] jpackage?
   - [ ] distribute it to matt
 - [ ] small game for leo
   - [ ] click on objects to have them emit some sound

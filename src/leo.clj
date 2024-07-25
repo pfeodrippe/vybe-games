@@ -1,4 +1,5 @@
 (ns leo
+  (:gen-class)
   (:require
    [vybe.game :as vg]
    [vybe.raylib :as vr]
@@ -604,7 +605,7 @@
     (vg/start! w screen-width screen-height #'draw
                (fn [w]
                  (-> w
-                     (vg/model :my/model (.getPath (io/resource "models.glb")))
+                     (vg/model :my/model (vg/extract-resource "models.glb"))
                      (vg/shader-program :shadowmap-shader "shaders/shadowmap.vs" "shaders/shadowmap.fs")
                      (vg/shader-program :dither-shader "shaders/dither.fs")
                      (vg/shader-program :noise-blur-shader "shaders/noise_blur_2d.fs")
@@ -612,6 +613,10 @@
                      (merge {:render-texture [(vr/RenderTexture2D (vr.c/load-render-texture screen-width screen-height))]}))))))
 #_(init)
 
-#_(vr/t (vf/rest-enable! w))
-
-#_ (vf/debug-level! 3)
+(defn -main
+  [& _args]
+  ;; We start `init` in a future so it's out of the main thread,
+  ;; `vr/-main` will be in the main threaad and it will loop things
+  ;; for us.
+  (future (init))
+  (vr/-main))
