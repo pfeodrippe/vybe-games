@@ -1,3 +1,5 @@
+A sample game for Vybe (https://github.com/pfeodrippe/vybe).
+
 ## Getting started
 
 ``` shell
