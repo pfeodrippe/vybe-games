@@ -1,3 +1,5 @@
+Java 22 is the minimhm required.
+
 A sample game for Vybe (https://github.com/pfeodrippe/vybe).
 
 ## Getting started
