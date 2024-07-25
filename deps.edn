@@ -1,15 +1,19 @@
 {:deps
- { ;; Clerk does not work out of the box for Java 22 projects at the moment,
+ {org.clojure/clojure {:mvn/version "1.12.0-beta1"}
+  ;; Clerk does not work out of the box for Java 22 projects at the moment,
   ;; so we patch it.
   io.github.nextjournal/markdown {:git/sha "6683c48dfdb23404a23057817b6ac3acf0310bca"}
   io.github.nextjournal/clerk {:mvn/version "0.16.1016"
                                :exclusions [io.github.nextjournal/markdown]}}
 
  :aliases
- {
+ { ;; Run with clj -T:build function-in-build
+  :build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.5"}}
+          :ns-default build}
+
   ;; -- Linux
   :linux
-  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.4.141-linux-x64"}}
+  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.4.145-linux-x64"}}
    :jvm-opts ["--enable-native-access=ALL-UNNAMED"
 
               ;; For tracing panama calls.
@@ -17,7 +21,7 @@
 
   ;; -- Mac
   :osx
-  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.4.141-macos-universal"} #_{:local/root "../vybe"}}
+  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.4.145-macos-universal"} #_{:local/root "../vybe"}}
    :jvm-opts ["--enable-native-access=ALL-UNNAMED"
               "-XstartOnFirstThread"
 
@@ -26,7 +30,7 @@
 
   ;; -- Windows
   :win
-  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.4.141-win-x64"}}
+  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.4.145-win-x64"}}
    :jvm-opts ["--enable-native-access=ALL-UNNAMED"
 
               ;; For tracing panama calls.
