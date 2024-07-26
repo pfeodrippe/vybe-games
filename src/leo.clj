@@ -1,5 +1,4 @@
 (ns leo
-  (:gen-class)
   (:require
    [vybe.game :as vg]
    [vybe.raylib :as vr]

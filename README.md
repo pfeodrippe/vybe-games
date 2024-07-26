@@ -1,4 +1,4 @@
-Java 22 is the minimhm required.
+JDK 22+ is required.
 
 A sample game for Vybe (https://github.com/pfeodrippe/vybe).
 
@@ -16,4 +16,16 @@ clj -M:osx -m vybe.native.loader && clj -M:osx -m vybe.raylib
 
 # Windows (x64)
 clj -M:win -m vybe.native.loader && clj -M:win -m vybe.raylib
+```
+
+## Build/Package
+
+``` shell
+clj -T:build uber
+
+# -- OSX
+rm -rf target/classes && jpackage --java-options '-XstartOnFirstThread' --java-options '--enable-native-access=ALL-UNNAMED' -i target -n leo --main-class leo --main-jar leo-0.1.0-standalone.jar
+
+# -- Linux or Windows
+rm -rf target/classes && jpackage --java-options '--enable-native-access=ALL-UNNAMED' -i target -n leo --main-class leo --main-jar leo-0.1.0-standalone.jar
 ```

@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - develop
+    paths-ignore:
+      - '**/README.md'
+      - '**/CHANGELOG.md'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: true
+    env:
+      VYBE_VERSION_SUFFIX: win-x64
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+         ref: ${{ github.head_ref }}   # checkout the correct branch name
+         fetch-depth: 0                # fetch the whole repo history
+         set-safe-directory: false
+
+      - name: Prepare java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'adopt'
+          java-version: '22'
+
+      - name: Install clojure tools
+        uses: DeLaGuardo/setup-clojure@12.5
+        with:
+          cli: latest
+
+      - name: build
+        run: |
+          clojure -T:build uber
+
+      - name: package
+        run: |
+          jpackage --java-options '--enable-native-access=ALL-UNNAMED' -i target -n leo --main-class leo.main --main-jar leo-0.1.0-standalone.jar
+
+  build-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: true
+    env:
+      VYBE_VERSION_SUFFIX: linux-x64
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+         ref: ${{ github.head_ref }}   # checkout the correct branch name
+         fetch-depth: 0                # fetch the whole repo history
+
+      - name: Prepare java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'adopt'
+          java-version: '22'
+
+      - name: Install clojure tools
+        uses: DeLaGuardo/setup-clojure@12.5
+        with:
+          cli: latest
+
+      - name: build
+        run: |
+          clojure -T:build uber
+
+      - name: package
+        run: |
+          rm -rf target/classes && jpackage --java-options '--enable-native-access=ALL-UNNAMED' -i target -n leo --main-class leo.main --main-jar leo-0.1.0-standalone.jar
+
+  build-macos:
+    runs-on: macOS-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: true
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+         ref: ${{ github.head_ref }}   # checkout the correct branch name
+         fetch-depth: 0                # fetch the whole repo history
+
+      - name: Prepare java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'adopt'
+          java-version: '22'
+
+      - name: Install clojure tools
+        uses: DeLaGuardo/setup-clojure@12.5
+        with:
+          cli: latest
+
+      - name: build
+        run: |
+          clojure -T:build uber
+
+      - name: package
+        run: |
+          rm -rf target/classes && jpackage --java-options '-XstartOnFirstThread' --java-options '--enable-native-access=ALL-UNNAMED' -i target -n leo --main-class leo.main --main-jar leo-0.1.0-standalone.jar
