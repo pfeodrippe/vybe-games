@@ -42,6 +42,17 @@ jobs:
       - name: package
         run: |
           jpackage --java-options '--enable-native-access=ALL-UNNAMED' -i target -n leo --main-class leo.main --main-jar leo-0.1.0-standalone.jar
+          dir
+
+      - name: upload package
+        uses: actions/upload-artifact@v4
+        with:
+           name: leo-win
+           path: leo-1.0.exe
+           if-no-files-found: error
+           retention-days: 30
+           compression-level: 6
+           overwrite: true
 
   build-linux:
     runs-on: ubuntu-latest
@@ -75,6 +86,17 @@ jobs:
       - name: package
         run: |
           rm -rf target/classes && jpackage --java-options '--enable-native-access=ALL-UNNAMED' -i target -n leo --main-class leo.main --main-jar leo-0.1.0-standalone.jar
+          ls
+
+      - name: upload package
+        uses: actions/upload-artifact@v4
+        with:
+           name: leo-linux
+           path: leo_1.0_amd64.deb
+           if-no-files-found: error
+           retention-days: 30
+           compression-level: 6
+           overwrite: true
 
   build-macos:
     runs-on: macOS-latest
@@ -106,3 +128,14 @@ jobs:
       - name: package
         run: |
           rm -rf target/classes && jpackage --java-options '-XstartOnFirstThread' --java-options '--enable-native-access=ALL-UNNAMED' -i target -n leo --main-class leo.main --main-jar leo-0.1.0-standalone.jar
+          ls
+
+      - name: upload package
+        uses: actions/upload-artifact@v4
+        with:
+           name: leo-osx
+           path: leo-1.0.dmg
+           if-no-files-found: error
+           retention-days: 30
+           compression-level: 6
+           overwrite: true
