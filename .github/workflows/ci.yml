@@ -36,11 +36,12 @@ jobs:
           cli: latest
 
       - name: build
+        env:
+          VYBE_RESOURCE_FOLDER: native
         run: |
           clj -M:win -m vybe.native.loader
-          dir /tmp
-          dir C:/tmp
           clojure -T:build uber
+          dir native
 
       - name: package
         run: |
