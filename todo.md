@@ -116,7 +116,7 @@
   - [x] flecs tags
   - [x] game tags
   - [x] clerk docs
-- [ ] compile to multiple OSs
+- [x] compile to multiple OSs
   - [x] create github workflow
     - [x] macos
       - [x] workflow
@@ -133,14 +133,15 @@
     - [x] windows
   - [x] build sample game as an uberjar
     - [x] run it locally
-  - [x] jpackage
+  - [x] jpackage and publish in GA
     - [x] macos
-    - [ ] windows
-  - [ ] add ability to shutdown app
-  - [ ] share it with matt
+    - [x] windows
+    - [x] linux
+  - [x] add ability to shutdown app
+  - [x] share it with pedro
 - [ ] small game for leo
   - [ ] click on objects to have them emit some sound
-    - [ ] they can sound with an unexpected sound
+    - [ ] they can emit an unexpected sound (e.g. dog meows)
     - [ ] the player has to match the object with the sound
   - [ ] dialogue system
   - [ ] macarena

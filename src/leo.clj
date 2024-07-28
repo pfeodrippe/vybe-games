@@ -455,6 +455,11 @@
 
     #_ (init)
 
+    ;; -- Window.
+    (vf/with-observer w [:vf/name :observer.window/on-close
+                         _ [:event :vg.window/on-close]]
+      (System/exit 0))
+
     ;; -- Raycast.
     (vf/with-observer w [:vf/name :observer/on-raycast-click
                          _ [:event :vg.raycast/on-click]
