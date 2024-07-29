@@ -14,6 +14,7 @@
    [overtone.sc.machinery.server.connection :as ov.conn]
    [vybe.util :as vy.u]
    [vybe.type :as vt]
+   [vybe.network :as vn]
    #_[overtone.core :refer :all]
    #_[overtone.live :refer :all]
    #_[clj-java-decompiler.core :refer [decompile disassemble]])
@@ -176,6 +177,8 @@
 
          #_(init)))
 
+(defonce puncher nil)
+
 (defn draw
   [w delta-time]
   (let [{:keys [render-texture shadowmap-shader dither-shader noise-blur-shader]}
@@ -322,7 +325,7 @@
 
     (vf/with-each w [_ [:or
                         :vg.gltf.anim/my-cubeAction.005
-                        :vg.gltf.anim/ProjectAction]
+                        #_:vg.gltf.anim/ProjectAction]
                      _ :vg/animation
                      e :vf/entity]
       (conj e :vg.anim/active))
@@ -405,6 +408,16 @@
               (assoc :color (vr/Color [200 155 255 1.0])))
         #_(println :a)
         (update translation :x + 0.2))
+
+    (let [key #(vr.c/is-key-down %1)]
+      (cond
+        (key (raylib/KEY_UP))
+        (-> w
+            (update-in [(w (p :vg.gltf/monster_parent :vg.gltf/monster)) vt/Translation :z] + 0.018))
+
+        (key (raylib/KEY_DOWN))
+        (-> w
+            (update-in [(w (p :vg.gltf/monster_parent :vg.gltf/monster)) vt/Translation :z] - 0.018))))
 
     ;; Running animation.
     #_(let [key #(vr.c/is-key-down %1)]
@@ -538,6 +551,25 @@
           (merge rotation (vt/Rotation rot))
           (merge translation (vt/Translation pos)))))
 
+    ;; -- Network.
+    (conj (vf/ent w vt/Translation) :vg/networked)
+
+    (vf/with-each w [_ :vg/networked
+                     c-eid :vf/eid]
+      #_(println "")
+      (when (not= (vf/get-rep w c-eid) :vg/networked)
+        #_(println :e c-eid)
+        (vf/with-system w [:vf/name (vf/path [c-eid :system/network-sync])
+                           c-value c-eid
+                           _ [:meta {:flags #{:up :self}} :vg/sync]
+                           e :vf/entity
+                           it :vf/iter]
+          #_(println :CHANGED (vf/iter-changed it))
+          #_(println :e (vf/get-name e))
+          (println :count (:count it) :a c-value))))
+
+    (vn/update! puncher delta-time)
+
     (let [draw-scene (do (fn [w]
                            #_(vr.c/draw-grid 30 0.5)
                            (if (get-in w [:vg/debug :vg/enabled])
@@ -583,6 +615,30 @@
 
 #_(init)
 
+(defn host-init!
+  []
+  (let [session-id   "gamecode20"
+        client-id    20
+        server-ip    "147.182.133.53"
+        server-port  8080
+        host (vn/make-hole-puncher server-ip server-port
+                                   {:session-id session-id
+                                    :client-id client-id
+                                    :num-of-players 2
+                                    :is-host true})]
+    host))
+
+(defn client-init!
+  []
+  (let [session-id   "gamecode20"
+        client-id    21
+        server-ip    "147.182.133.53"
+        server-port  8080
+        client (vn/make-hole-puncher server-ip server-port
+                                     {:session-id session-id
+                                      :client-id client-id})]
+    client))
+
 (defn init
   []
   (when-not (vr.c/is-window-ready)
@@ -599,6 +655,8 @@
     (vr.c/clear-background (vr/Color [10 100 200 255]))
     (vr.c/draw-rectangle 30 50 100 200 (vr/Color [255 100 10 255]))
     (vr.c/draw-rectangle 300 50 100 200 (vr/Color [255 100 10 255])))
+
+  (def puncher (host-init!) #_(client-init!))
 
   #_ (init)
 
