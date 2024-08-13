@@ -167,8 +167,8 @@
     - [x] only sync entities marked with :vg/sync
     - [x] move rabbit
     - [x] iterate over the networked components
-    - [ ] host sends data
-    - [ ] client receives data
+    - [x] host sends data
+    - [x] client receives data
     - [ ] client's monster is moved
     - [ ] menu to setup network connection
       - [ ] game code
