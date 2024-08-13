@@ -617,7 +617,7 @@
 
 (defn host-init!
   []
-  (let [session-id   "gamecode20"
+  (let [session-id   "gamecode30"
         client-id    20
         server-ip    "147.182.133.53"
         server-port  8080
@@ -630,7 +630,7 @@
 
 (defn client-init!
   []
-  (let [session-id   "gamecode20"
+  (let [session-id   "gamecode30"
         client-id    21
         server-ip    "147.182.133.53"
         server-port  8080
