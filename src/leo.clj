@@ -617,8 +617,8 @@
 
 (defn host-init!
   []
-  (let [session-id   "gamecode30"
-        client-id    20
+  (let [session-id   "gamecode40"
+        client-id    30
         server-ip    "147.182.133.53"
         server-port  8080
         host (vn/make-hole-puncher server-ip server-port
@@ -630,8 +630,8 @@
 
 (defn client-init!
   []
-  (let [session-id   "gamecode30"
-        client-id    21
+  (let [session-id   "gamecode40"
+        client-id    31
         server-ip    "147.182.133.53"
         server-port  8080
         client (vn/make-hole-puncher server-ip server-port
