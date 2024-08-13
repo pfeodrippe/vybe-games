@@ -15,6 +15,7 @@
    [vybe.util :as vy.u]
    [vybe.type :as vt]
    [vybe.network :as vn]
+   [clojure.edn :as edn]
    #_[overtone.core :refer :all]
    #_[overtone.live :refer :all]
    #_[clj-java-decompiler.core :refer [decompile disassemble]])
@@ -554,21 +555,51 @@
     ;; -- Network.
     (conj (vf/ent w vt/Translation) :vg/networked)
 
-    (vf/with-each w [_ :vg/networked
-                     c-eid :vf/eid]
-      #_(println "")
-      (when (not= (vf/get-rep w c-eid) :vg/networked)
-        #_(println :e c-eid)
-        (vf/with-system w [:vf/name (vf/path [c-eid :system/network-sync])
-                           c-value c-eid
-                           _ [:meta {:flags #{:up :self}} :vg/sync]
-                           e :vf/entity
-                           it :vf/iter]
-          #_(println :CHANGED (vf/iter-changed it))
-          #_(println :e (vf/get-name e))
-          (println :count (:count it) :a c-value))))
-
-    (vn/update! puncher delta-time)
+    (if (vn/host? puncher)
+      (do (vf/with-each w [_ :vg/networked
+                           c-eid :vf/eid]
+            #_(println "")
+            (when (not= (vf/get-rep w c-eid) :vg/networked)
+              #_(println :e c-eid)
+              (vf/with-system w [:vf/name (vf/path [c-eid :system/network-sync])
+                                 c-value c-eid
+                                 _ [:meta {:flags #{:up :self}} :vg/sync]
+                                 e :vf/entity
+                                 it :vf/iter]
+                #_(println :CHANGED (vf/iter-changed it))
+                #_(println :e (vf/get-name e))
+                (vn/send! puncher c-value)
+                #_(println :count (:count it) :a c-value))))
+          (vn/update! puncher delta-time))
+      ;; Client
+      (let [msgs (->> (vn/update! puncher delta-time)
+                      (map edn/read-string)
+                      (mapv (fn [edn]
+                              (when-let [c (-> edn
+                                               ffirst
+                                               vp/comp-cache
+                                               vp/comp-cache)]
+                                (assoc-in w [(w (p :vg.gltf/monster_parent :vg.gltf/monster)) vt/Translation]
+                                          (-> edn first second))))))])
+      #_(vf/with-each w [_ :vg/networked
+                         c-eid :vf/eid]
+          #_(println "")
+          (when (not= (vf/get-rep w c-eid) :vg/networked)
+            #_(println :e c-eid)
+            (vf/with-system w [:vf/name (vf/path [c-eid :system/network-sync])
+                               c-value c-eid
+                               _ [:meta {:flags #{:up :self}} :vg/sync]
+                               e :vf/entity
+                               it :vf/iter]
+              ;; Update pointer.
+              (let [edn (->
+                         (edn/read-string))
+                    ]
+                (c (-> edn
+                       first
+                       second)))
+              #_(vn/send! puncher c-value)
+              (vn/update! puncher delta-time)))))
 
     (let [draw-scene (do (fn [w]
                            #_(vr.c/draw-grid 30 0.5)
