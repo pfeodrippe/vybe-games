@@ -573,7 +573,7 @@
           (vn/update! puncher delta-time))
       ;; Client
       (let [msgs (->> (vn/update! puncher delta-time)
-                      (map edn/read-string)
+                      (map (comp edn/read-string :data))
                       (mapv (fn [edn]
                               (when-let [c (-> edn
                                                ffirst
