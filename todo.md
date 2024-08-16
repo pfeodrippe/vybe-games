@@ -141,11 +141,13 @@
   - [x] share it with pedro
 - [ ] initial support for multiplayer
   - https://github.com/ValveSoftware/GameNetworkingSockets
+  - https://developer.valvesoftware.com/wiki/Source_Multiplayer_Networking
   - https://docs.unrealengine.com/udk/Three/NetworkingOverview.html
   - https://gafferongames.com/categories/game-networking/
   - https://leanpub.com/b/development-and-deployment-of-multiplayer-online-games-part-arch
   - https://github.com/ThusSpokeNomad/GameNetworkingResources
   - https://github.com/anderspitman/awesome-tunneling
+  - https://www.gabrielgambetta.com/client-server-game-architecture.html
   - https://github.com/mas-bandwidth/netcode
     - https://github.com/mas-bandwidth/netcode/blob/main/STANDARD.md
   - hole punching, https://www.rafa.ee/articles/godot-peer-to-peer-multiplayer/
@@ -169,7 +171,7 @@
     - [x] iterate over the networked components
     - [x] host sends data
     - [x] client receives data
-    - [ ] client's monster is moved
+    - [x] client's monster is moved
     - [ ] menu to setup network connection
       - [ ] game code
     - [ ] get ip server from github repo
@@ -250,3 +252,4 @@
 - [ ] overly afficionated fox
 - [ ] environment manipulation as game mechanic
 - [ ] maybe one of the players only see the shadows
+- [ ] game where you have to balance a ball in a lever with 2 or more players
