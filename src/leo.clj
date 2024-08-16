@@ -573,14 +573,11 @@
           (vn/update! puncher delta-time))
       ;; Client
       (let [msgs (->> (vn/update! puncher delta-time)
-                      (map (comp edn/read-string :data))
-                      (mapv (fn [edn]
-                              (when-let [c (-> edn
-                                               ffirst
-                                               vp/comp-cache
-                                               vp/comp-cache)]
-                                (assoc-in w [(w (p :vg.gltf/monster_parent :vg.gltf/monster)) vt/Translation]
-                                          (-> edn first second))))))])
+                      (mapv (fn [{:keys [data]}]
+                              (when (vp/pmap? data)
+                                (println :DATA data)
+                                #_(conj (w (p :vg.gltf/monster_parent :vg.gltf/monster))
+                                        data)))))])
       #_(vf/with-each w [_ :vg/networked
                          c-eid :vf/eid]
           #_(println "")
