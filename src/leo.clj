@@ -575,9 +575,11 @@
       (let [msgs (->> (vn/update! puncher delta-time)
                       (mapv (fn [{:keys [data]}]
                               (when (vp/pmap? data)
-                                (println :DATA data)
-                                (conj (w (p :vg.gltf/monster_parent :vg.gltf/monster))
-                                      data)))))])
+                                (println :DATA data :TT (type data) #_ #_:SS (w (p :vg.gltf/monster_parent :vg.gltf/monster)))
+                                (merge w {(p :vg.gltf/monster_parent :vg.gltf/monster)
+                                            [data]})
+                                #_(assoc-in w [(p :vg.gltf/monster_parent :vg.gltf/monster) vt/Translation]
+                                          data)))))])
       #_(vf/with-each w [_ :vg/networked
                          c-eid :vf/eid]
           #_(println "")
@@ -684,7 +686,7 @@
     (vr.c/draw-rectangle 30 50 100 200 (vr/Color [255 100 10 255]))
     (vr.c/draw-rectangle 300 50 100 200 (vr/Color [255 100 10 255])))
 
-  (def puncher (host-init!) #_(client-init!))
+  (def puncher #_(host-init!) (client-init!))
 
   #_ (init)
 
