@@ -172,6 +172,7 @@
     - [x] host sends data
     - [x] client receives data
     - [x] client's monster is moved
+    - [ ] one monster per player
     - [ ] menu to setup network connection
       - [ ] game code
     - [ ] get ip server from github repo
