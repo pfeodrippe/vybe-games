@@ -576,8 +576,8 @@
                       (mapv (fn [{:keys [data]}]
                               (when (vp/pmap? data)
                                 (println :DATA data)
-                                #_(conj (w (p :vg.gltf/monster_parent :vg.gltf/monster))
-                                        data)))))])
+                                (conj (w (p :vg.gltf/monster_parent :vg.gltf/monster))
+                                      data)))))])
       #_(vf/with-each w [_ :vg/networked
                          c-eid :vf/eid]
           #_(println "")
