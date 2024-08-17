@@ -558,47 +558,20 @@
     (if (vn/host? puncher)
       (do (vf/with-each w [_ :vg/networked
                            c-eid :vf/eid]
-            #_(println "")
             (when (not= (vf/get-rep w c-eid) :vg/networked)
-              #_(println :e c-eid)
               (vf/with-system w [:vf/name (vf/path [c-eid :system/network-sync])
                                  c-value c-eid
                                  _ [:meta {:flags #{:up :self}} :vg/sync]
-                                 e :vf/entity
-                                 it :vf/iter]
-                #_(println :CHANGED (vf/iter-changed it))
+                                 e :vf/entity]
                 #_(println :e (vf/get-name e))
-                (vn/send! puncher c-value)
-                #_(println :count (:count it) :a c-value))))
+                (vn/send! puncher c-value))))
           (vn/update! puncher delta-time))
       ;; Client
-      (let [msgs (->> (vn/update! puncher delta-time)
-                      (mapv (fn [{:keys [data]}]
-                              (when (vp/pmap? data)
-                                (println :DATA data :TT (type data) #_ #_:SS (w (p :vg.gltf/monster_parent :vg.gltf/monster)))
-                                (merge w {(p :vg.gltf/monster_parent :vg.gltf/monster)
-                                            [data]})
-                                #_(assoc-in w [(p :vg.gltf/monster_parent :vg.gltf/monster) vt/Translation]
-                                          data)))))])
-      #_(vf/with-each w [_ :vg/networked
-                         c-eid :vf/eid]
-          #_(println "")
-          (when (not= (vf/get-rep w c-eid) :vg/networked)
-            #_(println :e c-eid)
-            (vf/with-system w [:vf/name (vf/path [c-eid :system/network-sync])
-                               c-value c-eid
-                               _ [:meta {:flags #{:up :self}} :vg/sync]
-                               e :vf/entity
-                               it :vf/iter]
-              ;; Update pointer.
-              (let [edn (->
-                         (edn/read-string))
-                    ]
-                (c (-> edn
-                       first
-                       second)))
-              #_(vn/send! puncher c-value)
-              (vn/update! puncher delta-time)))))
+      (->> (vn/update! puncher delta-time)
+           (mapv (fn [{:keys [data]}]
+                   (when (vp/pmap? data)
+                     (merge w {(p :vg.gltf/monster_parent :vg.gltf/monster)
+                               [data]}))))))
 
     (let [draw-scene (do (fn [w]
                            #_(vr.c/draw-grid 30 0.5)
