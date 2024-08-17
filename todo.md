@@ -175,7 +175,7 @@
     - [x] one monster per player
       - [x] send entity
       - [x] create another monster in blender
-    - [ ] trigger animation in bother sides
+    - [x] trigger animation in bother sides
     - [ ] menu to setup network connection
       - [ ] game code
     - [ ] get ip server from github repo
