@@ -564,14 +564,13 @@
                                  _ [:meta {:flags #{:up :self}} :vg/sync]
                                  e :vf/entity]
                 #_(println :e (vf/get-name e))
-                (vn/send! puncher c-value))))
+                (vn/send! puncher c-value {:entity e}))))
           (vn/update! puncher delta-time))
       ;; Client
       (->> (vn/update! puncher delta-time)
-           (mapv (fn [{:keys [data]}]
+           (mapv (fn [{:keys [data entity-name]}]
                    (when (vp/pmap? data)
-                     (merge w {(p :vg.gltf/monster_parent :vg.gltf/monster)
-                               [data]}))))))
+                     (merge w {entity-name [data]}))))))
 
     (let [draw-scene (do (fn [w]
                            #_(vr.c/draw-grid 30 0.5)
@@ -659,7 +658,10 @@
     (vr.c/draw-rectangle 30 50 100 200 (vr/Color [255 100 10 255]))
     (vr.c/draw-rectangle 300 50 100 200 (vr/Color [255 100 10 255])))
 
-  (def puncher #_(host-init!) (client-init!))
+  (def puncher
+    (if (System/getenv "VYBE_CLIENT")
+      (client-init!)
+      (host-init!)))
 
   #_ (init)
 
