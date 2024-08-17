@@ -175,6 +175,7 @@
     - [ ] one monster per player
       - [x] send entity
       - [ ] create another monster in blender
+      - [ ] interporlate component values
     - [ ] menu to setup network connection
       - [ ] game code
     - [ ] get ip server from github repo

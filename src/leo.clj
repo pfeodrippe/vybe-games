@@ -411,20 +411,19 @@
         (update translation :x + 0.2))
 
     (let [key #(vr.c/is-key-down %1)]
-      (cond
-        (key (raylib/KEY_UP))
+      (when (key (raylib/KEY_UP))
         (-> w
-            (update-in [(p :vg.gltf/monster_parent :vg.gltf/monster) vt/Translation :z] + 0.018))
+            (update-in [(p :vg.gltf/monster_parent :vg.gltf/monster) vt/Translation :z] + 0.018)))
 
-        (key (raylib/KEY_DOWN))
+      (when (key (raylib/KEY_DOWN))
         (-> w
-            (update-in [(p :vg.gltf/monster_parent :vg.gltf/monster) vt/Translation :z] - 0.018))
+            (update-in [(p :vg.gltf/monster_parent :vg.gltf/monster) vt/Translation :z] - 0.018)))
 
-        (key (raylib/KEY_I))
+      (when (key (raylib/KEY_I))
         (-> w
-            (update-in [(p :vg.gltf/monster_parent.001 :vg.gltf/monster.001) vt/Translation :z] + 0.018))
+            (update-in [(p :vg.gltf/monster_parent.001 :vg.gltf/monster.001) vt/Translation :z] + 0.018)))
 
-        (key (raylib/KEY_K))
+      (when (key (raylib/KEY_K))
         (-> w
             (update-in [(p :vg.gltf/monster_parent.001 :vg.gltf/monster.001) vt/Translation :z] - 0.018))))
 
@@ -563,23 +562,23 @@
     ;; -- Network.
     (conj (vf/ent w vt/Translation) :vg/networked)
 
-    (if (vn/host? puncher)
-      (do (vf/with-each w [_ :vg/networked
-                           c-eid :vf/eid]
-            (when (not= (vf/get-rep w c-eid) :vg/networked)
-              (vf/with-system w [:vf/name (vf/path [c-eid :system/network-sync])
-                                 c-value c-eid
-                                 _ [:meta {:flags #{:up :self}} :vg/sync]
-                                 e :vf/entity]
-                #_(println :e (vf/get-name e))
-                (vn/send! puncher c-value {:entity e}))))
-          (vn/update! puncher delta-time))
-      ;; Client
-      (->> (vn/update! puncher delta-time)
-           (mapv (fn [{:keys [data entity-name]}]
-                   (when (vp/pmap? data)
-                     (merge w {entity-name [data]}))))))
+    ;; Sync.
+    (vf/with-each w [_ :vg/networked
+                     c-eid :vf/eid]
+      (when (not= c-eid (vf/eid w :vg/networked))
+        (vf/with-system w [:vf/name (vf/path [c-eid :system/network-sync])
+                           c-value c-eid
+                           _ [:meta {:flags #{:up :self}} :vg/sync]
+                           e :vf/entity]
+          (vn/send! puncher c-value {:entity e}))))
 
+    ;; Receive network data.
+    (->> (vn/update! puncher delta-time)
+         (mapv (fn [{:keys [data entity-name]}]
+                 (when (vp/pmap? data)
+                   (merge w {entity-name [data]})))))
+
+    ;; -- Drawing
     (let [draw-scene (do (fn [w]
                            #_(vr.c/draw-grid 30 0.5)
                            (if (get-in w [:vg/debug :vg/enabled])
@@ -589,7 +588,6 @@
                              (vg/draw-debug w)
                              (vg/draw-scene w)))]
 
-      ;; -- Drawing
       (vg/draw-lights w #_default-shader (get shadowmap-shader vt/Shader) draw-scene)
 
       (vf/with-each w [_ :vg/camera-active
