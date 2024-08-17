@@ -584,7 +584,7 @@
          (mapv (fn [{:keys [data entity-name]}]
                  (when (vp/pmap? data)
                    #_(println :RECEIVED entity-name data)
-                   (let [c-eid (vf/eid (vp/component data))]
+                   (let [c-eid (vf/eid w (vp/component data))]
                      (merge w {entity-name [data [:vg.sync/synced c-eid]]})
                      (vf/enable w entity-name [:vg.sync/synced c-eid]))))))
 
