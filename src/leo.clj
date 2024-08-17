@@ -575,7 +575,7 @@
           ;; to flag that.
           #_(println :SS c-eid (:vg.sync/synced e))
           (if synced
-            (disj e :vg.sync/synced)
+            (vf/disable e :vg.sync/synced)
             (vn/send! puncher c-value {:entity e})))))
 
     ;; Receive network data.
@@ -583,7 +583,8 @@
          (mapv (fn [{:keys [data entity-name]}]
                  (when (vp/pmap? data)
                    #_(println :RECEIVED entity-name data)
-                   (merge w {entity-name [data :vg.sync/synced]})))))
+                   (merge w {entity-name [data :vg.sync/synced]})
+                   (vf/enable w entity-name :vg.sync/synced)))))
 
     ;; -- Drawing
     (let [draw-scene (do (fn [w]
