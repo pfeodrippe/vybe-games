@@ -561,6 +561,7 @@
 
     ;; -- Network.
     (conj (vf/ent w vt/Translation) :vg/networked)
+    (conj (vf/ent w vt/Transform) :vg/networked)
 
     ;; Sync.
     (vf/with-each w [_ :vg/networked
