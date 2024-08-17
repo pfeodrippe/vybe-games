@@ -173,9 +173,8 @@
     - [x] client receives data
     - [x] client's monster is moved
     - [ ] one monster per player
-      - [ ] send entity
+      - [x] send entity
       - [ ] create another monster in blender
-      - [ ] choose monster based on init?
     - [ ] menu to setup network connection
       - [ ] game code
     - [ ] get ip server from github repo

@@ -414,11 +414,19 @@
       (cond
         (key (raylib/KEY_UP))
         (-> w
-            (update-in [(w (p :vg.gltf/monster_parent :vg.gltf/monster)) vt/Translation :z] + 0.018))
+            (update-in [(p :vg.gltf/monster_parent :vg.gltf/monster) vt/Translation :z] + 0.018))
 
         (key (raylib/KEY_DOWN))
         (-> w
-            (update-in [(w (p :vg.gltf/monster_parent :vg.gltf/monster)) vt/Translation :z] - 0.018))))
+            (update-in [(p :vg.gltf/monster_parent :vg.gltf/monster) vt/Translation :z] - 0.018))
+
+        (key (raylib/KEY_I))
+        (-> w
+            (update-in [(p :vg.gltf/monster_parent.001 :vg.gltf/monster.001) vt/Translation :z] + 0.018))
+
+        (key (raylib/KEY_K))
+        (-> w
+            (update-in [(p :vg.gltf/monster_parent.001 :vg.gltf/monster.001) vt/Translation :z] - 0.018))))
 
     ;; Running animation.
     #_(let [key #(vr.c/is-key-down %1)]
