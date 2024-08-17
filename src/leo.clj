@@ -569,14 +569,22 @@
         (vf/with-system w [:vf/name (vf/path [c-eid :system/network-sync])
                            c-value c-eid
                            _ [:meta {:flags #{:up :self}} :vg/sync]
+                           synced [:maybe [:meta {:flags #{:up :self}} :vg.sync/synced]]
+                           synced-entity [:vf/entity {:flags #{:up :self}} :vg.sync/synced]
                            e :vf/entity]
-          (vn/send! puncher c-value {:entity e}))))
+          ;; We don't want to send data that we just received, we use :vg.sync/synced
+          ;; to flag that.
+          #_(println :SS synced synced-entity)
+          (if synced
+            (disj synced-entity :vg.sync/synced)
+            (vn/send! puncher c-value {:entity e})))))
 
     ;; Receive network data.
     (->> (vn/update! puncher delta-time)
          (mapv (fn [{:keys [data entity-name]}]
                  (when (vp/pmap? data)
-                   (merge w {entity-name [data]})))))
+                   #_(println :RECEIVED entity-name data)
+                   (merge w {entity-name [data :vg.sync/synced]})))))
 
     ;; -- Drawing
     (let [draw-scene (do (fn [w]
