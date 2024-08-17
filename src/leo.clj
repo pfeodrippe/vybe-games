@@ -560,8 +560,9 @@
           (merge translation (vt/Translation pos)))))
 
     ;; -- Network.
-    #_(conj (vf/ent w vt/Translation) :vg/networked)
-    (conj (vf/ent w vt/Transform) :vg/networked)
+    (conj (vf/ent w vt/Translation) :vg/networked)
+    (conj (vf/ent w vt/Rotation) :vg/networked)
+    (conj (vf/ent w vt/Scale) :vg/networked)
 
     ;; Sync.
     (vf/with-each w [_ :vg/networked
