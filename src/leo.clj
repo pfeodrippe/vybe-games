@@ -683,6 +683,7 @@
     ;; If you want to enable debugging (debug messages + clerk + flecs explorer),
     ;; uncomment line below.
     #_(vg/debug-init! w)
+    (merge w {:vg.sync/synced [(flecs/EcsCanToggle)]})
     (vg/start! w screen-width screen-height #'draw
                (fn [w]
                  (-> w
