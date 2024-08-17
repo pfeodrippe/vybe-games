@@ -569,14 +569,13 @@
         (vf/with-system w [:vf/name (vf/path [c-eid :system/network-sync])
                            c-value c-eid
                            _ [:meta {:flags #{:up :self}} :vg/sync]
-                           synced [:maybe [:meta {:flags #{:up :self}} :vg.sync/synced]]
-                           synced-entity [:vf/entity [:maybe {:flags #{:up :self}} :vg.sync/synced]]
+                           synced [:maybe :vg.sync/synced]
                            e :vf/entity]
           ;; We don't want to send data that we just received, we use :vg.sync/synced
           ;; to flag that.
-          #_(println :SS synced synced-entity)
+          #_(println :SS c-eid (:vg.sync/synced e))
           (if synced
-            (disj synced-entity :vg.sync/synced)
+            (disj e :vg.sync/synced)
             (vn/send! puncher c-value {:entity e})))))
 
     ;; Receive network data.
