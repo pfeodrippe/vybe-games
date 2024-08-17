@@ -570,13 +570,13 @@
         (vf/with-system w [:vf/name (vf/path [c-eid :system/network-sync])
                            c-value c-eid
                            _ [:meta {:flags #{:up :self}} :vg/sync]
-                           synced [:maybe :vg.sync/synced]
+                           synced [:maybe [:vg.sync/synced c-eid]]
                            e :vf/entity]
           ;; We don't want to send data that we just received, we use :vg.sync/synced
           ;; to flag that.
           #_(println :SS c-eid (:vg.sync/synced e))
           (if synced
-            (vf/disable e :vg.sync/synced)
+            (vf/disable e synced)
             (vn/send! puncher c-value {:entity e})))))
 
     ;; Receive network data.
@@ -584,8 +584,9 @@
          (mapv (fn [{:keys [data entity-name]}]
                  (when (vp/pmap? data)
                    #_(println :RECEIVED entity-name data)
-                   (merge w {entity-name [data :vg.sync/synced]})
-                   (vf/enable w entity-name :vg.sync/synced)))))
+                   (let [c-eid (vf/eid (vp/component data))]
+                     (merge w {entity-name [data [:vg.sync/synced c-eid]]})
+                     (vf/enable w entity-name [:vg.sync/synced c-eid]))))))
 
     ;; -- Drawing
     (let [draw-scene (do (fn [w]
@@ -684,7 +685,9 @@
     ;; If you want to enable debugging (debug messages + clerk + flecs explorer),
     ;; uncomment line below.
     #_(vg/debug-init! w)
-    (merge w {:vg.sync/synced [(flecs/EcsCanToggle)]})
+
+    (merge w {:vg.sync/synced [(flecs/EcsPairIsTag) (flecs/EcsCanToggle)]})
+
     (vg/start! w screen-width screen-height #'draw
                (fn [w]
                  (-> w
