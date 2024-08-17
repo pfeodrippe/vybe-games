@@ -172,10 +172,10 @@
     - [x] host sends data
     - [x] client receives data
     - [x] client's monster is moved
-    - [ ] one monster per player
+    - [x] one monster per player
       - [x] send entity
-      - [ ] create another monster in blender
-      - [ ] interporlate component values
+      - [x] create another monster in blender
+    - [ ] trigger animation in bother sides
     - [ ] menu to setup network connection
       - [ ] game code
     - [ ] get ip server from github repo
@@ -191,6 +191,8 @@
   - [ ] cat
   - [ ] vampire
   - [ ] arrota/peida
+- [ ] improve controls for player
+- [ ] interporlate network component values?
 - [ ] check if we want to upgrade raylib (there are some issues)
 - [x] small game
   - [-] fix scaled rotation

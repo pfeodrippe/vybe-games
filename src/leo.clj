@@ -560,7 +560,7 @@
           (merge translation (vt/Translation pos)))))
 
     ;; -- Network.
-    (conj (vf/ent w vt/Translation) :vg/networked)
+    #_(conj (vf/ent w vt/Translation) :vg/networked)
     (conj (vf/ent w vt/Transform) :vg/networked)
 
     ;; Sync.
