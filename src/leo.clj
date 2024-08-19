@@ -659,33 +659,41 @@
             (draw-scene w))
 
         ;; ---- UI.
-        (let [host-flag-mem (vp/mem ::host-flag (vp/bool* false))]
-          (vr.c/gui-toggle (vr/Rectangle [210 150 100 30])
-                           (vr/gui-icon (raylib/ICON_MONITOR) "Host?")
-                           host-flag-mem)
+        (let [host-flag-mem (vp/mem ::is-host (vp/bool* false))
+              expanded-mem (vp/mem ::gamecode-ui-expanded (vp/bool* false))
+              expanded? (vp/p->value expanded-mem :boolean)]
 
-          (vr/gui-text-input-box
-           ::gamecode
-           {:title "Gamecode"
-            :message "Put your game code here"
-            :rect [10 10 300 140]
-            :on-close #(println :CLOSE ::gamecode (vp/->string %))
-            :buttons [{:label (vr/gui-icon (raylib/ICON_STAR) "Gen")
-                       :on-click (fn [mem]
-                                   (vp/set-mem mem (str "gamecode" (random-uuid))))}
-                      {:label (vr/gui-icon (raylib/ICON_FILE_COPY) "Copy")
-                       :on-click (fn [mem]
-                                   (vr.c/set-clipboard-text mem))}
-                      {:label (vr/gui-icon (raylib/ICON_FILE_PASTE) "Paste")
-                       :on-click (fn [mem]
-                                   (vp/set-mem mem (vp/->string (vr.c/get-clipboard-text))))}
-                      {:label (vr/gui-icon (raylib/ICON_OK_TICK) "Submit")
-                       :on-click (fn [mem]
-                                   (let [gamecode (vp/->string mem)]
-                                     (when (seq gamecode)
-                                       (if (vp/p->value host-flag-mem :boolean)
-                                         (host-init! (vp/->string mem))
-                                         (client-init! (vp/->string mem))))))}]}))
+          (if expanded?
+            (do
+              (vr.c/gui-toggle (vr/Rectangle [200 140 100 30])
+                               (vr/gui-icon (raylib/ICON_MONITOR) "Host?")
+                               host-flag-mem)
+
+              (vr/gui-text-input-box
+               ::gamecode
+               {:title "Gamecode"
+                :message "Generate a gamecode (as a host) and\n share it with your friends"
+                :rect [0 0 300 140]
+                :on-close (fn [_]
+                            (vp/set-mem expanded-mem (vp/bool* false)))
+                :buttons [{:label (vr/gui-icon (raylib/ICON_STAR) "Gen")
+                           :on-click (fn [mem]
+                                       (vp/set-mem mem (str "gamecode-" (random-uuid))))}
+                          {:label (vr/gui-icon (raylib/ICON_FILE_COPY) "Copy")
+                           :on-click (fn [mem]
+                                       (vr.c/set-clipboard-text mem))}
+                          {:label (vr/gui-icon (raylib/ICON_FILE_PASTE) "Paste")
+                           :on-click (fn [mem]
+                                       (vp/set-mem mem (vp/->string (vr.c/get-clipboard-text))))}
+                          {:label (vr/gui-icon (raylib/ICON_OK_TICK) "Submit")
+                           :on-click (fn [mem]
+                                       (let [gamecode (vp/->string mem)]
+                                         (when (seq gamecode)
+                                           (if (vp/p->value host-flag-mem :boolean)
+                                             (host-init! (vp/->string mem))
+                                             (client-init! (vp/->string mem))))))}]}))
+            (when (pos? (vr.c/gui-button (vr/Rectangle [0 0 20 20]) (vr/gui-icon (raylib/ICON_GEAR))))
+              (vp/set-mem expanded-mem (vp/bool* true)))))
 
         (vr.c/draw-fps 510 570)))))
 
