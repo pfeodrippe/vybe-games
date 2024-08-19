@@ -180,6 +180,34 @@
 
 (defonce puncher nil)
 
+(defn host-init!
+  ([]
+   (host-init! "gamecode40"))
+  ([gamecode]
+   (let [session-id   gamecode
+         client-id    30
+         server-ip    "147.182.133.53"
+         server-port  8080
+         host (vn/make-hole-puncher server-ip server-port
+                                    {:session-id session-id
+                                     :client-id client-id
+                                     :num-of-players 2
+                                     :is-host true})]
+     host)))
+
+(defn client-init!
+  ([]
+   (client-init! "gamecode40"))
+  ([gamecode]
+   (let [session-id   gamecode
+         client-id    31
+         server-ip    "147.182.133.53"
+         server-port  8080
+         client (vn/make-hole-puncher server-ip server-port
+                                      {:session-id session-id
+                                       :client-id client-id})]
+     client)))
+
 (defn draw
   [w delta-time]
   (let [{:keys [render-texture shadowmap-shader dither-shader noise-blur-shader]}
@@ -618,7 +646,7 @@
           (vg/with-camera camera
             (draw-scene w))))
 
-      ;; Draw to the screen.
+      ;; -- Draw to the screen.
       (vg/with-drawing
         (vr.c/clear-background (vr/Color [255 20 100 255]))
 
@@ -630,51 +658,38 @@
         #_(vg/with-camera (get-in w [:vg/camera-active vt/Camera])
             (draw-scene w))
 
-        ;; -- UI.
-        #_(when (pos? (vr.c/gui-button (vr/Rectangle [10 10 100 50]) (str "#" (raylib/ICON_ARROW_DOWN) "#Open Image")))
-            #_(println :AA))
+        ;; ---- UI.
+        (let [host-flag-mem (vp/mem ::host-flag (vp/bool* false))]
+          (vr.c/gui-toggle (vr/Rectangle [210 150 100 30])
+                           (vr/gui-icon (raylib/ICON_MONITOR) "Host?")
+                           host-flag-mem)
 
-        (let [text-size 50
-              text (vp/mem ::gamecode "ffddf" text-size)]
-          (when (pos? (vr.c/gui-text-input-box (vr/Rectangle [10 10 200 140])
-                                               "Gamecode" "Put your game code here"
-                                               (vr.c/gui-icon-text (raylib/ICON_FILE_PASTE) "Paste;Submit")
-                                               text text-size vp/null))
-            (println :TEXT (vp/->string text))))
-        #_(vr.c/get-clipboard-text)
-
-        #_(let [text-size 50
-                text (vp/mem ::ransss "aabc" text-size)]
-            (when (pos? (vr.c/gui-text-box (vr/Rectangle [10 200 100 50]) text text-size true))
-              (println :TEXT_2 (vp/->string text))))
+          (vr/gui-text-input-box
+           ::gamecode
+           {:title "Gamecode"
+            :message "Put your game code here"
+            :rect [10 10 300 140]
+            :on-close #(println :CLOSE ::gamecode (vp/->string %))
+            :buttons [{:label (vr/gui-icon (raylib/ICON_STAR) "Gen")
+                       :on-click (fn [mem]
+                                   (vp/set-mem mem (str "gamecode" (random-uuid))))}
+                      {:label (vr/gui-icon (raylib/ICON_FILE_COPY) "Copy")
+                       :on-click (fn [mem]
+                                   (vr.c/set-clipboard-text mem))}
+                      {:label (vr/gui-icon (raylib/ICON_FILE_PASTE) "Paste")
+                       :on-click (fn [mem]
+                                   (vp/set-mem mem (vp/->string (vr.c/get-clipboard-text))))}
+                      {:label (vr/gui-icon (raylib/ICON_OK_TICK) "Submit")
+                       :on-click (fn [mem]
+                                   (let [gamecode (vp/->string mem)]
+                                     (when (seq gamecode)
+                                       (if (vp/p->value host-flag-mem :boolean)
+                                         (host-init! (vp/->string mem))
+                                         (client-init! (vp/->string mem))))))}]}))
 
         (vr.c/draw-fps 510 570)))))
 
 #_(init)
-
-(defn host-init!
-  []
-  (let [session-id   "gamecode40"
-        client-id    30
-        server-ip    "147.182.133.53"
-        server-port  8080
-        host (vn/make-hole-puncher server-ip server-port
-                                   {:session-id session-id
-                                    :client-id client-id
-                                    :num-of-players 2
-                                    :is-host true})]
-    host))
-
-(defn client-init!
-  []
-  (let [session-id   "gamecode40"
-        client-id    31
-        server-ip    "147.182.133.53"
-        server-port  8080
-        client (vn/make-hole-puncher server-ip server-port
-                                     {:session-id session-id
-                                      :client-id client-id})]
-    client))
 
 (defn init
   []
