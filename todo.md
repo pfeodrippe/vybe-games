@@ -261,3 +261,4 @@
 - [ ] environment manipulation as game mechanic
 - [ ] maybe one of the players only see the shadows
 - [ ] game where you have to balance a ball in a lever with 2 or more players
+- [ ] player modifies blender trying to trap the other

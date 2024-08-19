@@ -33,6 +33,7 @@
     (when-not @*audio-enabled?
       (require '[overtone.core :refer :all])
       (eval '(boot-server))
+      (require '[overtone.inst.synth :as synth])
       (reset! *audio-enabled? true))
     (catch Exception e#
       (println e#)
@@ -110,14 +111,27 @@
 
   (def b (sample "/Users/pfeodrippe/Library/Application Support/ATK/sounds/stereo/Aurora_Surgit-Dies_Irae.wav"))
 
-  (demo 1 (lpf (pink-noise 0.4) 400))
+  (ddd)
+
+  (demo 1 [(lpf (pink-noise 0.4) 400)
+           (lpf (pink-noise 0.4) 400)])
+
+  (demo 1 (fx-echo (pink-noise 0.4) 1 100 1))
+
+  (adsr 1 0.7)
 
   (do
     (stop)
     (def aaa (ddd [:tail early-g] :out_bus my-bus))
     (def sound-d (directional [:tail later-g] :in my-bus :out_bus 0)))
 
-  (stop)
+  (definst example [freq 440 gate 1 amp 1]
+    (* (env-gen (adsr) :gate gate :action FREE)
+       amp))
+
+  (synth/ping :note 44)
+  (synth/vintage-bass  :t 2)
+  (synth/ks1 :note 48)
 
   (ctl sound-d :azim (/ math/PI 2))
   (ctl sound-d :elev (/ math/PI 2))
@@ -513,8 +527,8 @@
     (vf/with-observer w [:vf/name :observer/on-raycast-click
                          _ [:event :vg.raycast/on-click]
                          {:keys [id]} [:filter vt/Eid]]
-      (sound (demo 0.2 (mapv (comp sin-osc midi->hz)
-                             (repeatedly 3 #(+ (rand-int 20) 55)))))
+      (sound (mapv synth/ks1-demo
+                   (repeatedly 3 #(+ (rand-int 20) 55))))
       (let [c (fn [k] (vf/path [id k]))]
         (merge w
                (if (contains? (w (c :vg.gltf.anim/CubeDown)) :vg/selected)
@@ -533,7 +547,7 @@
     (vf/with-observer w [:vf/name :observer/on-raycast-enter
                          _ [:event :vg.raycast/on-enter]
                          body [:filter vj/VyBody]]
-      (sound (demo 0.1 (sin-osc (midi->hz (+ (rand-int 20) 50))))))
+      (sound (synth/ks1 (+ (rand-int 20) 50))))
 
     (vf/with-observer w [:vf/name :observer/on-raycast-leave
                          _ [:event :vg.raycast/on-leave]]
@@ -675,6 +689,7 @@
                 :message "Generate a gamecode (as a host) and\n share it with your friends"
                 :rect [0 0 300 140]
                 :on-close (fn [_]
+                            (sound (synth/ks1-demo :note 65))
                             (vp/set-mem expanded-mem (vp/bool* false)))
                 :buttons [{:label (vr/gui-icon (raylib/ICON_STAR) "Gen")
                            :on-click (fn [mem]
@@ -693,6 +708,7 @@
                                              (host-init! (vp/->string mem))
                                              (client-init! (vp/->string mem))))))}]}))
             (when (pos? (vr.c/gui-button (vr/Rectangle [0 0 20 20]) (vr/gui-icon (raylib/ICON_GEAR))))
+              (sound (synth/ks1-demo :note 70))
               (vp/set-mem expanded-mem (vp/bool* true)))))
 
         (vr.c/draw-fps 510 570)))))
@@ -715,11 +731,6 @@
     (vr.c/clear-background (vr/Color [10 100 200 255]))
     (vr.c/draw-rectangle 30 50 100 200 (vr/Color [255 100 10 255]))
     (vr.c/draw-rectangle 300 50 100 200 (vr/Color [255 100 10 255])))
-
-  (def puncher
-    (if (System/getenv "VYBE_CLIENT")
-      (client-init!)
-      (host-init!)))
 
   #_ (init)
 
