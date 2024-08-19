@@ -177,7 +177,9 @@
       - [x] create another monster in blender
     - [x] trigger animation in bother sides
     - [ ] menu to setup network connection
-      - [ ] game code
+      - [x] gamecode
+      - [x] expand gamecode windows
+      - [ ] show connection status
     - [ ] get ip server from github repo
 - [ ] small game for leo
   - [ ] click on objects to have them emit some sound
