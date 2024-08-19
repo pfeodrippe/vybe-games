@@ -630,6 +630,24 @@
         #_(vg/with-camera (get-in w [:vg/camera-active vt/Camera])
             (draw-scene w))
 
+        ;; -- UI.
+        #_(when (pos? (vr.c/gui-button (vr/Rectangle [10 10 100 50]) (str "#" (raylib/ICON_ARROW_DOWN) "#Open Image")))
+            #_(println :AA))
+
+        (let [text-size 50
+              text (vp/mem ::gamecode "ffddf" text-size)]
+          (when (pos? (vr.c/gui-text-input-box (vr/Rectangle [10 10 200 140])
+                                               "Gamecode" "Put your game code here"
+                                               (vr.c/gui-icon-text (raylib/ICON_FILE_PASTE) "Paste;Submit")
+                                               text text-size vp/null))
+            (println :TEXT (vp/->string text))))
+        #_(vr.c/get-clipboard-text)
+
+        #_(let [text-size 50
+                text (vp/mem ::ransss "aabc" text-size)]
+            (when (pos? (vr.c/gui-text-box (vr/Rectangle [10 200 100 50]) text text-size true))
+              (println :TEXT_2 (vp/->string text))))
+
         (vr.c/draw-fps 510 570)))))
 
 #_(init)
