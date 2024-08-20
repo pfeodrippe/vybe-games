@@ -704,9 +704,10 @@
                            :on-click (fn [mem]
                                        (let [gamecode (vp/->string mem)]
                                          (when (seq gamecode)
-                                           (if (vp/p->value is-host-mem :boolean)
-                                             (host-init! (vp/->string mem))
-                                             (client-init! (vp/->string mem))))))}]})
+                                           (def puncher
+                                             (if (vp/p->value is-host-mem :boolean)
+                                               (host-init! (vp/->string mem))
+                                               (client-init! (vp/->string mem)))))))}]})
 
               (vr.c/gui-panel (vr/Rectangle [x-offset (+ 175 y-offset) 350 100])
                               "Network Connection")
