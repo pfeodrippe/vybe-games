@@ -199,7 +199,7 @@
    (host-init! "gamecode40"))
   ([gamecode]
    (let [session-id   gamecode
-         client-id    30
+         client-id    (rand-int 999999)
          server-ip    "147.182.133.53"
          server-port  8080
          host (vn/make-hole-puncher server-ip server-port
@@ -214,7 +214,7 @@
    (client-init! "gamecode40"))
   ([gamecode]
    (let [session-id   gamecode
-         client-id    31
+         client-id    (rand-int 999999)
          server-ip    "147.182.133.53"
          server-port  8080
          client (vn/make-hole-puncher server-ip server-port
