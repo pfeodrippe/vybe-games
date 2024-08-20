@@ -176,16 +176,19 @@
       - [x] send entity
       - [x] create another monster in blender
     - [x] trigger animation in bother sides
-    - [ ] menu to setup network connection
+    - [x] menu to setup network connection
       - [x] gamecode
       - [x] expand gamecode windows
-      - [ ] show connection status
-    - [ ] get ip server from github repo
+      - [x] show connection status
+- [x] fix windows issue
+- [x] fix model loading
 - [ ] small game for leo
+  - [ ] dialogue system
+    - [ ] 2d ballons (3d?)
+  - [ ] make whole selectable instead of its parts (submeshes?)
   - [ ] click on objects to have them emit some sound
     - [ ] they can emit an unexpected sound (e.g. dog meows)
     - [ ] the player has to match the object with the sound
-  - [ ] dialogue system
   - [ ] macarena
   - [ ] boi
   - [ ] owl
@@ -195,6 +198,7 @@
   - [ ] arrota/peida
 - [ ] improve controls for player
 - [ ] interporlate network component values?
+- [ ] get ip server from github repo
 - [ ] check if we want to upgrade raylib (there are some issues)
 - [x] small game
   - [-] fix scaled rotation
