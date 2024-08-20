@@ -224,7 +224,7 @@
 
 (defn draw
   [w delta-time]
-  (let [{:keys [render-texture shadowmap-shader dither-shader noise-blur-shader]}
+  (let [{:keys [render-texture shadowmap-shader dither-shader noise-blur-shader default-shader]}
         w
 
         phys (get-in w [(vg/root) vj/PhysicsSystem])
@@ -245,6 +245,7 @@
         _ (do (def w w)
               (def p p)
               (def shadowmap-shader shadowmap-shader)
+              (def default-shader default-shader)
               (def phys phys))
 
         #_ (init)]
@@ -641,21 +642,22 @@
                              (vg/draw-debug w)
                              (vg/draw-scene w)))]
 
-      (vg/draw-lights w #_default-shader (get shadowmap-shader vt/Shader) draw-scene)
+      (vg/draw-lights w #_(get default-shader vt/Shader) (get shadowmap-shader vt/Shader) draw-scene)
 
       (vf/with-each w [_ :vg/camera-active
                        camera vt/Camera]
         (vg/with-multipass (get render-texture vr/RenderTexture2D) {:shaders
+                                                                    #_[(get default-shader vt/Shader)]
                                                                     [[(get noise-blur-shader vt/Shader)
-                                                                      {:u_radius (+ 1.0
-                                                                                    #_(* (vr.c/vector-3-length velocity) 0.1)
-                                                                                    (rand 1))}]
+                                                                        {:u_radius (+ 1.0
+                                                                                      #_(* (vr.c/vector-3-length velocity) 0.1)
+                                                                                      (rand 1))}]
 
-                                                                     [(get dither-shader vt/Shader)
-                                                                      {:u_offsets (vt/Vector3 (mapv #(* % (+ 0.6
-                                                                                                             (wobble 0.3)))
-                                                                                                    [0.02 (+ 0.016 (wobble 0.01))
-                                                                                                     (+ 0.040 (wobble 0.01))]))}]]}
+                                                                       [(get dither-shader vt/Shader)
+                                                                        {:u_offsets (vt/Vector3 (mapv #(* % (+ 0.6
+                                                                                                               (wobble 0.3)))
+                                                                                                      [0.02 (+ 0.016 (wobble 0.01))
+                                                                                                       (+ 0.040 (wobble 0.01))]))}]]}
           (vr.c/clear-background (vr/Color "#A98B39"))
           (vg/with-camera camera
             (draw-scene w))))
@@ -731,14 +733,6 @@
         (vr.c/draw-fps 510 570)))))
 
 #_(init)
-
-#_(vr/t (vr.c/gui-load-style-default))
-#_(vr/t (vr.c/gui-load-style-cherry))
-#_(vr/t (vr.c/gui-load-style-candy))
-#_(vr/t (vr.c/gui-load-style-sunny))
-#_(vr/t (vr.c/gui-load-style-terminal))
-#_(vr/t (vr.c/gui-load-style-ashes))
-#_(vr/t (vr.c/gui-load-style-enefete))
 
 (defn init
   []
