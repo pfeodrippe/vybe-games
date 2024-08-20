@@ -673,21 +673,21 @@
             (draw-scene w))
 
         ;; ---- UI.
-        (let [host-flag-mem (vp/mem ::is-host (vp/bool* false))
+        (let [is-host-mem (vp/mem ::is-host (vp/bool* false))
+              is-host (vp/p->value is-host-mem :boolean)
               expanded-mem (vp/mem ::gamecode-ui-expanded (vp/bool* false))
-              expanded? (vp/p->value expanded-mem :boolean)]
+              expanded? (vp/p->value expanded-mem :boolean)
+
+              x-offset 10
+              y-offset 10]
 
           (if expanded?
             (do
-              (vr.c/gui-toggle (vr/Rectangle [200 140 100 30])
-                               (vr/gui-icon (raylib/ICON_MONITOR) "Host?")
-                               host-flag-mem)
-
               (vr/gui-text-input-box
                ::gamecode
                {:title "Gamecode"
                 :message "Generate a gamecode (as a host) and\n share it with your friends"
-                :rect [0 0 300 140]
+                :rect [x-offset y-offset 350 170]
                 :on-close (fn [_]
                             (sound (synth/ks1-demo :note 65))
                             (vp/set-mem expanded-mem (vp/bool* false)))
@@ -704,16 +704,40 @@
                            :on-click (fn [mem]
                                        (let [gamecode (vp/->string mem)]
                                          (when (seq gamecode)
-                                           (if (vp/p->value host-flag-mem :boolean)
+                                           (if (vp/p->value is-host-mem :boolean)
                                              (host-init! (vp/->string mem))
-                                             (client-init! (vp/->string mem))))))}]}))
-            (when (pos? (vr.c/gui-button (vr/Rectangle [0 0 20 20]) (vr/gui-icon (raylib/ICON_GEAR))))
+                                             (client-init! (vp/->string mem))))))}]})
+
+              (vr.c/gui-panel (vr/Rectangle [x-offset (+ 175 y-offset) 350 100])
+                              "Network Connection")
+
+              (vr.c/gui-check-box (vr/Rectangle [(+ x-offset 10) (+ 220 y-offset) 30 30])
+                                  "Connected?"
+                                  (vp/bool* (vn/connected? puncher)))
+
+              (vr.c/gui-toggle (vr/Rectangle [(+ 240 x-offset) (+ 220 y-offset) 100 30])
+                               (vr/gui-icon (if is-host
+                                              (raylib/ICON_ZOOM_ALL)
+                                              (raylib/ICON_ZOOM_CENTER))
+                                            "Host?")
+                               is-host-mem))
+            (when (pos? (vr.c/gui-button (vr/Rectangle [0 0 25 25])
+                                         (vr/gui-icon (if (vn/connected? puncher)
+                                                        (raylib/ICON_HEART)
+                                                        (raylib/ICON_DEMON)))))
               (sound (synth/ks1-demo :note 70))
               (vp/set-mem expanded-mem (vp/bool* true)))))
-
         (vr.c/draw-fps 510 570)))))
 
 #_(init)
+
+#_(vr/t (vr.c/gui-load-style-default))
+#_(vr/t (vr.c/gui-load-style-cherry))
+#_(vr/t (vr.c/gui-load-style-candy))
+#_(vr/t (vr.c/gui-load-style-sunny))
+#_(vr/t (vr.c/gui-load-style-terminal))
+#_(vr/t (vr.c/gui-load-style-ashes))
+#_(vr/t (vr.c/gui-load-style-enefete))
 
 (defn init
   []
@@ -731,6 +755,8 @@
     (vr.c/clear-background (vr/Color [10 100 200 255]))
     (vr.c/draw-rectangle 30 50 100 200 (vr/Color [255 100 10 255]))
     (vr.c/draw-rectangle 300 50 100 200 (vr/Color [255 100 10 255])))
+
+  (vr.c/gui-load-style-sunny)
 
   #_ (init)
 
