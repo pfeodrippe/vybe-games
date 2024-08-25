@@ -1,6 +1,6 @@
 JDK 22+ is required.
 
-A sample game for Vybe (https://github.com/pfeodrippe/vybe).
+Sample games for Vybe (https://github.com/pfeodrippe/vybe).
 
 ## Getting started
 
