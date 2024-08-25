@@ -736,6 +736,8 @@
 
 (defn init
   []
+  (audio-enable!)
+
   (when-not (vr.c/is-window-ready)
     (vr.c/set-config-flags (raylib/FLAG_MSAA_4X_HINT))
     (vr.c/init-window screen-width screen-height "Opa")
