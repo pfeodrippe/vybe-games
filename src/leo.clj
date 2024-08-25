@@ -40,7 +40,7 @@
       (println "\n\n ----- WARNING -----\nIf you want audio working for this game, download SuperCollider at\nhttps://supercollider.github.io/downloads.html"))))
 
 ;; Try to enable audio.
-#_(audio-enable!)
+(audio-enable!)
 
 (defmacro sound
   "Macro used to wrap audio calls so we can use it safely for users who
@@ -736,8 +736,6 @@
 
 (defn init
   []
-  (audio-enable!)
-
   (when-not (vr.c/is-window-ready)
     (vr.c/set-config-flags (raylib/FLAG_MSAA_4X_HINT))
     (vr.c/init-window screen-width screen-height "Opa")
