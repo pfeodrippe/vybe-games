@@ -1,7 +1,9 @@
 (ns leo.main
   "Namespace that should be used by the published application only."
-  (:gen-class))
+  (:gen-class)
+  (:require
+   [leo]))
 
 (defn -main
   [& _args]
-  ((requiring-resolve 'leo/-main)))
+  (leo/-main []))
