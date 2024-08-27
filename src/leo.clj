@@ -40,7 +40,7 @@
       (println "\n\n ----- WARNING -----\nIf you want audio working for this game, download SuperCollider at\nhttps://supercollider.github.io/downloads.html"))))
 
 ;; Try to enable audio.
-(audio-enable!)
+#_(audio-enable!)
 
 (defmacro sound
   "Macro used to wrap audio calls so we can use it safely for users who
@@ -649,18 +649,27 @@
         (vg/with-multipass (get render-texture vr/RenderTexture2D) {:shaders
                                                                     #_[(get default-shader vt/Shader)]
                                                                     [[(get noise-blur-shader vt/Shader)
-                                                                        {:u_radius (+ 1.0
-                                                                                      #_(* (vr.c/vector-3-length velocity) 0.1)
-                                                                                      (rand 1))}]
+                                                                      {:u_radius (+ 1.0
+                                                                                    #_(* (vr.c/vector-3-length velocity) 0.1)
+                                                                                    (rand 1))}]
 
-                                                                       [(get dither-shader vt/Shader)
-                                                                        {:u_offsets (vt/Vector3 (mapv #(* % (+ 0.6
-                                                                                                               (wobble 0.3)))
-                                                                                                      [0.02 (+ 0.016 (wobble 0.01))
-                                                                                                       (+ 0.040 (wobble 0.01))]))}]]}
+                                                                     [(get dither-shader vt/Shader)
+                                                                      {:u_offsets (vt/Vector3 (mapv #(* % (+ 0.6
+                                                                                                             (wobble 0.3)))
+                                                                                                    [0.02 (+ 0.016 (wobble 0.01))
+                                                                                                     (+ 0.040 (wobble 0.01))]))}]]}
           (vr.c/clear-background (vr/Color "#A98B39"))
           (vg/with-camera camera
-            (draw-scene w))))
+            (draw-scene w))
+
+          #_(vr.c/gui-group-box (vr/Rectangle [330 330 200 100])
+                                "Monster")
+
+          #_(vr.c/gui-dummy-rec (vr/Rectangle [340 340 180 80])
+                              "Que tu quer???????????\n???")
+
+          #_(vr.c/gui-label (vr/Rectangle [340 340 180 80])
+                          "Que tu quer?")))
 
       ;; -- Draw to the screen.
       (vg/with-drawing
@@ -730,6 +739,7 @@
                                                         (raylib/ICON_DEMON)))))
               (sound (synth/ks1-demo :note 70))
               (vp/set-mem expanded-mem (vp/bool* true)))))
+
         (vr.c/draw-fps 510 570)))))
 
 #_(init)
@@ -776,7 +786,7 @@
 (defn -main
   [& _args]
   ;; We start `init` in a future so it's out of the main thread,
-  ;; `vr/-main` will be in the main threaad and it will loop things
-  ;; for us.
+  ;; `vr/-main` will be in the main thread and it will loop the game draw
+  ;; function for us.
   (future (init))
   (vr/-main))

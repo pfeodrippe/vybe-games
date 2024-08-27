@@ -46,6 +46,7 @@
                :target-dir class-dir})
   (b/compile-clj {:basis basis
                   :ns-compile '[leo.main]
+                  #_ #_:compile-opts {:direct-linking true}
                   :class-dir class-dir})
   (b/uber {:class-dir class-dir
            :uber-file (uber-file "leo")

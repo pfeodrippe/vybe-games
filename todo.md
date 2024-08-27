@@ -139,7 +139,7 @@
     - [x] linux
   - [x] add ability to shutdown app
   - [x] share it with pedro
-- [ ] initial support for multiplayer
+- [x] initial support for multiplayer
   - https://github.com/ValveSoftware/GameNetworkingSockets
   - https://developer.valvesoftware.com/wiki/Source_Multiplayer_Networking
   - https://docs.unrealengine.com/udk/Three/NetworkingOverview.html
@@ -148,6 +148,7 @@
   - https://github.com/ThusSpokeNomad/GameNetworkingResources
   - https://github.com/anderspitman/awesome-tunneling
   - https://www.gabrielgambetta.com/client-server-game-architecture.html
+  - https://tailscale.com/blog/how-nat-traversal-works
   - https://github.com/mas-bandwidth/netcode
     - https://github.com/mas-bandwidth/netcode/blob/main/STANDARD.md
   - hole punching, https://www.rafa.ee/articles/godot-peer-to-peer-multiplayer/
@@ -182,8 +183,10 @@
       - [x] show connection status
 - [x] fix windows issue
 - [x] fix model loading
+- [x] upgrade flecs
 - [ ] small game for leo
   - [ ] dialogue system
+    - [ ] render text
     - [ ] 2d ballons (3d?)
   - [ ] make whole selectable instead of its parts (submeshes?)
   - [ ] click on objects to have them emit some sound
@@ -196,6 +199,9 @@
   - [ ] cat
   - [ ] vampire
   - [ ] arrota/peida
+- [ ] send only input, not transforms, to peers
+- [ ] how to embed scsynth?
+- [ ] use server when hole punching doesn't work
 - [ ] improve controls for player
 - [ ] interporlate network component values?
 - [ ] get ip server from github repo
