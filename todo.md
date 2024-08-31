@@ -186,8 +186,13 @@
 - [x] upgrade flecs
 - [ ] small game for leo
   - [ ] dialogue system
-    - [ ] render text
-    - [ ] 2d ballons (3d?)
+    - [ ] 3d text
+      - [x] instanced drawing
+        - [x] make lightning work with instanced
+        - [x] simple particles
+      - [ ] draw text
+        - [ ] using prefabs
+      - [ ] more letters
   - [ ] make whole selectable instead of its parts (submeshes?)
   - [ ] click on objects to have them emit some sound
     - [ ] they can emit an unexpected sound (e.g. dog meows)
