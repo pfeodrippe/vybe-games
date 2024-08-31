@@ -22,7 +22,8 @@
   (:import
    (org.vybe.flecs flecs)
    (org.vybe.raylib raylib)
-   (org.vybe.jolt jolt)))
+   (org.vybe.jolt jolt)
+   (java.lang.foreign MemorySegment ValueLayout)))
 
 (defonce *audio-enabled? (atom false))
 
@@ -192,7 +193,7 @@
 
          #_(init)))
 
-(defonce puncher nil)
+(defonce *puncher (atom nil))
 
 (defn host-init!
   ([]
@@ -221,6 +222,29 @@
                                       {:session-id session-id
                                        :client-id client-id})]
      client)))
+
+(declare cube)
+
+(def particles
+  (memoize
+   (fn [shader]
+     (vp/with-arena-root
+       (let [transforms (vp/arr 30000 vr/Matrix)
+             material (vr.c/load-material-default)
+             _ (assoc material :shader shader)
+             _ (doseq [[idx transform] (mapv vector (range) transforms)]
+                 (merge transform (vg/matrix-transform (vt/Translation
+                                                        (mapv #(+ % (wobble-rand 0.5 (rand 0.25)))
+                                                              [(- (* (mod idx 10) 0.5)
+                                                                  2)
+                                                               (- (* (mod idx 99) 0.1)
+                                                                  0)
+                                                               (- (* (mod idx 7) 0.4)
+                                                                  1)]))
+                                                       (vt/Rotation [0 0 0 1])
+                                                       (vt/Scale (mapv #(Math/abs ^double (wobble-rand (* % 1.5) 10))
+                                                                       [0.009 0.01 0.011])))))]
+         [transforms material])))))
 
 (defn draw
   [w delta-time]
@@ -621,10 +645,10 @@
           #_(println :SS c-eid (:vg.sync/synced e))
           (if synced
             (vf/disable e synced)
-            (vn/send! puncher c-value {:entity e})))))
+            (vn/send! @*puncher c-value {:entity e})))))
 
     ;; Receive network data.
-    (->> (vn/update! puncher delta-time)
+    (->> (vn/update! @*puncher delta-time)
          (mapv (fn [{:keys [data entity-name]}]
                  (when (vp/pmap? data)
                    #_(println :RECEIVED entity-name data)
@@ -632,9 +656,26 @@
                      (merge w {entity-name [data [:vg.sync/synced c-eid]]})
                      (vf/enable w entity-name [:vg.sync/synced c-eid]))))))
 
+
+    #_ (init)
+
     ;; -- Drawing
-    (let [draw-scene (do (fn [w]
+    (let [shader (get shadowmap-shader vt/Shader)
+          [transforms material] (particles shader)
+          draw-scene (do (fn [w]
                            #_(vr.c/draw-grid 30 0.5)
+
+                           (.setAtIndex (vp/mem (:locs shader))
+                                        (vp/type->layout :int)
+                                        (raylib/SHADER_LOC_MATRIX_MODEL)
+                                        (int (vr.c/get-shader-location-attrib shader "instanceTransform")))
+                           (vr.c/draw-mesh-instanced cube material transforms (count transforms))
+
+                           (.setAtIndex (vp/mem (:locs shader))
+                                        (vp/type->layout :int)
+                                        (raylib/SHADER_LOC_MATRIX_MODEL)
+                                        (int (vr.c/get-shader-location shader "matModel")))
+
                            (if (get-in w [:vg/debug :vg/enabled])
                              (vg/draw-debug w)
                              (vg/draw-scene w)))
@@ -666,10 +707,16 @@
                                 "Monster")
 
           #_(vr.c/gui-dummy-rec (vr/Rectangle [340 340 180 80])
-                              "Que tu quer???????????\n???")
+                                "Que tu quer???????????\n???")
 
           #_(vr.c/gui-label (vr/Rectangle [340 340 180 80])
-                          "Que tu quer?")))
+                            "Que tu quer?")))
+
+      #_(merge w
+               {:klk [(vf/is-a (vf/path [:my/model :vg.gltf/alphabet :vg.gltf/B]))]})
+      #_(:klk2 w)
+      #_(merge w
+               {:klk2 [(vf/is-a (vf/path [:my/model :vg.gltf/alphabet :vg.gltf/C]))]})
 
       ;; -- Draw to the screen.
       (vg/with-drawing
@@ -715,17 +762,17 @@
                            :on-click (fn [mem]
                                        (let [gamecode (vp/->string mem)]
                                          (when (seq gamecode)
-                                           (def puncher
-                                             (if (vp/p->value is-host-mem :boolean)
-                                               (host-init! (vp/->string mem))
-                                               (client-init! (vp/->string mem)))))))}]})
+                                           (reset! *puncher
+                                                   (if (vp/p->value is-host-mem :boolean)
+                                                     (host-init! (vp/->string mem))
+                                                     (client-init! (vp/->string mem)))))))}]})
 
               (vr.c/gui-panel (vr/Rectangle [x-offset (+ 175 y-offset) 350 100])
                               "Network Connection")
 
               (vr.c/gui-check-box (vr/Rectangle [(+ x-offset 10) (+ 220 y-offset) 30 30])
                                   "Connected?"
-                                  (vp/bool* (vn/connected? puncher)))
+                                  (vp/bool* (vn/connected? @*puncher)))
 
               (vr.c/gui-toggle (vr/Rectangle [(+ 240 x-offset) (+ 220 y-offset) 100 30])
                                (vr/gui-icon (if is-host
@@ -734,7 +781,7 @@
                                             "Host?")
                                is-host-mem))
             (when (pos? (vr.c/gui-button (vr/Rectangle [0 0 25 25])
-                                         (vr/gui-icon (if (vn/connected? puncher)
+                                         (vr/gui-icon (if (vn/connected? @*puncher)
                                                         (raylib/ICON_HEART)
                                                         (raylib/ICON_DEMON)))))
               (sound (synth/ks1-demo :note 70))
@@ -774,6 +821,8 @@
 
     (vg/start! w screen-width screen-height #'draw
                (fn [w]
+                 (def cube (vr.c/gen-mesh-cube 1 1 1)
+                   #_(vg/gen-cube {:x 5 :y 5 :z 5} 2))
                  (-> w
                      (vg/model :my/model (vg/extract-resource "models.glb"))
                      (vg/shader-program :shadowmap-shader "shaders/shadowmap.vs" "shaders/shadowmap.fs")
@@ -782,6 +831,33 @@
                      (vg/shader-program :default-shader)
                      (merge {:render-texture [(vr/RenderTexture2D (vr.c/load-render-texture screen-width screen-height))]}))))))
 #_(init)
+
+(comment
+
+  (def cube (vg/gen-cube {:x 10 :y 10 :z 10} 4))
+
+  (let [transforms (vp/arr 1 vr/Matrix)]
+    (doseq [transform transforms]
+      (merge transform (vg/matrix-transform (vt/Translation [1 0 0]) (vt/Rotation) (vt/Scale [1 1 1]))))
+    (vr.c/draw-mesh-instanced (:mesh cube) (:material cube) transforms (count transforms))
+    transforms)
+
+
+
+
+  (def w2 (vf/make-world))
+
+  (merge w2 {:a [:vf/prefab
+                 {:c [:vf/prefab :d]}
+                 :f]})
+
+  (merge w2 {:a [{:c [(vf/slot-of :a)]}]})
+
+  (merge w2 {:g [(vf/is-a :a)]})
+
+  (vf/target (:g w2) (vf/path [:a :c]))
+
+  ())
 
 (defn -main
   [& _args]
