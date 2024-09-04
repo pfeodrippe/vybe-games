@@ -190,6 +190,7 @@
       - [x] instanced drawing
         - [x] make lightning work with instanced
         - [x] simple particles
+      - [x] particles sound
       - [ ] draw text
         - [ ] using prefabs
       - [ ] more letters
@@ -277,3 +278,4 @@
 - [ ] maybe one of the players only see the shadows
 - [ ] game where you have to balance a ball in a lever with 2 or more players
 - [ ] player modifies blender trying to trap the other
+- [ ] we can do something that uses particles as flocks (e.g. animals)

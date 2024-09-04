@@ -41,7 +41,7 @@
       (println "\n\n ----- WARNING -----\nIf you want audio working for this game, download SuperCollider at\nhttps://supercollider.github.io/downloads.html"))))
 
 ;; Try to enable audio.
-#_(audio-enable!)
+(audio-enable!)
 
 (defmacro sound
   "Macro used to wrap audio calls so we can use it safely for users who
@@ -80,7 +80,10 @@
 (defn indices [pred coll]
   (keep-indexed #(when (pred %2) %1) coll))
 
-#_(do
+(defonce init-sound
+  (sound
+
+    (stop)
 
     (defonce my-bus
       (audio-bus 1))
@@ -100,11 +103,12 @@
       (out out_bus
            #_(* mul (sin-osc 260) (saw 3) 0.04)
            #_(play-buf 1 b (buf-rate-scale:ir b) :loop 1)
-           (* mul (lpf (pink-noise 0.4) 500))))
+           (* mul (lpf (pink-noise 0.8) 500))))
 
     (defsynth-load directional
       "resources/sc/compiled/directional.scsyndef")
-    #_ (def sound-d (directional [:tail later-g] :in my-bus :out_bus 0)))
+    (ddd [:tail early-g] :out_bus my-bus)
+    (def sound-d (directional [:tail later-g] :in my-bus :out_bus 0))))
 
 (comment
 
@@ -131,10 +135,10 @@
        amp))
 
   (synth/ping :note 44)
-  (synth/vintage-bass  :t 2)
+  (synth/vintage-bass  :t 1)
   (synth/ks1 :note 48)
 
-  (ctl sound-d :azim (/ math/PI 2))
+  (ctl sound-d :azim (/ math/PI 4))
   (ctl sound-d :elev (/ math/PI 2))
 
   (pp-node-tree)
@@ -230,7 +234,8 @@
    (fn [shader]
      (vp/with-arena-root
        (let [transforms (vp/arr 30000 vr/Matrix)
-             material (vr.c/load-material-default)
+             {:keys [mesh material]} (vg/gen-cube {} 2)
+             _ (def cube mesh)
              _ (assoc material :shader shader)
              _ (doseq [[idx transform] (mapv vector (range) transforms)]
                  (merge transform (vg/matrix-transform (vt/Translation
@@ -241,10 +246,36 @@
                                                                   0)
                                                                (- (* (mod idx 7) 0.4)
                                                                   1)]))
-                                                       (vt/Rotation [0 0 0 1])
-                                                       (vt/Scale (mapv #(Math/abs ^double (wobble-rand (* % 1.5) 10))
-                                                                       [0.009 0.01 0.011])))))]
+                                                       #_(vt/Rotation [0 0 0 1])
+                                                       (vr.c/quaternion-from-euler (rand Math/TAU)
+                                                                                   (rand Math/TAU)
+                                                                                   (rand Math/TAU))
+                                                       (vt/Scale (mapv #(Math/abs ^double (+ % (wobble-rand (* % 0.9) 10000)))
+                                                                       [0.01 0.01 0.01])))))]
          [transforms material])))))
+
+(defn ambisonic
+  [sound-source pov-transform obj-transform]
+  (let [d (vr.c/vector-3-distance
+           (vg/matrix->translation pov-transform)
+           (vg/matrix->translation obj-transform))
+        [azim elev] (let [{:keys [x y z] :as _v} (-> obj-transform
+                                                     (vr.c/matrix-multiply (vr.c/matrix-invert pov-transform))
+                                                     vg/matrix->translation)]
+                      (if (> z 0)
+                        [(- (Math/atan2 x z))
+                         (Math/atan2 y z)
+                         _v]
+                        [(Math/atan2 x z)
+                         (Math/atan2 y z)
+                         _v]))
+        amp (if (zero? d)
+              1
+              (/ 1 (* d d)))]
+    (sound
+      (ctl sound-source :azim azim :elev elev :amp (* amp 100) :distance d))))
+
+#_ (init)
 
 (defn draw
   [w delta-time]
@@ -328,28 +359,14 @@
         (if idx*
           (when (= c vt/Translation)
             ;; Play some sound.
-            #_(let [d (vr.c/vector-3-distance
-                       (vg/matrix->translation (get-in w [:vg/camera-active [vt/Transform :global]]))
-                       (vg/matrix->translation (get-in w [:vg.gltf/Sphere [vt/Transform :global]])))
-                    [azim elev] (let [cam-transform (get-in w [:vg/camera-active [vt/Transform :global]])
-                                      sphere-transform (get-in w [:vg.gltf/Sphere [vt/Transform :global]])
-                                      {:keys [x y z] :as _v} (-> sphere-transform
-                                                                 (vr.c/matrix-multiply (vr.c/matrix-invert cam-transform))
-                                                                 vg/matrix->translation)]
-                                  (if (> z 0)
-                                    [(- (vr.c/atan-2 x z))
-                                     (vr.c/atan-2 y z)
-                                     _v]
-                                    [(vr.c/atan-2 x z)
-                                     (vr.c/atan-2 y z)
-                                     _v]))
-                    amp (if (zero? d)
-
-                          1
-                          (/ 1 (* d d 1)))]
-                #_(ctl sound-d :azim azim :elev elev :amp amp :distance d)))
+            (vf/with-each w [_ :vg/camera-active
+                             camera vt/Camera
+                             transform [vt/Transform :global]
+                             sound-source-transform [:src (p :vg.gltf/sound_source) [vt/Transform :global]]]
+              (ambisonic sound-d transform sound-source-transform)))
           (conj parent-e :vg.anim/stop))
 
+        ;; FIXME: This `merge` takes a lot of CPU.
         (merge w {node [(if t
                           (lerp-p (nth values idx)
                                   (nth values (inc idx))
@@ -393,6 +410,7 @@
 
     (vf/with-each w [_ [:or
                         :vg.gltf.anim/my-cubeAction.005
+                        :vg.gltf.anim/sound_sourceAction
                         #_:vg.gltf.anim/ProjectAction]
                      _ :vg/animation
                      e :vf/entity]
@@ -579,9 +597,9 @@
       (merge w {(p :vg.gltf/Sphere) [(vt/Translation [-100 -100 -100])]}))
 
     #_(vr/t
-        (vf/with-each w [_ :vg/camera-active
-                         e :vf/entity]
-          (vf/get-name e)))
+       (vf/with-each w [_ :vg/camera-active
+                        e :vf/entity]
+         (vf/get-name e)))
 
     ;; Camera systems.
     (vf/with-system w [:vf/name :system/update-camera
@@ -662,6 +680,7 @@
     ;; -- Drawing
     (let [shader (get shadowmap-shader vt/Shader)
           [transforms material] (particles shader)
+          #_ #_mesh (get (w (vf/path [:my/model :vg.gltf/alphabet :vg.gltf/B :vg.gltf.mesh/data])) vr/Mesh)
           draw-scene (do (fn [w]
                            #_(vr.c/draw-grid 30 0.5)
 
@@ -821,8 +840,6 @@
 
     (vg/start! w screen-width screen-height #'draw
                (fn [w]
-                 (def cube (vr.c/gen-mesh-cube 1 1 1)
-                   #_(vg/gen-cube {:x 5 :y 5 :z 5} 2))
                  (-> w
                      (vg/model :my/model (vg/extract-resource "models.glb"))
                      (vg/shader-program :shadowmap-shader "shaders/shadowmap.vs" "shaders/shadowmap.fs")
