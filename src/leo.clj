@@ -41,7 +41,7 @@
       (println "\n\n ----- WARNING -----\nIf you want audio working for this game, download SuperCollider at\nhttps://supercollider.github.io/downloads.html"))))
 
 ;; Try to enable audio.
-(audio-enable!)
+#_(audio-enable!)
 
 (defmacro sound
   "Macro used to wrap audio calls so we can use it safely for users who
@@ -229,7 +229,7 @@
 
 (declare cube)
 
-(def particles
+(defonce particles
   (memoize
    (fn [shader]
      (vp/with-arena-root
@@ -333,8 +333,23 @@
 
     #_ (init)
 
+    (comment
+
+      (vf/system-query-str (w :vf.system/transform))
+      (vf/system-query-str (w "vybe_transform"))
+
+      (get (w (p :vg.gltf/sound_source)) vt/Transform)
+      (get (w (p :vg.gltf/sound_source)) [vt/Transform :global])
+
+      "[in] C_vybe!!type/Translation($this), [in] C_vybe!!type/Rotation($this), [in] C_vybe!!type/Scale($this), [out] C_vybe!!type/Transform($this,global), [out] C_vybe!!type/Transform($this), [in] ?C_vybe!!type/Transform($this|cascade ChildOf,global)"
+
+      "[in] C_vybe!!type/Translation($this), [in] C_vybe!!type/Rotation($this), [in] C_vybe!!type/Scale($this), [out] C_vybe!!type/Transform($this,global), [out] C_vybe!!type/Transform($this), [out] ?C_vybe!!type/Transform($this|cascade ChildOf,global)"
+
+      ())
+
     (vf/with-each w [[_ node] [:vg.anim/target-node :*]
                      [_ c] [:vg.anim/target-component :*]
+                     node-ref vf/Ref
                      {:keys [timeline_count values timeline]} vt/AnimationChannel
                      player [:meta {:flags #{:up :cascade}
                                     :inout :mut}
@@ -359,22 +374,33 @@
         (if idx*
           (when (= c vt/Translation)
             ;; Play some sound.
-            (vf/with-each w [_ :vg/camera-active
-                             camera vt/Camera
-                             transform [vt/Transform :global]
-                             sound-source-transform [:src (p :vg.gltf/sound_source) [vt/Transform :global]]]
-              (ambisonic sound-d transform sound-source-transform)))
+            #_(vf/with-each w [_ :vg/camera-active
+                               camera vt/Camera
+                               transform [vt/Transform :global]
+                               sound-source-transform [:src (p :vg.gltf/sound_source) [vt/Transform :global]]]
+                (ambisonic sound-d transform sound-source-transform)))
           (conj parent-e :vg.anim/stop))
 
-        ;; FIXME: This `merge` takes a lot of CPU.
-        (merge w {node [(if t
-                          (lerp-p (nth values idx)
-                                  (nth values (inc idx))
-                                  t)
-                          (nth values idx))]})
+        ;; We modify the component from the ref and have to notify flecs that it
+        ;; was modified.
+        (merge @node-ref (if t
+                           (lerp-p (nth values idx)
+                                   (nth values (inc idx))
+                                   t)
+                           (nth values idx)))
+        (vf/modified! w node c)
 
         ;; For blending.
         #_(merge w {node {:vg.anim/frame-animation [[(nth values idx) n]]}})))
+
+    (comment
+
+      (def my-ref
+        (vf/ref w (p :vg.gltf/Cube) vt/Translation))
+
+      @my-ref
+
+      ())
 
     ;; Blending.
     #_(vf/with-each w [_ :vg.anim/joint
@@ -597,9 +623,9 @@
       (merge w {(p :vg.gltf/Sphere) [(vt/Translation [-100 -100 -100])]}))
 
     #_(vr/t
-       (vf/with-each w [_ :vg/camera-active
-                        e :vf/entity]
-         (vf/get-name e)))
+        (vf/with-each w [_ :vg/camera-active
+                         e :vf/entity]
+          (vf/get-name e)))
 
     ;; Camera systems.
     (vf/with-system w [:vf/name :system/update-camera
@@ -829,7 +855,6 @@
 
   (vr.c/gui-load-style-sunny)
 
-  #_ (init)
 
   (let [w (vf/make-world)]
     ;; If you want to enable debugging (debug messages + clerk + flecs explorer),
