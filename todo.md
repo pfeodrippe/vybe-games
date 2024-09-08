@@ -184,6 +184,8 @@
 - [x] fix windows issue
 - [x] fix model loading
 - [x] upgrade flecs
+- [x] debug animation system
+  - [x] maybe moving transform to C helps? (YES)
 - [ ] small game for leo
   - [ ] dialogue system
     - [ ] 3d text
