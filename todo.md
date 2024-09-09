@@ -186,6 +186,7 @@
 - [x] upgrade flecs
 - [x] debug animation system
   - [x] maybe moving transform to C helps? (YES)
+- [x] refactor leo.clj
 - [ ] small game for leo
   - [ ] dialogue system
     - [ ] 3d text
