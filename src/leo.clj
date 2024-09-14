@@ -52,7 +52,8 @@
 
 #_(init)
 
-#_ (sound (demo 0.2 (sin-osc 400)))
+#_
+(sound (demo 0.2 (sin-osc 400)))
 
 (set! *warn-on-reflection* true)
 
