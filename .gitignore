@@ -23,3 +23,4 @@ bin/flecs.c
 .calva
 
 .clerk/
+*.blend1

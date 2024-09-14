@@ -4,6 +4,16 @@ Sample games for Vybe (https://github.com/pfeodrippe/vybe).
 
 ## Getting started
 
+As we have to deal with resources like Blender files that are 100M+, we are using
+git-lfs (https://git-lfs.com/) to manage these, please install it this git extension.
+
+After you clone this project, run
+
+``` shell
+git lfs fetch
+git lfs checkout # this will replace the LFS pointers with real data
+```
+
 ``` shell
 # This will put the dynamic libs in the right place and start raylib in the main thread,
 # open the REPL and call call the `init` function inside `leo.clj`.
