@@ -229,7 +229,8 @@
                                                                                    (rand Math/TAU)
                                                                                    (rand Math/TAU))
                                                        (vt/Scale (mapv #(Math/abs ^double (+ % (wobble-rand (* % 0.9) 10000)))
-                                                                       [0.01 0.01 0.01])))))]
+                                                                       [0.01 0.01 0.01]
+                                                                       #_[0.1 0.1 0.1])))))]
          [transforms material])))))
 
 (defn ambisonic
@@ -590,7 +591,9 @@
                                   (vp/type->layout :int)
                                   (raylib/SHADER_LOC_MATRIX_MODEL)
                                   (int (vr.c/get-shader-location-attrib shader "instanceTransform")))
-                     (vr.c/draw-mesh-instanced cube material transforms (count transforms))
+                     (vr.c/draw-mesh-instanced cube #_(get-in (w (p :vg.gltf/alphabet :vg.gltf/G :vg.gltf.mesh/data))
+                                                              [ vr/Mesh])
+                                               material transforms (count transforms))
 
                      (.setAtIndex (vp/mem (:locs shader))
                                   (vp/type->layout :int)
@@ -642,6 +645,7 @@
 
 (defn draw
   [w delta-time]
+  (def w w)
   (let [phys (get-in w [(vg/root) vj/PhysicsSystem])]
 
     ;; This will set and reevaluate the default systems (you can call this

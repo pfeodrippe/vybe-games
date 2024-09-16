@@ -23,3 +23,7 @@ bin/flecs.c
 .calva
 
 .clerk/
+
+# Blender, we will just commit .glb files so we don't have to use git lfs
+*.blend
+*.blend1
