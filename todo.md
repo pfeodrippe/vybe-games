@@ -195,9 +195,13 @@
         - [x] make lightning work with instanced
         - [x] simple particles
       - [x] particles sound
+      - [x] more letters
       - [ ] draw text
-        - [ ] using prefabs
-      - [ ] more letters
+        - [ ] draw one letter
+          - [ ] use transforms
+        - [ ] draw "OK"
+  - [ ] digits
+  - [ ] hunnn, moving the text as particles seems also interesting
   - [ ] make whole selectable instead of its parts (submeshes?)
   - [ ] click on objects to have them emit some sound
     - [ ] they can emit an unexpected sound (e.g. dog meows)

@@ -211,7 +211,7 @@
   (memoize
    (fn [shader]
      (vp/with-arena-root
-       (let [transforms (vp/arr 30000 vr/Matrix)
+       (let [transforms (vp/arr 10000 vr/Matrix)
              {:keys [mesh material]} (vg/gen-cube {} 2)
              _ (def cube mesh)
              _ (assoc material :shader shader)
@@ -229,7 +229,7 @@
                                                                                    (rand Math/TAU)
                                                                                    (rand Math/TAU))
                                                        (vt/Scale (mapv #(Math/abs ^double (+ % (wobble-rand (* % 0.9) 10000)))
-                                                                       [0.01 0.01 0.01]
+                                                                       [0.02 0.02 0.02]
                                                                        #_[0.1 0.1 0.1])))))]
          [transforms material])))))
 
@@ -587,6 +587,8 @@
   (let [shader (get shadowmap-shader vt/Shader)
         [transforms material] (particles shader)
         draw-scene (fn [w]
+                     ;; Particles.
+                     (vg/set-uniform shader {:shaderType 0})
                      (.setAtIndex (vp/mem (:locs shader))
                                   (vp/type->layout :int)
                                   (raylib/SHADER_LOC_MATRIX_MODEL)
@@ -595,6 +597,40 @@
                                                               [ vr/Mesh])
                                                material transforms (count transforms))
 
+                     ;; 3d Text.
+                     (let [mat (get-in (w (p :vg.gltf/alphabet :vg.gltf/G :vg.gltf.mesh/data))
+                                       [vr/Material])
+                           O-mesh (get-in (w (p :vg.gltf/alphabet :vg.gltf/O :vg.gltf.mesh/data))
+                                          [vr/Mesh])]
+                       (vg/set-uniform shader {:shaderType 1})
+                       (let [transforms (vp/arr 2 vt/Transform)]
+                         (merge (first transforms)
+                                (vg/matrix-transform
+                                 (vt/Translation [1 3 1])
+                                 (vt/Rotation [0 0 0 1])
+                                 (vt/Scale [1 1 1])))
+                         (merge (second transforms)
+                                (vg/matrix-transform
+                                 (vt/Translation [1 6 1])
+                                 (vt/Rotation [0 0 0 1])
+                                 (vt/Scale [1 1 1])))
+                         (vr.c/draw-mesh-instanced O-mesh
+                                                   mat
+                                                   transforms
+                                                   (count transforms)))
+                       (let [transforms (vp/arr 1 vt/Transform)]
+                         (merge (first transforms)
+                                (vg/matrix-transform
+                                 (vt/Translation [2 3 1])
+                                 (vt/Rotation [0 0 0 1])
+                                 (vt/Scale [1 1 1])))
+                         (vr.c/draw-mesh-instanced (get-in (w (p :vg.gltf/alphabet :vg.gltf/K :vg.gltf.mesh/data))
+                                                           [vr/Mesh])
+                                                   mat
+                                                   transforms
+                                                   (count transforms))))
+
+                     ;; Model.
                      (.setAtIndex (vp/mem (:locs shader))
                                   (vp/type->layout :int)
                                   (raylib/SHADER_LOC_MATRIX_MODEL)

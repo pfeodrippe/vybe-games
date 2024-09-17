@@ -1,5 +1,5 @@
 {:deps
- {org.clojure/clojure {:mvn/version "1.12.0-beta1"}
+ {org.clojure/clojure {:mvn/version "1.12.0"}
   ;; Clerk does not work out of the box for Java 22 projects at the moment,
   ;; so we patch it.
   io.github.nextjournal/markdown {:git/sha "6683c48dfdb23404a23057817b6ac3acf0310bca"}
