@@ -581,58 +581,36 @@
         (sound (synth/ks1-demo :note 70))
         (vp/set-mem expanded-mem (vp/bool* true))))))
 
-(def get-draw-info
-  (memoize
-   (fn [w _mat text translation-vec initial-draw-info]
-     (vp/with-arena-root
-       (let [translation (vt/Translation translation-vec)
-             {:keys [text translation]} {:text text
-                                         :translation translation}
-             {:keys [x y z]} translation
+(defonce transform-identity
+  (vg/matrix-transform
+   (vt/Translation [0 0 0])
+   (vt/Rotation [0 0 0 1])
+   (vt/Scale [1 1 1])))
 
-             {:keys [char->draw-info]}
-             (reduce (fn [{:keys [idx char->draw-info] :as acc} c]
-                       (if-let [char-ent (w (p :vg.gltf/alphabet
-                                               (keyword "vg.gltf" (str c))
-                                               :vg.gltf.mesh/data))]
-                         (let [draw-info (or (get char->draw-info c)
-                                             {:transforms-vec []
-                                              :mesh (get-in char-ent [vr/Mesh])})
-                               draw-info-updated (update draw-info :transforms-vec
-                                                         conj (vg/matrix-transform
-                                                               (vt/Translation [(+ x idx) y z])
-                                                               (vt/Rotation [0 0 0 1])
-                                                               (vt/Scale [1 1 1])))]
-                           (-> acc
-                               (update :idx inc)
-                               (assoc-in [:char->draw-info c] draw-info-updated)))
-                         (update acc :idx inc)))
-                     {:idx 0
-                      :char->draw-info (update-vals initial-draw-info
-                                                    (fn [{:keys [transforms] :as v}]
-                                                      (-> v
-                                                          (assoc :transforms-vec (into [] transforms))
-                                                          (dissoc :transforms))))}
-                     text)]
-         (update-vals char->draw-info (fn [{:keys [transforms-vec] :as v}]
-                                        (-> v
-                                            (assoc :transforms (vp/arr transforms-vec))
-                                            (dissoc :transforms-vec)))))))))
+(defn- draw-text-3d-meshes
+  [w mat text translation-vec]
+  (let [translation (vt/Translation translation-vec)
+        {:keys [text translation]} {:text text
+                                    :translation translation}
+        {:keys [x y z]} translation]
+    (loop [[c & text-rest] text
+           idx 0]
+      (when text-rest
+        (when-let [char-ent (w (p :vg.gltf/alphabet
+                                  (keyword "vg.gltf" (str c))
+                                  :vg.gltf.mesh/data))]
+          (let [mesh (get-in char-ent [vr/Mesh])
+                transform (-> (vr.c/matrix-translate (+ x idx) y z)
+                              (vr.c/matrix-multiply transform-identity))]
+            (vr.c/draw-mesh mesh mat transform)))
+        (recur text-rest (inc idx))))))
 
 (defn draw-text-3d
   [w texts-and-translations]
   (let [mat (get-in (w (p :vg.gltf/alphabet :vg.gltf/G :vg.gltf.mesh/data))
-                    [vr/Material])
-        draw-info (->> texts-and-translations
-                       (reduce (fn [acc [text translation-vec]]
-                                 (get-draw-info w
-                                                mat
-                                                text
-                                                translation-vec
-                                                acc))
-                               {}))]
-    (doseq [[_c {:keys [transforms mesh]}] draw-info]
-      (vr.c/draw-mesh-instanced mesh mat transforms (count transforms)))))
+                    [vr/Material])]
+    (doseq [[text translation-vec] texts-and-translations]
+      (draw-text-3d-meshes w mat text translation-vec))))
 
 #_(init)
 
@@ -643,7 +621,7 @@
         [transforms material] (particles shader)
         draw-scene (fn [w]
                      ;; Particles.
-                     (vg/set-uniform shader {:shaderType 0})
+                     (vg/set-uniform shader {:shaderType 1})
                      (.setAtIndex (vp/mem (:locs shader))
                                   (vp/type->layout :int)
                                   (raylib/SHADER_LOC_MATRIX_MODEL)
@@ -652,19 +630,37 @@
                                                               [ vr/Mesh])
                                                material transforms (count transforms))
 
-                     ;; 3d Text.
-                     (vg/set-uniform shader {:shaderType 1})
-                     (draw-text-3d w [["AABCDEFGHI" [-3.5 6 2]]
-                                      ["JKLMMNOPQR" [-3.5 4 1]]
-                                      ["JKLMMNOPQR" [-3.5 8 1]]
-                                      ["JKLMMNOPQR" [-3.5 10 1]]
-                                      ["STUVWXYZ"  [-3.5 2 0]]])
-
                      ;; Model.
+                     (vg/set-uniform shader {:shaderType 0})
                      (.setAtIndex (vp/mem (:locs shader))
                                   (vp/type->layout :int)
                                   (raylib/SHADER_LOC_MATRIX_MODEL)
                                   (int (vr.c/get-shader-location shader "matModel")))
+
+                     ;; 3d Text.
+                     (draw-text-3d w [["AABCDEFGHI" [-3.5 6 2]]
+                                      ["AABCDEFGHI" [-3.5 -1 5]]
+                                      ["JKLMMNOPQR" [-3.5 4 1]]
+                                      ["JKLMMNOPQR" [-3.5 8 1]]
+                                      ["JKLMMNOPQR" [-1.5 1 1]]
+                                      ["JKLMMNOPQR" [1.5 1 1]]
+                                      ["JKLMMNOPQR" [-3.5 8 4]]
+                                      ["JKLMMNOPQR" [-3.5 2 -4]]
+                                      ["JKLMMNOPQR" [-3.5 10 1]]
+                                      ["STUVWXYZ"  [-3.5 2 0]]
+                                      ["STUVWXYZ"  [-5.5 4 0]]
+
+                                      ["AABCDEFGHI" [-3.5 6 2]]
+                                      ["AABCDEFGHI" [-3.5 -1 5]]
+                                      ["JKLMMNOPQR" [-3.5 4 1]]
+                                      ["JKLMMNOPQR" [-3.5 8 1]]
+                                      ["JKLMMNOPQR" [-1.5 1 1]]
+                                      ["JKLMMNOPQR" [1.5 1 3]]
+                                      ["JKLMMNOPQR" [-3.5 8 4]]
+                                      ["JKLMMNOPQR" [-3.5 2 -4]]
+                                      ["JKLMMNOPQR" [-3.5 10 1]]
+                                      ["STUVWXYZ"  [-3.5 2 3]]
+                                      ["STUVWXYZ"  [-5.5 4 5]]])
 
                      (if (get-in w [:vg/debug :vg/enabled])
                        (vg/draw-debug w)
