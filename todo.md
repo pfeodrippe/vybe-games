@@ -197,9 +197,12 @@
       - [x] particles sound
       - [x] more letters
       - [ ] draw text
-        - [ ] draw one letter
-          - [ ] use transforms
-        - [ ] draw "OK"
+        - [x] draw one letter
+          - [x] use transforms
+        - [x] draw "OK"
+        - [x] build transforms from strings
+        - [ ] align text
+        - [ ] support lower case characters
   - [ ] digits
   - [ ] hunnn, moving the text as particles seems also interesting
   - [ ] make whole selectable instead of its parts (submeshes?)
