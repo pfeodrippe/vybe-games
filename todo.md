@@ -201,9 +201,24 @@
           - [x] use transforms
         - [x] draw "OK"
         - [x] build transforms from strings
-        - [ ] align text
+        - [x] align text
         - [ ] support lower case characters
   - [ ] digits
+  - [ ] other characters
+    - [ ] ,;
+    - [ ] ?
+    - [ ] .
+    - [ ] !
+    - [ ] ()
+    - [ ] []
+    - [ ] ~
+    - [ ] '
+    - [ ] "
+    - [ ] /\
+    - [ ] #
+    - [ ] ^
+    - [ ] *
+    - [ ] _
   - [ ] hunnn, moving the text as particles seems also interesting
   - [ ] make whole selectable instead of its parts (submeshes?)
   - [ ] click on objects to have them emit some sound

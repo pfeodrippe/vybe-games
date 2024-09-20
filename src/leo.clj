@@ -25,6 +25,8 @@
    (org.vybe.jolt jolt)
    (java.lang.foreign MemorySegment ValueLayout)))
 
+(set! *warn-on-reflection* true)
+
 (defonce *audio-enabled? (atom false))
 
 (defn audio-enable!
@@ -53,8 +55,6 @@
 #_(init)
 
 #_ (sound (demo 0.2 (sin-osc 400)))
-
-(set! *warn-on-reflection* true)
 
 (defn wobble
   ([v]
@@ -211,8 +211,8 @@
   (memoize
    (fn [shader]
      (vp/with-arena-root
-       (let [transforms (vp/arr 10000 vr/Matrix)
-             {:keys [mesh material]} (vg/gen-cube {} 2)
+       (let [transforms (vp/arr 1000 vr/Matrix)
+             {:keys [mesh material]} (vg/gen-cube {:x 1 :y 0.5 :z 0.3} 2)
              _ (def cube mesh)
              _ (assoc material :shader shader)
              _ (doseq [[idx transform] (mapv vector (range) transforms)]
@@ -229,7 +229,8 @@
                                                                                    (rand Math/TAU)
                                                                                    (rand Math/TAU))
                                                        (vt/Scale (mapv #(Math/abs ^double (+ % (wobble-rand (* % 0.9) 10000)))
-                                                                       [0.02 0.02 0.02]
+                                                                       [0.03 0.03 0.03]
+                                                                       #_[0.05 0.05 0.05]
                                                                        #_[0.1 0.1 0.1])))))]
          [transforms material])))))
 
@@ -594,23 +595,51 @@
                                     :translation translation}
         {:keys [x y z]} translation]
     (loop [[c & text-rest] text
-           idx 0]
-      (when text-rest
-        (when-let [char-ent (w (p :vg.gltf/alphabet
-                                  (keyword "vg.gltf" (str c))
-                                  :vg.gltf.mesh/data))]
+           x-idx 0.0
+           y-idx 0.0]
+      (when c
+        (if-let [char-ent (w (p :vg.gltf/alphabet
+                                (keyword "vg.gltf" (str/upper-case c))
+                                :vg.gltf.mesh/data))]
           (let [mesh (get-in char-ent [vr/Mesh])
-                transform (-> (vr.c/matrix-translate (+ x idx) y z)
-                              (vr.c/matrix-multiply transform-identity))]
-            (vr.c/draw-mesh mesh mat transform)))
-        (recur text-rest (inc idx))))))
+                r (fn custom-rand
+                    ([v] (custom-rand v 0.1))
+                    ([v factor] #_(+ v (wobble-rand factor (math/cos (+ x-idx y-idx (+ 0.5 factor)))))
+                     v))
+                lower? (^[char] Character/isLowerCase c)
+                transform (cond->> (-> transform-identity
+                                       (vr.c/matrix-multiply (vr.c/matrix-translate (r (* (+ x x-idx)
+                                                                                          0.8)
+                                                                                       0.13)
+                                                                                    (r (* (+ y y-idx (if lower?
+                                                                                                       -0.32
+                                                                                                       0))
+                                                                                          0.9)
+                                                                                       0.08)
+                                                                                    (r z)))
+                                       (vr.c/matrix-multiply (vr.c/matrix-rotate-xyz
+                                                              (vt/Translation [(r 0 0.005)
+                                                                               (r 0 0.008)
+                                                                               (r 0 0.007)]))))
+                            lower?
+                            (vr.c/matrix-multiply (vr.c/matrix-scale 0.7 0.5 1)))]
+            (vr.c/draw-mesh mesh mat transform)
+            (recur text-rest (inc x-idx) y-idx))
+          (case c
+            \newline (recur text-rest 0.0 (- y-idx 1.3))
+
+            (recur text-rest (inc x-idx) y-idx)))))))
 
 (defn draw-text-3d
-  [w texts-and-translations]
+  [w shader texts-and-translations]
   (let [mat (get-in (w (p :vg.gltf/alphabet :vg.gltf/G :vg.gltf.mesh/data))
                     [vr/Material])]
-    (doseq [[text translation-vec] texts-and-translations]
-      (draw-text-3d-meshes w mat text translation-vec))))
+    (assoc mat :shader shader)
+    (doseq [[text translation-vec {:keys [scale] :or {scale 1.0}}] texts-and-translations]
+      (vr.c/rl-push-matrix)
+      (vr.c/rl-scalef scale scale scale)
+      (draw-text-3d-meshes w mat text translation-vec)
+      (vr.c/rl-pop-matrix))))
 
 #_(init)
 
@@ -638,7 +667,24 @@
                                   (int (vr.c/get-shader-location shader "matModel")))
 
                      ;; 3d Text.
-                     (draw-text-3d w [["AABCDEFGHI" [-3.5 6 2]]
+                     (draw-text-3d w (get shadowmap-shader vt/Shader)
+                                   [#_["Pitoco\nGuimaraes\nFeodrippe" [-2.5 9 2]]
+                                    #_["Hey OMG\nWhat The\nHell\nLOL" [-3.5 5 2]]
+                                    ["Hey, let's \nstart a new\ngame" [-5.5 10 2] {:scale 0.7}]
+                                    #_[(str "recur arg for primitive\nlocal: y_idx is not\n"
+                                            "recur arg for primitive\nlocal: y_idx is not\n"
+                                            "recur arg for primitive\nlocal: y_idx is not\n"
+                                            "recur arg for primitive\nlocal: y_idx is not\n"
+                                            "recur arg for primitive\nlocal: y_idx is not\n"
+                                            "recur arg for primitive\nlocal: y_idx is not\n"
+                                            "recur arg for primitive\nlocal: y_idx is not\n"
+                                            "recur arg for primitive\nlocal: y_idx is not\n"
+                                            "recur arg for primitive\nlocal: y_idx is not\n"
+                                            "recur arg for primitive\nlocal: y_idx is not\n"
+                                            "recur arg for primitive\nlocal: y_idx is not\n")
+                                       [-9.5 30 2]
+                                       {:scale 0.3}]]
+                                   #_[["AABCDEFGHI" [-3.5 6 2]]
                                       ["AABCDEFGHI" [-3.5 -1 5]]
                                       ["JKLMMNOPQR" [-3.5 4 1]]
                                       ["JKLMMNOPQR" [-3.5 8 1]]
