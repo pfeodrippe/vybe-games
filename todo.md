@@ -189,37 +189,25 @@
 - [x] refactor leo.clj
 - [x] fix blender 4.2 GLTF color export
 - [ ] small game for leo
+  - [x] 3d text
+    - [x] instanced drawing
+      - [x] make lightning work with instanced
+      - [x] simple particles
+    - [x] particles sound
+    - [x] more letters
+    - [x] draw text
+      - [x] draw one letter
+        - [x] use transforms
+      - [x] draw "OK"
+      - [x] build transforms from strings
+      - [x] align text
+      - [x] support lower case characters
+  - [x] check if we can have a slicing allocator
+    - later
+  - [x] digits
+  - [-] hunnn, moving the text as particles seems also interesting
   - [ ] dialogue system
-    - [ ] 3d text
-      - [x] instanced drawing
-        - [x] make lightning work with instanced
-        - [x] simple particles
-      - [x] particles sound
-      - [x] more letters
-      - [ ] draw text
-        - [x] draw one letter
-          - [x] use transforms
-        - [x] draw "OK"
-        - [x] build transforms from strings
-        - [x] align text
-        - [ ] support lower case characters
-  - [ ] digits
-  - [ ] other characters
-    - [ ] ,;
-    - [ ] ?
-    - [ ] .
-    - [ ] !
-    - [ ] ()
-    - [ ] []
-    - [ ] ~
-    - [ ] '
-    - [ ] "
-    - [ ] /\
-    - [ ] #
-    - [ ] ^
-    - [ ] *
-    - [ ] _
-  - [ ] hunnn, moving the text as particles seems also interesting
+    - [ ] check if we can make a 3d balloon
   - [ ] make whole selectable instead of its parts (submeshes?)
   - [ ] click on objects to have them emit some sound
     - [ ] they can emit an unexpected sound (e.g. dog meows)
@@ -238,6 +226,21 @@
 - [ ] interporlate network component values?
 - [ ] get ip server from github repo
 - [ ] check if we want to upgrade raylib (there are some issues)
+ - [ ] other characters
+    - [x] ,;
+    - [x] ?
+    - [x] .
+    - [x] !
+    - [x] ()
+    - [ ] []
+    - [ ] ~
+    - [ ] '
+    - [x] "
+    - [ ] /\
+    - [ ] #
+    - [ ] ^
+    - [ ] *
+    - [ ] _
 - [x] small game
   - [-] fix scaled rotation
     - [x] are we able to use the latest c++ jolt?
@@ -294,6 +297,7 @@
   - [ ] create multiple animations in blender for the same object
   - [ ] maybe states
 - [ ] maybe use `$` for the keyword name when we want something to be registered as a child?
+- [ ] maybe see if people in the flecs community can use it for modding
 
 
 ## Ideas

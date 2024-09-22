@@ -588,41 +588,58 @@
    (vt/Rotation [0 0 0 1])
    (vt/Scale [1 1 1])))
 
+(def char->name
+  {\, :vg.gltf/comma
+   \. :vg.gltf/dot
+   \; :vg.gltf/semicolon
+   \: :vg.gltf/colon
+   \( :vg.gltf/parenthesis_left
+   \) :vg.gltf/parenthesis_right
+   \" :vg.gltf/quote_left
+   \! :vg.gltf/exclamation
+   \? :vg.gltf/interrogation})
+
 (defn- draw-text-3d-meshes
   [w mat text translation-vec]
   (let [translation (vt/Translation translation-vec)
-        {:keys [text translation]} {:text text
-                                    :translation translation}
         {:keys [x y z]} translation]
     (loop [[c & text-rest] text
            x-idx 0.0
            y-idx 0.0]
       (when c
-        (if-let [char-ent (w (p :vg.gltf/alphabet
-                                (keyword "vg.gltf" (str/upper-case c))
-                                :vg.gltf.mesh/data))]
+        (if-let [char-ent (cond
+                            (Character/isLetter ^Character c)
+                            (w (p :vg.gltf/alphabet
+                                  (keyword "vg.gltf" (str/upper-case c))
+                                  :vg.gltf.mesh/data))
+
+                            (Character/isDigit ^Character c)
+                            (w (p :vg.gltf/digits_punctuation
+                                  (keyword "vg.gltf" (str "d_" c))
+                                  :vg.gltf.mesh/data))
+
+                            :else
+                            (when-let [c-name (char->name c)]
+                              (w (p :vg.gltf/digits_punctuation c-name :vg.gltf.mesh/data))))]
           (let [mesh (get-in char-ent [vr/Mesh])
                 r (fn custom-rand
-                    ([v] (custom-rand v 0.1))
-                    ([v factor] #_(+ v (wobble-rand factor (math/cos (+ x-idx y-idx (+ 0.5 factor)))))
-                     v))
+                    ([v]
+                     (custom-rand v 0.01))
+                    ([v factor]
+                     (+ v (wobble-rand factor (* (math/cos (* (+ x-idx y-idx) factor)) 1.0)))))
                 lower? (^[char] Character/isLowerCase c)
-                transform (cond->> (-> transform-identity
-                                       (vr.c/matrix-multiply (vr.c/matrix-translate (r (* (+ x x-idx)
-                                                                                          0.8)
-                                                                                       0.13)
-                                                                                    (r (* (+ y y-idx (if lower?
-                                                                                                       -0.32
-                                                                                                       0))
-                                                                                          0.9)
-                                                                                       0.08)
-                                                                                    (r z)))
-                                       (vr.c/matrix-multiply (vr.c/matrix-rotate-xyz
-                                                              (vt/Translation [(r 0 0.005)
-                                                                               (r 0 0.008)
-                                                                               (r 0 0.007)]))))
-                            lower?
-                            (vr.c/matrix-multiply (vr.c/matrix-scale 0.7 0.5 1)))]
+                new-transform (-> transform-identity
+                                  (vr.c/matrix-multiply (vr.c/matrix-translate (* (+ x x-idx)
+                                                                                  0.6)
+                                                                               (+ y y-idx (if lower?
+                                                                                            -0.32
+                                                                                            0))
+                                                                               z)))
+                transform (cond->> (-> new-transform
+                                       (vr.c/matrix-multiply (vr.c/matrix-rotate (vg/matrix->translation new-transform)
+                                                                                 (r 0 0.15))))
+                            true
+                            (vr.c/matrix-multiply (vr.c/matrix-scale 0.7 (if lower? 0.5 1) 1)))]
             (vr.c/draw-mesh mesh mat transform)
             (recur text-rest (inc x-idx) y-idx))
           (case c
@@ -668,9 +685,9 @@
 
                      ;; 3d Text.
                      (draw-text-3d w (get shadowmap-shader vt/Shader)
-                                   [#_["Pitoco\nGuimaraes\nFeodrippe" [-2.5 9 2]]
-                                    #_["Hey OMG\nWhat The\nHell\nLOL" [-3.5 5 2]]
-                                    ["Hey, let's \nstart a new\ngame" [-5.5 10 2] {:scale 0.7}]
+                                   [["Pito. Co:\nGuima;raes\nFeodrippe" [-2.5 10 4]]
+                                    ["Hey! OMG,\nWhat (The)\nHell?\nLOL. Ma! Que cosa\nAB012 \"345\" 6789" [-3.5 5 2]]
+                                    #_["Hey let's \nstart a new\ngame" [-5.5 10 2] {:scale 0.8}]
                                     #_[(str "recur arg for primitive\nlocal: y_idx is not\n"
                                             "recur arg for primitive\nlocal: y_idx is not\n"
                                             "recur arg for primitive\nlocal: y_idx is not\n"
@@ -794,7 +811,8 @@
       (conj e :vg.anim/active))
 
     ;; Draw... things.
-    (render w)))
+    (render w)
+    #_(println (.*state (vp/default-arena)))))
 
 #_(init)
 
