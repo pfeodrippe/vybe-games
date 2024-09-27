@@ -188,6 +188,39 @@
   - [x] maybe moving transform to C helps? (YES)
 - [x] refactor leo.clj
 - [x] fix blender 4.2 GLTF color export
+- [x] check zig
+  - https://renatoathaydes.github.io/zig-common-tasks/
+  - [x] simple zig function
+  - [x] system test
+  - [x] comptime hash map to define entities
+    - we will try to follow what we have for the flecs clj vybe
+    - [x] define simple entities
+    - [x] add components to entities
+    - [x] pairs
+    - [x] add children to parent
+    - [x] tags
+    - [x] get pair
+  - [x] system
+    - [x] simple types
+    - [x] get entity
+    - [x] tag filtering
+    - [x] optional
+    - [x] pair
+      - [x] tag
+      - [x] component
+    - [x] parent
+    - [x] cascade
+    - [x] out
+  - [x] move transform system from c to zig
+    - [x] raymath
+    - [x] vybe types
+    - [x] vybe_transform
+    - [x] export
+    - [x] call from clj
+  - [x] observer
+    - [x] observer function
+    - [x] observer events
+- [ ] check CI
 - [ ] small game for leo
   - [x] 3d text
     - [x] instanced drawing
@@ -206,8 +239,11 @@
     - later
   - [x] digits
   - [-] hunnn, moving the text as particles seems also interesting
-  - [ ] dialogue system
+  - [ ] dialogue graphics
     - [ ] check if we can make a 3d balloon
+    - [ ] test balloon with text
+  - [ ] dialogue system
+    - [ ] branches
   - [ ] make whole selectable instead of its parts (submeshes?)
   - [ ] click on objects to have them emit some sound
     - [ ] they can emit an unexpected sound (e.g. dog meows)
@@ -219,6 +255,9 @@
   - [ ] cat
   - [ ] vampire
   - [ ] arrota/peida
+- [ ] zig
+  - [ ] use some known type for `term`
+  - [ ] pair wildcard
 - [ ] send only input, not transforms, to peers
 - [ ] how to embed scsynth?
 - [ ] use server when hole punching doesn't work
@@ -226,21 +265,23 @@
 - [ ] interporlate network component values?
 - [ ] get ip server from github repo
 - [ ] check if we want to upgrade raylib (there are some issues)
- - [ ] other characters
-    - [x] ,;
-    - [x] ?
-    - [x] .
-    - [x] !
-    - [x] ()
-    - [ ] []
-    - [ ] ~
-    - [ ] '
-    - [x] "
-    - [ ] /\
-    - [ ] #
-    - [ ] ^
-    - [ ] *
-    - [ ] _
+- [ ] other characters
+  - [x] ,;
+  - [x] ?
+  - [x] .
+  - [x] !
+  - [x] ()
+  - [ ] []
+  - [ ] ~
+  - [ ] '
+  - [x] "
+  - [ ] /\
+  - [ ] #
+  - [ ] ^
+  - [ ] *
+  - [ ] _
+- [ ] zig
+  - [ ] create system from observers
 - [x] small game
   - [-] fix scaled rotation
     - [x] are we able to use the latest c++ jolt?
