@@ -13,7 +13,7 @@
 
   ;; -- Linux
   :linux
-  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.4.306-linux-x64"}}
+  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.6.338-linux-x64"}}
    :jvm-opts ["--enable-native-access=ALL-UNNAMED"
 
               ;; For tracing panama calls.
@@ -21,7 +21,7 @@
 
   ;; -- Mac
   :osx
-  {:extra-deps {io.github.pfeodrippe/vybe #_{:mvn/version "0.4.306-macos-universal"} {:local/root "../vybe"}}
+  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.6.338-macos-universal"} #_{:local/root "../vybe"}}
    :jvm-opts ["--enable-native-access=ALL-UNNAMED"
               "-XstartOnFirstThread"
 
@@ -30,7 +30,7 @@
 
   ;; -- Windows
   :win
-  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.4.306-win-x64"}}
+  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.6.338-win-x64"}}
    :jvm-opts ["--enable-native-access=ALL-UNNAMED"
 
               ;; For tracing panama calls.
