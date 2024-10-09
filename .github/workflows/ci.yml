@@ -39,7 +39,7 @@ jobs:
         env:
           VYBE_RESOURCE_FOLDER: native
         run: |
-          clj -M:win -m vybe.native.loader
+          clojure -M:win -m vybe.native.loader
           clojure -T:build uber
           dir native
 
@@ -85,6 +85,7 @@ jobs:
 
       - name: build
         run: |
+          clojure -M:linux -m vybe.native.loader
           clojure -T:build uber
 
       - name: package
@@ -127,6 +128,7 @@ jobs:
 
       - name: build
         run: |
+          clojure -M:osx -m vybe.native.loader
           clojure -T:build uber
 
       - name: package
