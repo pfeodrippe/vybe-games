@@ -190,6 +190,7 @@
 - [x] fix blender 4.2 GLTF color export
 - [x] check zig
   - https://renatoathaydes.github.io/zig-common-tasks/
+  - Book about Zig, https://pedropark99.github.io/zig-book/
   - [x] simple zig function
   - [x] system test
   - [x] comptime hash map to define entities
@@ -220,7 +221,7 @@
   - [x] observer
     - [x] observer function
     - [x] observer events
-- [ ] check CI
+- [x] check CI
 - [ ] small game for leo
   - [x] 3d text
     - [x] instanced drawing
