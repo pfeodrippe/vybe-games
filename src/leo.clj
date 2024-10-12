@@ -805,6 +805,7 @@
     (vf/with-query w [_ [:or
                          :vg.gltf.anim/my-cubeAction.005
                          :vg.gltf.anim/sound_sourceAction
+                         :vg.gltf.anim/pilot_axisAction
                          #_:vg.gltf.anim/ProjectAction]
                       _ :vg/animation
                       e :vf/entity]
