@@ -727,10 +727,7 @@
 
                      (if (get-in w [:vg/debug :vg/enabled])
                        (vg/draw-debug w)
-                       (do (vg/draw-scene w {:scene :vg.gltf.scene/main_scene})
-                           #_(vg/draw-scene w {:scene :vg.gltf.scene/track_scene}))))]
-
-    (vg/draw-lights w #_(get default-shader vt/Shader) (get shadowmap-shader vt/Shader) draw-scene)
+                       (vg/draw-scene w {:scene :vg.gltf.scene/main_scene})))]
 
     ;; We don't need to run this everytime, we just have it here because it's convenient.
     (-> (w (p :vg.gltf/tv :vg.gltf/screen :vg.gltf.mesh/data))
@@ -742,6 +739,7 @@
                       camera vt/Camera]
 
       ;; Track.
+      (vg/draw-lights w (get shadowmap-shader vt/Shader) draw-scene {:scene :vg.gltf.scene/track_scene})
       (vg/with-multipass (get render-texture vr/RenderTexture2D) {:shaders
                                                                   [[(get noise-blur-shader vt/Shader)
                                                                     {:u_radius (+ 4.0 (wobble-rand 2.0))}]]}
@@ -750,6 +748,7 @@
           (vg/draw-scene w {:scene :vg.gltf.scene/track_scene})))
 
       ;; General.
+      (vg/draw-lights w (get shadowmap-shader vt/Shader) draw-scene {:scene :vg.gltf.scene/main_scene})
       (vg/with-multipass (get render-texture vr/RenderTexture2D) {:shaders
                                                                   [[(get noise-blur-shader vt/Shader)
                                                                     {:u_radius (+ 1.0
@@ -831,6 +830,9 @@
                          :vg.gltf.anim/my-cubeAction.005
                          :vg.gltf.anim/sound_sourceAction
                          :vg.gltf.anim/pilot_axisAction.001
+                         :vg.gltf.anim/pilot_axisAction.002
+                         :vg.gltf.anim/pilot_axisAction.003
+                         :vg.gltf.anim/pilot_axisAction.004
                          #_:vg.gltf.anim/ProjectAction]
                       _ :vg/animation
                       e :vf/entity]
