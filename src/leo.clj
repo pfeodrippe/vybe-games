@@ -684,46 +684,46 @@
                                   (int (vr.c/get-shader-location shader "matModel")))
 
                      ;; 3d Text.
-                     (draw-text-3d w (get shadowmap-shader vt/Shader)
-                                   [["Pito. Co:\nGuima;raes\nFeodrippe" [-2.5 10 4]]
-                                    ["Hey! OMG,\nWhat (The)\nHell?\nLOL. Ma! Que cosa\nAB012 \"345\" 6789" [-3.5 5 2]]
-                                    #_["Hey let's \nstart a new\ngame" [-5.5 10 2] {:scale 0.8}]
-                                    #_[(str "recur arg for primitive\nlocal: y_idx is not\n"
-                                            "recur arg for primitive\nlocal: y_idx is not\n"
-                                            "recur arg for primitive\nlocal: y_idx is not\n"
-                                            "recur arg for primitive\nlocal: y_idx is not\n"
-                                            "recur arg for primitive\nlocal: y_idx is not\n"
-                                            "recur arg for primitive\nlocal: y_idx is not\n"
-                                            "recur arg for primitive\nlocal: y_idx is not\n"
-                                            "recur arg for primitive\nlocal: y_idx is not\n"
-                                            "recur arg for primitive\nlocal: y_idx is not\n"
-                                            "recur arg for primitive\nlocal: y_idx is not\n"
-                                            "recur arg for primitive\nlocal: y_idx is not\n")
-                                       [-9.5 30 2]
-                                       {:scale 0.3}]]
-                                   #_[["AABCDEFGHI" [-3.5 6 2]]
-                                      ["AABCDEFGHI" [-3.5 -1 5]]
-                                      ["JKLMMNOPQR" [-3.5 4 1]]
-                                      ["JKLMMNOPQR" [-3.5 8 1]]
-                                      ["JKLMMNOPQR" [-1.5 1 1]]
-                                      ["JKLMMNOPQR" [1.5 1 1]]
-                                      ["JKLMMNOPQR" [-3.5 8 4]]
-                                      ["JKLMMNOPQR" [-3.5 2 -4]]
-                                      ["JKLMMNOPQR" [-3.5 10 1]]
-                                      ["STUVWXYZ"  [-3.5 2 0]]
-                                      ["STUVWXYZ"  [-5.5 4 0]]
+                     #_(draw-text-3d w (get shadowmap-shader vt/Shader)
+                                     [["Pito. Co:\nGuima;raes\nFeodrippe" [-2.5 10 4]]
+                                      ["Hey! OMG,\nWhat (The)\nHell?\nLOL. Ma! Que cosa\nAB012 \"345\" 6789" [-3.5 5 2]]
+                                      #_["Hey let's \nstart a new\ngame" [-5.5 10 2] {:scale 0.8}]
+                                      #_[(str "recur arg for primitive\nlocal: y_idx is not\n"
+                                              "recur arg for primitive\nlocal: y_idx is not\n"
+                                              "recur arg for primitive\nlocal: y_idx is not\n"
+                                              "recur arg for primitive\nlocal: y_idx is not\n"
+                                              "recur arg for primitive\nlocal: y_idx is not\n"
+                                              "recur arg for primitive\nlocal: y_idx is not\n"
+                                              "recur arg for primitive\nlocal: y_idx is not\n"
+                                              "recur arg for primitive\nlocal: y_idx is not\n"
+                                              "recur arg for primitive\nlocal: y_idx is not\n"
+                                              "recur arg for primitive\nlocal: y_idx is not\n"
+                                              "recur arg for primitive\nlocal: y_idx is not\n")
+                                         [-9.5 30 2]
+                                         {:scale 0.3}]]
+                                     #_[["AABCDEFGHI" [-3.5 6 2]]
+                                        ["AABCDEFGHI" [-3.5 -1 5]]
+                                        ["JKLMMNOPQR" [-3.5 4 1]]
+                                        ["JKLMMNOPQR" [-3.5 8 1]]
+                                        ["JKLMMNOPQR" [-1.5 1 1]]
+                                        ["JKLMMNOPQR" [1.5 1 1]]
+                                        ["JKLMMNOPQR" [-3.5 8 4]]
+                                        ["JKLMMNOPQR" [-3.5 2 -4]]
+                                        ["JKLMMNOPQR" [-3.5 10 1]]
+                                        ["STUVWXYZ"  [-3.5 2 0]]
+                                        ["STUVWXYZ"  [-5.5 4 0]]
 
-                                      ["AABCDEFGHI" [-3.5 6 2]]
-                                      ["AABCDEFGHI" [-3.5 -1 5]]
-                                      ["JKLMMNOPQR" [-3.5 4 1]]
-                                      ["JKLMMNOPQR" [-3.5 8 1]]
-                                      ["JKLMMNOPQR" [-1.5 1 1]]
-                                      ["JKLMMNOPQR" [1.5 1 3]]
-                                      ["JKLMMNOPQR" [-3.5 8 4]]
-                                      ["JKLMMNOPQR" [-3.5 2 -4]]
-                                      ["JKLMMNOPQR" [-3.5 10 1]]
-                                      ["STUVWXYZ"  [-3.5 2 3]]
-                                      ["STUVWXYZ"  [-5.5 4 5]]])
+                                        ["AABCDEFGHI" [-3.5 6 2]]
+                                        ["AABCDEFGHI" [-3.5 -1 5]]
+                                        ["JKLMMNOPQR" [-3.5 4 1]]
+                                        ["JKLMMNOPQR" [-3.5 8 1]]
+                                        ["JKLMMNOPQR" [-1.5 1 1]]
+                                        ["JKLMMNOPQR" [1.5 1 3]]
+                                        ["JKLMMNOPQR" [-3.5 8 4]]
+                                        ["JKLMMNOPQR" [-3.5 2 -4]]
+                                        ["JKLMMNOPQR" [-3.5 10 1]]
+                                        ["STUVWXYZ"  [-3.5 2 3]]
+                                        ["STUVWXYZ"  [-5.5 4 5]]])
 
                      (if (get-in w [:vg/debug :vg/enabled])
                        (vg/draw-debug w)
@@ -732,8 +732,24 @@
 
     (vg/draw-lights w #_(get default-shader vt/Shader) (get shadowmap-shader vt/Shader) draw-scene)
 
+    ;; We don't need to run this everytime, we just have it here because it's convenient.
+    (-> (w (p :vg.gltf/tv :vg.gltf/screen :vg.gltf.mesh/data))
+        (get vr/Material)
+        (vr/material-get (raylib/MATERIAL_MAP_DIFFUSE))
+        (assoc-in [:texture] (:texture (get render-texture vr/RenderTexture2D))))
+
     (vf/with-query w [_ :vg/camera-active
                       camera vt/Camera]
+
+      ;; Track.
+      (vg/with-multipass (get render-texture vr/RenderTexture2D) {:shaders
+                                                                  [[(get noise-blur-shader vt/Shader)
+                                                                    {:u_radius (+ 4.0 (wobble-rand 2.0))}]]}
+        (vg/with-camera (get (w (p :vg.gltf/track_camera)) vt/Camera)
+          (vr.c/clear-background (vr/Color [5 5 5 100]))
+          (vg/draw-scene w {:scene :vg.gltf.scene/track_scene})))
+
+      ;; General.
       (vg/with-multipass (get render-texture vr/RenderTexture2D) {:shaders
                                                                   [[(get noise-blur-shader vt/Shader)
                                                                     {:u_radius (+ 1.0
@@ -748,6 +764,11 @@
         (vr.c/clear-background (vr/Color "#A98B39"))
         (vg/with-camera camera
           (draw-scene w))
+
+        #_(vr.c/draw-texture-pro (:texture (get render-texture vr/RenderTexture2D))
+                                 (vr/Rectangle [0 0 screen-width (- screen-height)])
+                                 (vr/Rectangle [0 0  (/ screen-width 3) (/ screen-height 3)])
+                                 (vr/Vector2 [-300 -300]) 0 vg/color-white)
 
         #_(vr.c/gui-group-box (vr/Rectangle [330 330 200 100])
                               "Monster")
@@ -809,7 +830,7 @@
     (vf/with-query w [_ [:or
                          :vg.gltf.anim/my-cubeAction.005
                          :vg.gltf.anim/sound_sourceAction
-                         :vg.gltf.anim/pilot_axisAction
+                         :vg.gltf.anim/pilot_axisAction.001
                          #_:vg.gltf.anim/ProjectAction]
                       _ :vg/animation
                       e :vf/entity]
