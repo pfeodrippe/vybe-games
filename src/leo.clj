@@ -482,7 +482,7 @@
                                                       :object_layer :vj.layer/moving})
                                            body (vj/body-add phys settings)
                                            {:keys [mesh material]} (vg/gen-cube {:x 0.5 :y 0.5 :z 0.5} (rand-int 10))]
-                                       [(vg/body-path body) [mesh material body phys]])))
+                                       [(vg/body-path body) [mesh material body phys :vg.gltf.scene/main_scene]])))
                              (into {}))))]
     (cond
       (key-pressed? (raylib/KEY_C))
@@ -727,7 +727,8 @@
 
                      (if (get-in w [:vg/debug :vg/enabled])
                        (vg/draw-debug w)
-                       (vg/draw-scene w)))]
+                       (do (vg/draw-scene w {:scene :vg.gltf.scene/main_scene})
+                           #_(vg/draw-scene w {:scene :vg.gltf.scene/track_scene}))))]
 
     (vg/draw-lights w #_(get default-shader vt/Shader) (get shadowmap-shader vt/Shader) draw-scene)
 
@@ -752,19 +753,22 @@
                               "Monster")
 
         #_(vr.c/gui-dummy-rec (vr/Rectangle [340 340 180 80])
-                              "Que tu quer???????????\n???")))
+                              "Que tu quer???????????\n???"))
 
-    ;; -- Draw to the screen.
-    (vg/with-drawing
-      (vr.c/clear-background (vr/Color [255 20 100 255]))
+      ;; -- Draw to the screen.
+      (vg/with-drawing
+        (vr.c/clear-background (vr/Color [255 20 100 255]))
 
-      (vr.c/draw-texture-pro (:texture (get render-texture vr/RenderTexture2D))
-                             (vr/Rectangle [0 0 screen-width (- screen-height)])
-                             (vr/Rectangle [0 0  screen-width screen-height])
-                             (vr/Vector2 [0 0]) 0 vg/color-white)
+        (vr.c/draw-texture-pro (:texture (get render-texture vr/RenderTexture2D))
+                               (vr/Rectangle [0 0 screen-width (- screen-height)])
+                               (vr/Rectangle [0 0  screen-width screen-height])
+                               (vr/Vector2 [0 0]) 0 vg/color-white)
 
-      (render-ui)
-      (vr.c/draw-fps 510 570))))
+        #_(vg/with-camera camera
+            (vg/draw-scene w {:scene :vg.gltf.scene/track_scene}))
+
+        (render-ui)
+        (vr.c/draw-fps 510 570)))))
 
 #_(init)
 
