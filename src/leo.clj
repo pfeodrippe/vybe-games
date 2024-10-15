@@ -741,11 +741,18 @@
       ;; Track.
       (vg/draw-lights w (get shadowmap-shader vt/Shader) draw-scene {:scene :vg.gltf.scene/track_scene})
       (vg/with-multipass (get render-texture vr/RenderTexture2D) {:shaders
-                                                                  [[(get noise-blur-shader vt/Shader)
-                                                                    {:u_radius (+ 4.0 (wobble-rand 2.0))}]]}
+                                                                  [#_[(get noise-blur-shader vt/Shader)
+                                                                    {:u_radius #_(+ 1.0 #_(wobble-rand 2.0)) 0}]
+                                                                   #_[(get dither-shader vt/Shader)
+                                                                      {:u_offsets (vt/Vector3 (mapv #(* % 0.0)
+                                                                                                    [0.02 (+ 0.016 (wobble 0.01))
+                                                                                                     (+ 0.040 (wobble 0.01))]))}]]}
+        (vr.c/clear-background (vr/Color [5 5 5 255]))
         (vg/with-camera (get (w (p :vg.gltf/track_camera)) vt/Camera)
-          (vr.c/clear-background (vr/Color [5 5 5 100]))
-          (vg/draw-scene w {:scene :vg.gltf.scene/track_scene})))
+          (vg/draw-scene w {:scene :vg.gltf.scene/track_scene}))
+
+        (vr.c/gui-group-box (vr/Rectangle [330 330 200 100]) "Monster")
+        (vr.c/gui-dummy-rec (vr/Rectangle [340 340 180 80]) "Que tu quer???????????\n???"))
 
       ;; General.
       (vg/draw-lights w (get shadowmap-shader vt/Shader) draw-scene {:scene :vg.gltf.scene/main_scene})
@@ -767,7 +774,7 @@
         #_(vr.c/draw-texture-pro (:texture (get render-texture vr/RenderTexture2D))
                                  (vr/Rectangle [0 0 screen-width (- screen-height)])
                                  (vr/Rectangle [0 0  (/ screen-width 3) (/ screen-height 3)])
-                                 (vr/Vector2 [-300 -300]) 0 vg/color-white)
+                                 (vr/Vector2 [-390 -300]) 0 vg/color-white)
 
         #_(vr.c/gui-group-box (vr/Rectangle [330 330 200 100])
                               "Monster")
