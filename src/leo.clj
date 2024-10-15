@@ -11,14 +11,11 @@
    [clojure.java.io :as io]
    [vybe.jolt :as vj]
    [vybe.jolt.c :as vj.c]
-   [overtone.sc.machinery.server.connection :as ov.conn]
    [vybe.util :as vy.u]
    [vybe.type :as vt]
    [vybe.network :as vn]
    [clojure.edn :as edn]
-   #_[overtone.core :refer :all]
-   #_[overtone.live :refer :all]
-   #_[clj-java-decompiler.core :refer [decompile disassemble]])
+   [vybe.audio :as va])
   (:import
    (org.vybe.flecs flecs)
    (org.vybe.raylib raylib)
@@ -27,34 +24,14 @@
 
 (set! *warn-on-reflection* true)
 
-(defonce *audio-enabled? (atom false))
-
-(defn audio-enable!
-  []
-  (try
-    (ov.conn/scsynth-path)
-    (when-not @*audio-enabled?
-      (require '[overtone.core :refer :all])
-      (eval '(boot-server))
-      (require '[overtone.inst.synth :as synth])
-      (reset! *audio-enabled? true))
-    (catch Exception e#
-      (println e#)
-      (println "\n\n ----- WARNING -----\nIf you want audio working for this game, download SuperCollider at\nhttps://supercollider.github.io/downloads.html"))))
-
-;; Try to enable audio.
-#_(audio-enable!)
-
-(defmacro sound
-  "Macro used to wrap audio calls so we can use it safely for users who
-  have overtone installed."
-  [& body]
-  (when @*audio-enabled?
-    `(do ~@body)))
+;; Enable audio and require synth after it.
+(do
+  (va/audio-enable!)
+  (eval '(require '[overtone.inst.synth :as synth])))
 
 #_(init)
 
-#_ (sound (demo 0.2 (sin-osc 400)))
+#_ (va/sound (demo 0.2 (sin-osc 400)))
 
 (defn wobble
   ([v]
@@ -81,7 +58,7 @@
   (keep-indexed #(when (pred %2) %1) coll))
 
 (defonce init-sound
-  (sound
+  (va/sound
 
     (stop)
 
@@ -252,7 +229,7 @@
         amp (if (zero? d)
               1
               (/ 1 (* d d)))]
-    (sound
+    (va/sound
       (ctl sound-source :azim azim :elev elev :amp (* amp 100) :distance d))))
 
 #_ (init)
@@ -270,8 +247,8 @@
 (vf/defobserver on-raycast-click w
   [_ [:event :vg.raycast/on-click]
    {:keys [id]} [:filter vt/Eid]]
-  (sound (mapv synth/ks1-demo
-               (repeatedly 3 #(+ (rand-int 20) 55))))
+  (va/sound (mapv synth/ks1-demo
+                  (repeatedly 3 #(+ (rand-int 20) 55))))
   (let [c (fn [k] (vf/path [id k]))]
     (merge w
            (if (contains? (w (c :vg.gltf.anim/CubeDown)) :vg/selected)
@@ -291,7 +268,7 @@
 (vf/defobserver on-raycast-enter _w
   [_ [:event :vg.raycast/on-enter]
    _body [:filter vj/VyBody]]
-  (sound (synth/ks1 (+ (rand-int 20) 50))))
+  (va/sound (synth/ks1 (+ (rand-int 20) 50))))
 
 (vf/defobserver on-raycast-leave w
   [_ [:event :vg.raycast/on-leave]]
@@ -542,7 +519,7 @@
           :message "Generate a gamecode (as a host) and\n share it with your friends"
           :rect [x-offset y-offset 350 170]
           :on-close (fn [_]
-                      (sound (synth/ks1-demo :note 65))
+                      (va/sound (synth/ks1-demo :note 65))
                       (vp/set-mem expanded-mem (vp/bool* false)))
           :buttons [{:label (vr/gui-icon (raylib/ICON_STAR) "Gen")
                      :on-click (fn [mem]
@@ -579,7 +556,7 @@
                                    (vr/gui-icon (if (vn/connected? @*puncher)
                                                   (raylib/ICON_HEART)
                                                   (raylib/ICON_DEMON)))))
-        (sound (synth/ks1-demo :note 70))
+        (va/sound (synth/ks1-demo :note 70))
         (vp/set-mem expanded-mem (vp/bool* true))))))
 
 (defonce transform-identity
@@ -741,11 +718,18 @@
       ;; Track.
       (vg/draw-lights w (get shadowmap-shader vt/Shader) draw-scene {:scene :vg.gltf.scene/track_scene})
       (vg/with-multipass (get render-texture vr/RenderTexture2D) {:shaders
-                                                                  [[(get noise-blur-shader vt/Shader)
-                                                                    {:u_radius (+ 4.0 (wobble-rand 2.0))}]]}
+                                                                  [#_[(get noise-blur-shader vt/Shader)
+                                                                    {:u_radius #_(+ 1.0 #_(wobble-rand 2.0)) 0}]
+                                                                   #_[(get dither-shader vt/Shader)
+                                                                      {:u_offsets (vt/Vector3 (mapv #(* % 0.0)
+                                                                                                    [0.02 (+ 0.016 (wobble 0.01))
+                                                                                                     (+ 0.040 (wobble 0.01))]))}]]}
+        (vr.c/clear-background (vr/Color [5 5 5 255]))
         (vg/with-camera (get (w (p :vg.gltf/track_camera)) vt/Camera)
-          (vr.c/clear-background (vr/Color [5 5 5 100]))
-          (vg/draw-scene w {:scene :vg.gltf.scene/track_scene})))
+          (vg/draw-scene w {:scene :vg.gltf.scene/track_scene}))
+
+        (vr.c/gui-group-box (vr/Rectangle [330 330 200 100]) "Monster")
+        (vr.c/gui-dummy-rec (vr/Rectangle [340 340 180 80]) "Que tu quer???????????\n???"))
 
       ;; General.
       (vg/draw-lights w (get shadowmap-shader vt/Shader) draw-scene {:scene :vg.gltf.scene/main_scene})
@@ -767,7 +751,7 @@
         #_(vr.c/draw-texture-pro (:texture (get render-texture vr/RenderTexture2D))
                                  (vr/Rectangle [0 0 screen-width (- screen-height)])
                                  (vr/Rectangle [0 0  (/ screen-width 3) (/ screen-height 3)])
-                                 (vr/Vector2 [-300 -300]) 0 vg/color-white)
+                                 (vr/Vector2 [-390 -300]) 0 vg/color-white)
 
         #_(vr.c/gui-group-box (vr/Rectangle [330 330 200 100])
                               "Monster")

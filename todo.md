@@ -222,6 +222,20 @@
     - [x] observer function
     - [x] observer events
 - [x] check CI
+- [-] use SC without overtone?
+  - nah, let's just use it
+  - [-] compile using zig
+  - [-] data-oriented approach?
+  - [-] or maybe we can use faust?
+    - https://github.com/grame-cncm/faust
+    - https://faustdoc.grame.fr/workshops/2020-04-10-faust-101/
+- [ ] sc build
+  - [ ] add test
+  - [ ] run CI
+    - [ ] osx
+    - [ ] windows
+    - [ ] linux
+   - [ ] ambisonic test
 - [ ] small game for leo
   - [x] 3d text
     - [x] instanced drawing
