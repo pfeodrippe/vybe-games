@@ -230,11 +230,18 @@
     - https://github.com/grame-cncm/faust
     - https://faustdoc.grame.fr/workshops/2020-04-10-faust-101/
 - [ ] sc build
-  - [ ] add test
+  - [x] add test
   - [ ] run CI
     - [ ] osx
+      - [x] pass test
+      - [ ] add synth lib into JAR
     - [ ] windows
-    - [ ] linux
+      - [x] pass test
+      - [ ] add synth lib into JAR
+    - [x] linux
+      - [x] pass test
+      - [-] add synth lib into JAR
+        - Let the Linux user handle that
    - [ ] ambisonic test
 - [ ] small game for leo
   - [x] 3d text

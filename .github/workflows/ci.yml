@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches:
-      - main
+      - develop
     paths-ignore:
       - '**/README.md'
       - '**/CHANGELOG.md'
@@ -84,13 +84,16 @@ jobs:
           cli: latest
 
       - name: build
+        env:
+          VYBE_RESOURCE_FOLDER: native
         run: |
           clojure -M:linux -m vybe.native.loader
           clojure -T:build uber
+          ls native
 
       - name: package
         run: |
-          rm -rf target/classes && jpackage --java-options '--enable-native-access=ALL-UNNAMED' -i target -n leo --main-class leo.main --main-jar leo-0.1.0-standalone.jar
+          rm -rf target/classes && jpackage --java-options '--enable-native-access=ALL-UNNAMED' --app-content native -i target -n leo --main-class leo.main --main-jar leo-0.1.0-standalone.jar
           ls
 
       - name: upload package
@@ -127,13 +130,16 @@ jobs:
           cli: latest
 
       - name: build
+        env:
+          VYBE_RESOURCE_FOLDER: native
         run: |
           clojure -M:osx -m vybe.native.loader
           clojure -T:build uber
+          ls native
 
       - name: package
         run: |
-          rm -rf target/classes && jpackage --java-options '-XstartOnFirstThread' --java-options '--enable-native-access=ALL-UNNAMED' -i target -n leo --main-class leo.main --main-jar leo-0.1.0-standalone.jar
+          rm -rf target/classes && jpackage --java-options '-XstartOnFirstThread' --java-options '--enable-native-access=ALL-UNNAMED' --app-content native -i target -n leo --main-class leo.main --main-jar leo-0.1.0-standalone.jar
           ls
 
       - name: upload package
