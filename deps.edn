@@ -13,17 +13,20 @@
 
   ;; -- Linux
   :linux
-  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.348-linux-x64"}}
+  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.350-linux-x64-SNAPSHOT"}}
    :jvm-opts ["--enable-native-access=ALL-UNNAMED"
+              "-Djava.library.path=native"
 
               ;; For tracing panama calls.
               #_"-Djextract.trace.downcalls=true"]}
 
   ;; -- Mac
   :osx
-  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.348-macos-universal"} #_{:local/root "../vybe"}
+  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.350-macos-universal-SNAPSHOT"} #_{:local/root "../vybe"}
                 #_ #_nubank/matcher-combinators {:mvn/version "3.9.1"}}
    :jvm-opts ["--enable-native-access=ALL-UNNAMED"
+              "-Djava.library.path=native"
+
               "-XstartOnFirstThread"
 
               ;; For tracing panama calls.
@@ -31,11 +34,11 @@
 
   ;; -- Windows
   :win
-  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.348-win-x64"}}
+  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.350-win-x64-SNAPSHOT"}}
    :jvm-opts ["--enable-native-access=ALL-UNNAMED"
               "-Djava.library.path=native"
 
               ;; For tracing panama calls.
               #_"-Djextract.trace.downcalls=true"]}}
 
- :paths ["src" "resources"]}
+ :paths ["src" "resources" "native"]}

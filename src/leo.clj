@@ -25,7 +25,7 @@
 (set! *warn-on-reflection* true)
 
 ;; Enable audio and require synth after it.
-(do
+(when-not *compile-files*
   (va/audio-enable!)
   (eval '(require '[overtone.inst.synth :as synth])))
 
@@ -846,7 +846,6 @@
     (vr.c/draw-rectangle 300 50 100 200 (vr/Color [255 100 10 255])))
 
   (vr.c/gui-load-style-sunny)
-
 
   (let [w (vf/make-world)]
     ;; If you want to enable debugging (debug messages + clerk + flecs explorer),

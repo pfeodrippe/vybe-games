@@ -234,14 +234,17 @@
   - [ ] run CI
     - [ ] osx
       - [x] pass test
-      - [ ] add synth lib into JAR
+      - [x] add to native folder
+      - [x] check if we can increase the allowed size with the clojar's folks
+      - [ ] build
     - [ ] windows
       - [x] pass test
-      - [ ] add synth lib into JAR
-    - [x] linux
+      - [ ] build
+    - [ ] linux
       - [x] pass test
       - [-] add synth lib into JAR
         - Let the Linux user handle that
+      - [ ] build
    - [ ] ambisonic test
 - [ ] small game for leo
   - [x] 3d text

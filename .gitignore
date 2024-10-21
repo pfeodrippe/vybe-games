@@ -27,3 +27,5 @@ bin/flecs.c
 # Blender, we will just commit .glb files so we don't have to use git lfs
 *.blend
 *.blend1
+
+native
