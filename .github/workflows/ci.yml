@@ -39,11 +39,11 @@ jobs:
         run: |
           clojure -M:win -m vybe.native.loader
           clojure -T:build uber
-          dir native
+          dir vybe_native
 
       - name: package
         run: |
-          jpackage --java-options '--enable-native-access=ALL-UNNAMED' --java-options '-Djava.library.path=native' --app-content native --type msi --win-dir-chooser --win-menu --win-console -i target -n leo --main-class leo.main --main-jar leo-0.1.0-standalone.jar
+          jpackage --java-options '--enable-native-access=ALL-UNNAMED' --java-options '-Djava.library.path=vybe_native' --app-content vybe_native --type msi --win-dir-chooser --win-menu --win-console -i target -n leo --main-class leo.main --main-jar leo-0.1.0-standalone.jar
           dir
 
       - name: upload package
@@ -85,11 +85,11 @@ jobs:
         run: |
           clojure -M:linux -m vybe.native.loader
           clojure -T:build uber
-          ls native
+          ls vybe_native
 
       - name: package
         run: |
-          rm -rf target/classes && jpackage --java-options '--enable-native-access=ALL-UNNAMED' --java-options '-Djava.library.path=native' --app-content native -i target -n leo --main-class leo.main --main-jar leo-0.1.0-standalone.jar
+          rm -rf target/classes && jpackage --java-options '--enable-native-access=ALL-UNNAMED' --java-options '-Djava.library.path=vybe_native' --app-content vybe_native -i target -n leo --main-class leo.main --main-jar leo-0.1.0-standalone.jar
           ls
 
       - name: upload package
@@ -103,7 +103,7 @@ jobs:
            overwrite: true
 
   build-macos:
-    runs-on: macOS-latest
+    runs-on: macos-14
     timeout-minutes: 30
     strategy:
       fail-fast: true
@@ -129,11 +129,11 @@ jobs:
         run: |
           clojure -M:osx -m vybe.native.loader
           clojure -T:build uber
-          ls native
+          ls vybe_native
 
       - name: package
         run: |
-          rm -rf target/classes && jpackage --java-options '-XstartOnFirstThread' --java-options '--enable-native-access=ALL-UNNAMED' --java-options '-Djava.library.path=native' --app-content native -i target -n leo --main-class leo.main --main-jar leo-0.1.0-standalone.jar
+          rm -rf target/classes && jpackage --java-options '-XstartOnFirstThread' --java-options '--enable-native-access=ALL-UNNAMED' --java-options '-Djava.library.path=vybe_native' --app-content vybe_native -i target -n leo --main-class leo.main --main-jar leo-0.1.0-standalone.jar
           ls
 
       - name: upload package

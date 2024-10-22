@@ -28,4 +28,4 @@ bin/flecs.c
 *.blend
 *.blend1
 
-native
+vybe_native

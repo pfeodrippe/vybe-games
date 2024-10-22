@@ -852,17 +852,16 @@
     ;; uncomment line below.
     #_(vg/debug-init! w)
 
-    (merge w {:vg.sync/synced [(flecs/EcsPairIsTag) (flecs/EcsCanToggle)]})
-
     (vg/start! w screen-width screen-height #'draw
                (fn [w]
                  (-> w
+                     (merge {:render-texture [(vr/RenderTexture2D (vr.c/load-render-texture screen-width screen-height))]
+                             :vg.sync/synced [(flecs/EcsPairIsTag) (flecs/EcsCanToggle)]})
                      (vg/model :my/model (vg/extract-resource "models.glb"))
                      (vg/shader-program :shadowmap-shader "shaders/shadowmap.vs" "shaders/shadowmap.fs")
                      (vg/shader-program :dither-shader "shaders/dither.fs")
                      (vg/shader-program :noise-blur-shader "shaders/noise_blur_2d.fs")
-                     (vg/shader-program :default-shader)
-                     (merge {:render-texture [(vr/RenderTexture2D (vr.c/load-render-texture screen-width screen-height))]}))))))
+                     (vg/shader-program :default-shader))))))
 
 #_(init)
 
