@@ -43,7 +43,7 @@ jobs:
 
       - name: package
         run: |
-          jpackage --java-options '--enable-native-access=ALL-UNNAMED' --java-options '-Djava.library.path=vybe_native' --app-content vybe_native --type msi --win-dir-chooser --win-menu --win-console -i target -n leo --main-class leo.main --main-jar leo-0.1.0-standalone.jar
+          jpackage --java-options '--enable-native-access=ALL-UNNAMED' --java-options '-Djava.library.path=vybe_native' --app-content vybe_native --app-content resources --type msi --win-dir-chooser --win-menu --win-console -i target -n leo --main-class leo.main --main-jar leo-0.1.0-standalone.jar
           dir
 
       - name: upload package
@@ -89,7 +89,16 @@ jobs:
 
       - name: package
         run: |
-          rm -rf target/classes && jpackage --java-options '--enable-native-access=ALL-UNNAMED' --java-options '-Djava.library.path=vybe_native' --app-content vybe_native -i target -n leo --main-class leo.main --main-jar leo-0.1.0-standalone.jar
+          mv resources target/resources
+          rm -rf target/classes && jpackage \
+             --java-options '--enable-native-access=ALL-UNNAMED' \
+             --java-options '-Djava.library.path=vybe_native:$APPDIR/../vybe_native' \
+             --java-options '-DVYBE_APPDIR=$APPDIR' \
+             --app-content vybe_native \
+             -i target \
+             -n leo \
+             --main-class leo.main \
+             --main-jar leo-0.1.0-standalone.jar
           ls
 
       - name: upload package
@@ -133,7 +142,17 @@ jobs:
 
       - name: package
         run: |
-          rm -rf target/classes && jpackage --java-options '-XstartOnFirstThread' --java-options '--enable-native-access=ALL-UNNAMED' --java-options '-Djava.library.path=vybe_native' --app-content vybe_native -i target -n leo --main-class leo.main --main-jar leo-0.1.0-standalone.jar
+          mv resources target/resources
+          rm -rf target/classes && jpackage \
+             --java-options '-XstartOnFirstThread' \
+             --java-options '--enable-native-access=ALL-UNNAMED' \
+             --java-options '-Djava.library.path=vybe_native:$APPDIR/../vybe_native' \
+             --java-options '-DVYBE_APPDIR=$APPDIR' \
+             --app-content vybe_native \
+             -i target \
+             -n leo \
+             --main-class leo.main \
+             --main-jar leo-0.1.0-standalone.jar
           ls
 
       - name: upload package

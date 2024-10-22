@@ -236,6 +236,8 @@
       - [x] pass test
       - [x] add to native folder
       - [x] check if we can increase the allowed size with the clojar's folks
+      - [x] fix zig flecs and vybe_native flecs conflict by removing zig flecs
+      - [ ] fix sc resources lookup
       - [ ] build
     - [ ] windows
       - [x] pass test

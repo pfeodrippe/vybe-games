@@ -57,35 +57,41 @@
 (defn indices [pred coll]
   (keep-indexed #(when (pred %2) %1) coll))
 
+(defn app-resource
+  [path]
+  (str (or (System/getProperty "VYBE_APPDIR")
+           (System/getProperty "user.dir"))
+       path))
+
 (defonce init-sound
   (va/sound
 
-    (stop)
+   (stop)
 
-    (defonce my-bus
-      (audio-bus 1))
+   (defonce my-bus
+     (audio-bus 1))
 
-    (defonce main-g (group "get-on-the-bus main"))
-    (defonce early-g (group "early birds" :head main-g))
-    (defonce later-g (group "latecomers" :after early-g))
+   (defonce main-g (group "get-on-the-bus main"))
+   (defonce early-g (group "early birds" :head main-g))
+   (defonce later-g (group "latecomers" :after early-g))
 
-    (defsynth-load bass-drum
-      "resources/sc/compiled/sonic-pi-sc808_bassdrum.scsyndef")
-    #_ (bass-drum)
+   (def bass-drum
+     (synth-load (app-resource "/resources/sc/compiled/sonic-pi-sc808_bassdrum.scsyndef")))
+   #_ (bass-drum)
 
-    (defonce b (sample "~/Downloads/wrapping-paper-rustle-72405.mp3"))
+   (defonce b (sample "~/Downloads/wrapping-paper-rustle-72405.mp3"))
 
-    (defsynth ddd
-      [freq 300, mul 0.5, out_bus 0]
-      (out out_bus
-           #_(* mul (sin-osc 260) (saw 3) 0.04)
-           #_(play-buf 1 b (buf-rate-scale:ir b) :loop 1)
-           (* mul (lpf (pink-noise 0.8) 500))))
+   (defsynth ddd
+     [freq 300, mul 0.5, out_bus 0]
+     (out out_bus
+          #_(* mul (sin-osc 260) (saw 3) 0.04)
+          #_(play-buf 1 b (buf-rate-scale:ir b) :loop 1)
+          (* mul (lpf (pink-noise 0.8) 500))))
 
-    (defsynth-load directional
-      "resources/sc/compiled/directional.scsyndef")
-    (ddd [:tail early-g] :out_bus my-bus)
-    (def sound-d (directional [:tail later-g] :in my-bus :out_bus 0))))
+   (def directional
+     (synth-load (app-resource "/resources/sc/compiled/directional.scsyndef")))
+   (ddd [:tail early-g] :out_bus my-bus)
+   (def sound-d (directional [:tail later-g] :in my-bus :out_bus 0))))
 
 (comment
 
