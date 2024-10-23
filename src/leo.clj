@@ -79,7 +79,7 @@
      (synth-load (app-resource "/resources/sc/compiled/sonic-pi-sc808_bassdrum.scsyndef")))
    #_ (bass-drum)
 
-   (defonce b (sample "~/Downloads/wrapping-paper-rustle-72405.mp3"))
+   #_(defonce b (sample "~/Downloads/wrapping-paper-rustle-72405.mp3"))
 
    (defsynth ddd
      [freq 300, mul 0.5, out_bus 0]

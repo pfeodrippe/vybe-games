@@ -231,23 +231,26 @@
     - https://faustdoc.grame.fr/workshops/2020-04-10-faust-101/
 - [ ] sc build
   - [x] add test
-  - [ ] run CI
-    - [ ] osx
+  - [x] run CI
+    - [x] osx
       - [x] pass test
       - [x] add to native folder
       - [x] check if we can increase the allowed size with the clojar's folks
       - [x] fix zig flecs and vybe_native flecs conflict by removing zig flecs
-      - [ ] fix sc resources lookup
-      - [ ] build
-    - [ ] windows
+      - [x] fix sc resources lookup
+      - [x] build
+    - [x] windows
       - [x] pass test
-      - [ ] build
-    - [ ] linux
+      - [x] build
+    - [x] linux
       - [x] pass test
       - [-] add synth lib into JAR
         - Let the Linux user handle that
-      - [ ] build
+      - [x] build
    - [ ] ambisonic test
+     - https://www.ambisonictoolkit.net/documentation/supercollider/
+     - [ ] install atk
+     - [ ] write test
 - [ ] small game for leo
   - [x] 3d text
     - [x] instanced drawing

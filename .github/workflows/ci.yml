@@ -43,17 +43,7 @@ jobs:
 
       - name: package
         run: |
-          jpackage \
-             --java-options '--enable-native-access=ALL-UNNAMED' \
-             --java-options '-Djava.library.path=vybe_native' \
-             --app-content vybe_native \
-             --app-content resources \
-             --type msi \
-             --win-dir-chooser --win-menu --win-console \
-             -i target \
-             -n leo \
-             --main-class leo.main \
-             --main-jar leo-0.1.0-standalone.jar
+          jpackage --java-options '--enable-native-access=ALL-UNNAMED' --java-options '-Djava.library.path=vybe_native' --app-content vybe_native --app-content resources --type msi --win-dir-chooser --win-menu --win-console -i target -n leo --main-class leo.main --main-jar leo-0.1.0-standalone.jar
           dir
 
       - name: upload package
