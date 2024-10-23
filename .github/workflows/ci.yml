@@ -90,11 +90,11 @@ jobs:
       - name: package
         run: |
           mv resources target/resources
+          mv vybe_native target/vybe_native
           rm -rf target/classes && jpackage \
              --java-options '--enable-native-access=ALL-UNNAMED' \
-             --java-options '-Djava.library.path=vybe_native:$APPDIR/../vybe_native' \
+             --java-options '-Djava.library.path=vybe_native:$APPDIR/vybe_native' \
              --java-options '-DVYBE_APPDIR=$APPDIR' \
-             --app-content vybe_native \
              -i target \
              -n leo \
              --main-class leo.main \
@@ -143,12 +143,12 @@ jobs:
       - name: package
         run: |
           mv resources target/resources
+          mv vybe_native target/vybe_native
           rm -rf target/classes && jpackage \
              --java-options '-XstartOnFirstThread' \
              --java-options '--enable-native-access=ALL-UNNAMED' \
-             --java-options '-Djava.library.path=vybe_native:$APPDIR/../vybe_native' \
+             --java-options '-Djava.library.path=vybe_native:$APPDIR/vybe_native' \
              --java-options '-DVYBE_APPDIR=$APPDIR' \
-             --app-content vybe_native \
              -i target \
              -n leo \
              --main-class leo.main \
