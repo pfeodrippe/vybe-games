@@ -249,8 +249,16 @@
       - [x] build
    - [ ] ambisonic test
      - https://www.ambisonictoolkit.net/documentation/supercollider/
-     - [ ] install atk
-     - [ ] write test
+     - [ ] osx
+       - [ ] install atk
+       - [ ] write test
+         - [ ] see how to get the output programmatically
+     - [ ] windows
+       - [ ] install atk
+       - [ ] write test
+     - [ ] linux
+       - [ ] install atk
+       - [ ] write test
 - [ ] small game for leo
   - [x] 3d text
     - [x] instanced drawing
