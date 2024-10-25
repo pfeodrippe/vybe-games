@@ -18,6 +18,9 @@ clj -M:osx -m vybe.native.loader && clj -M:osx -m vybe.raylib
 clj -M:win -m vybe.native.loader && clj -M:win -m vybe.raylib
 ```
 
+If you want to test it using the local vybe project, append `:dev` to the
+aliases (e.g. for Mac, we would have `clj -M:osx:dev -m vybe.native.loader && clj -M:osx:dev -m vybe.raylib`).
+
 ## Build/Package
 
 ``` shell

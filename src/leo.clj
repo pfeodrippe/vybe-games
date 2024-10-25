@@ -57,20 +57,6 @@
 (defn indices [pred coll]
   (keep-indexed #(when (pred %2) %1) coll))
 
-(defn app-resource
-  [path]
-  (let [file (io/file (str (or (System/getProperty "VYBE_APPDIR")
-                               (System/getProperty "user.dir"))
-                           "/"
-                           path))]
-    (if (.exists file)
-      (str file)
-      ;; If the file doesn't exist, maybe the path is a resource and we will.
-      (if (io/resource path)
-        (vg/extract-resource path {:target-folder (vy.u/app-resource ".")})
-        (throw (ex-info "App resource not found" {:path path}))))))
-#_(app-resource "com/pfeodrippe/vybe/overtone/directional.scsyndef")
-
 (defonce init-sound
   (va/sound
 
@@ -84,7 +70,7 @@
     (defonce later-g (group "latecomers" :after early-g))
 
     (def bass-drum
-      (synth-load (app-resource "resources/sc/compiled/sonic-pi-sc808_bassdrum.scsyndef")))
+      (synth-load (vy.u/app-resource "resources/sc/compiled/sonic-pi-sc808_bassdrum.scsyndef")))
     #_ (bass-drum)
 
     #_(defonce b (sample "~/Downloads/wrapping-paper-rustle-72405.mp3"))
@@ -97,7 +83,7 @@
            (* mul (lpf (pink-noise 0.8) 500))))
 
     (def directional
-      (synth-load (app-resource "com/pfeodrippe/vybe/overtone/directional.scsyndef"))
+      (synth-load (vy.u/app-resource "com/pfeodrippe/vybe/overtone/directional.scsyndef"))
       #_(synth-load (app-resource "/resources/sc/compiled/directional.scsyndef")))
 
     (my-noise [:tail early-g] :out_bus my-bus)
@@ -873,7 +859,7 @@
                  (-> w
                      (merge {:render-texture [(vr/RenderTexture2D (vr.c/load-render-texture screen-width screen-height))]
                              :vg.sync/synced [(flecs/EcsPairIsTag) (flecs/EcsCanToggle)]})
-                     (vg/model :my/model (vg/extract-resource "models.glb"))
+                     (vg/model :my/model (vy.u/extract-resource "models.glb"))
                      (vg/shader-program :shadowmap-shader "shaders/shadowmap.vs" "shaders/shadowmap.fs")
                      (vg/shader-program :dither-shader "shaders/dither.fs")
                      (vg/shader-program :noise-blur-shader "shaders/noise_blur_2d.fs")
