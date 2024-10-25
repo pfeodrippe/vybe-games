@@ -247,18 +247,19 @@
       - [-] add synth lib into JAR
         - Let the Linux user handle that
       - [x] build
-   - [ ] ambisonic test
+   - [x] ambisonic test
      - https://www.ambisonictoolkit.net/documentation/supercollider/
-     - [ ] osx
-       - [ ] install atk
-       - [ ] write test
-         - [ ] see how to get the output programmatically
-     - [ ] windows
-       - [ ] install atk
-       - [ ] write test
-     - [ ] linux
-       - [ ] install atk
-       - [ ] write test
+     - [x] osx
+       - [x] install atk
+       - [x] write test
+         - [x] see how to get the output programmatically
+     - [x] windows
+       - [x] install atk
+       - [x] write test
+     - [-] linux
+       - let the user handle it
+       - [-] install atk
+       - [-] write test
 - [ ] small game for leo
   - [x] 3d text
     - [x] instanced drawing

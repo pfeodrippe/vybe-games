@@ -59,26 +59,17 @@
 
 (defn app-resource
   [path]
-  (str (or (System/getProperty "VYBE_APPDIR")
-           (System/getProperty "user.dir"))
-       path))
-
-#_(defmacro defsynth-load
-    "Load a synth from a compiled Synthdef file.
-
-  E.g.
-  (defsynth-load my-beep
-   \"/Users/paulo.feodrippe/dev/sonic-pi/etc/synthdefs/compiled/sonic-pi-beep.scsyndef\")
-
-  (my-beep :note 40)"
-    [def-name file-path]
-    `(let [smap# (synth-load ~file-path)
-           var# (def ~def-name
-                  smap#)]
-       (alter-meta! var#
-                    (merge (dissoc (meta smap) :name)
-                           (meta def-name)))
-       var#))
+  (let [file (io/file (str (or (System/getProperty "VYBE_APPDIR")
+                               (System/getProperty "user.dir"))
+                           "/"
+                           path))]
+    (if (.exists file)
+      (str file)
+      ;; If the file doesn't exist, maybe the path is a resource and we will.
+      (if (io/resource path)
+        (vg/extract-resource path {:target-folder (vy.u/app-resource ".")})
+        (throw (ex-info "App resource not found" {:path path}))))))
+#_(app-resource "com/pfeodrippe/vybe/overtone/directional.scsyndef")
 
 (defonce init-sound
   (va/sound
@@ -93,12 +84,12 @@
     (defonce later-g (group "latecomers" :after early-g))
 
     (def bass-drum
-      (synth-load (app-resource "/resources/sc/compiled/sonic-pi-sc808_bassdrum.scsyndef")))
+      (synth-load (app-resource "resources/sc/compiled/sonic-pi-sc808_bassdrum.scsyndef")))
     #_ (bass-drum)
 
     #_(defonce b (sample "~/Downloads/wrapping-paper-rustle-72405.mp3"))
 
-    (defsynth ddd
+    (defsynth my-noise
       [freq 300, mul 0.5, out_bus 0]
       (out out_bus
            #_(* mul (sin-osc 260) (saw 3) 0.04)
@@ -106,8 +97,10 @@
            (* mul (lpf (pink-noise 0.8) 500))))
 
     (def directional
-      (synth-load (app-resource "/resources/sc/compiled/directional.scsyndef")))
-    (ddd [:tail early-g] :out_bus my-bus)
+      (synth-load (app-resource "com/pfeodrippe/vybe/overtone/directional.scsyndef"))
+      #_(synth-load (app-resource "/resources/sc/compiled/directional.scsyndef")))
+
+    (my-noise [:tail early-g] :out_bus my-bus)
     (def sound-d (directional [:tail later-g] :in my-bus :out_bus 0))))
 
 (comment
@@ -116,7 +109,7 @@
 
   (def b (sample "/Users/pfeodrippe/Library/Application Support/ATK/sounds/stereo/Aurora_Surgit-Dies_Irae.wav"))
 
-  (ddd)
+  (my-noise)
 
   (demo 1 [(lpf (pink-noise 0.4) 400)
            (lpf (pink-noise 0.4) 400)])
@@ -127,7 +120,7 @@
 
   (do
     (stop)
-    (def aaa (ddd [:tail early-g] :out_bus my-bus))
+    (def aaa (my-noise [:tail early-g] :out_bus my-bus))
     (def sound-d (directional [:tail later-g] :in my-bus :out_bus 0)))
 
   (definst example [freq 440 gate 1 amp 1]
