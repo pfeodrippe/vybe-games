@@ -232,7 +232,7 @@
               1
               (/ 1 (* d d)))]
     (va/sound
-      (ctl sound-source :azim azim :elev elev :amp (* amp 100) :distance d))))
+      (ctl sound-source :azim azim :elev elev :amp (* amp 10) :distance d))))
 
 #_ (init)
 
@@ -368,13 +368,7 @@
                   (nth timeline idx))))]
 
     (if idx*
-      (when (= c vt/Translation)
-        ;; Play some sound.
-        #_(vf/with-query w [_ :vg/camera-active
-                            camera vt/Camera
-                            transform [vt/Transform :global]
-                            sound-source-transform [:src (p :vg.gltf/sound_source) [vt/Transform :global]]]
-            (ambisonic sound-d transform sound-source-transform)))
+      (when (= c vt/Translation))
       (conj parent-e :vg.anim/stop))
 
     ;; We modify the component from the ref and have to notify flecs that it
@@ -385,6 +379,13 @@
                                t)
                        (nth values idx)))
     (vf/modified! w node c)))
+
+(vf/defsystem update-sound-sources w
+  [_ :vg/camera-active
+   camera vt/Camera
+   transform [vt/Transform :global]
+   sound-source-transform [:src (p :vg.gltf/sound_source) [vt/Transform :global]]]
+  (ambisonic sound-d transform sound-source-transform))
 
 (defn update-jolt-meshes
   [w]
@@ -484,7 +485,7 @@
           (merge
            {(p :vg.gltf/CameraFar :vg.gltf.anim/CameraFarAction) [:vg.anim/active]})))))
 
-(defn input-monster
+#_(defn input-monster
   [w]
   (let [key-down? #(vr.c/is-key-down %1)]
     (when (key-down? (raylib/KEY_UP))
@@ -799,6 +800,7 @@
     (update-model-meshes w)
     (animation-controller w)
     (animation-node-player w)
+    (update-sound-sources w)
 
     ;; Normal functions.
     (update-jolt-meshes w)
@@ -806,7 +808,7 @@
       (vj/update! phys delta-time))
     (network-handler w delta-time)
     (input-handler w)
-    (input-monster w)
+    #_(input-monster w)
 
     ;; Progress world by running the systems.
     (vf/progress w delta-time)
