@@ -25,7 +25,7 @@
 (set! *warn-on-reflection* true)
 
 ;; Enable audio and require synth after it.
-(when-not *compile-files*
+#_(when-not *compile-files*
   (va/audio-enable!)
   (eval '(require '[overtone.inst.synth :as synth])))
 
@@ -80,7 +80,7 @@
       (out out_bus
            #_(* mul (sin-osc 260) (saw 3) 0.04)
            #_(play-buf 1 b (buf-rate-scale:ir b) :loop 1)
-           (* mul (lpf (pink-noise 0.8) 500))))
+           (* mul (lpf (* 0.8 (pink-noise)) 500))))
 
     (def directional
       (synth-load (vy.u/app-resource "com/pfeodrippe/vybe/overtone/directional.scsyndef"))
@@ -367,12 +367,11 @@
                (- (nth timeline (inc idx))
                   (nth timeline idx))))]
 
-    (if idx*
-      (when (= c vt/Translation))
+    (when-not idx*
       (conj parent-e :vg.anim/stop))
 
-    ;; We modify the component from the ref and have to notify flecs that it
-    ;; was modified.
+    ;; We modify the component from the ref and then we have to notify flecs
+    ;; that it was modified.
     (merge @node-ref (if t
                        (lerp-p (nth values idx)
                                (nth values (inc idx))
@@ -380,12 +379,11 @@
                        (nth values idx)))
     (vf/modified! w node c)))
 
-(vf/defsystem update-sound-sources w
+(vf/defsystem update-sound-sources _w
   [_ :vg/camera-active
-   camera vt/Camera
    transform [vt/Transform :global]
    sound-source-transform [:src (p :vg.gltf/sound_source) [vt/Transform :global]]]
-  (ambisonic sound-d transform sound-source-transform))
+  (va/sound (ambisonic sound-d transform sound-source-transform)))
 
 (defn update-jolt-meshes
   [w]

@@ -1,10 +1,5 @@
 {:deps
- {org.clojure/clojure {:mvn/version "1.12.0"}
-  ;; Clerk does not work out of the box for Java 22 projects at the moment,
-  ;; so we patch it.
-  io.github.nextjournal/markdown {:git/sha "6683c48dfdb23404a23057817b6ac3acf0310bca"}
-  io.github.nextjournal/clerk {:mvn/version "0.16.1016"
-                               :exclusions [io.github.nextjournal/markdown]}}
+ {org.clojure/clojure {:mvn/version "1.12.0"}}
 
  :aliases
  { ;; Run with clj -T:build function-in-build
@@ -16,7 +11,7 @@
 
   ;; -- Linux
   :linux
-  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.362-linux-x64"}}
+  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.381-linux-x64-SNAPSHOT"}}
    :jvm-opts ["--enable-native-access=ALL-UNNAMED"
               "-Djava.library.path=vybe_native"
 
@@ -25,7 +20,7 @@
 
   ;; -- Mac
   :osx
-  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.362-macos-universal"} #_{:local/root "../vybe"}}
+  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.381-macos-universal-SNAPSHOT"} #_{:local/root "../vybe"}}
    :jvm-opts ["--enable-native-access=ALL-UNNAMED"
               "-Djava.library.path=vybe_native"
 
@@ -36,7 +31,7 @@
 
   ;; -- Windows
   :win
-  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.362-win-x64"}}
+  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.381-win-x64-SNAPSHOT"}}
    :jvm-opts ["--enable-native-access=ALL-UNNAMED"
               "-Djava.library.path=vybe_native"
 
