@@ -278,6 +278,7 @@
     - later
   - [x] digits
   - [-] hunnn, moving the text as particles seems also interesting
+  - [ ] fix black color issue when running it locally
   - [ ] dialogue graphics
     - [ ] check if we can make a 3d balloon
     - [ ] test balloon with text

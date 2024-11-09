@@ -20,7 +20,7 @@
 
   ;; -- Mac
   :osx
-  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.381-macos-universal-SNAPSHOT"} #_{:local/root "../vybe"}}
+  {:extra-deps {io.github.pfeodrippe/vybe #_{:mvn/version "0.7.381-macos-universal-SNAPSHOT"} {:local/root "../vybe"}}
    :jvm-opts ["--enable-native-access=ALL-UNNAMED"
               "-Djava.library.path=vybe_native"
 

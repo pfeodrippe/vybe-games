@@ -25,7 +25,7 @@
 (set! *warn-on-reflection* true)
 
 ;; Enable audio and require synth after it.
-#_(when-not *compile-files*
+(when-not *compile-files*
   (va/audio-enable!)
   (eval '(require '[overtone.inst.synth :as synth])))
 
