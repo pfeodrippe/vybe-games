@@ -278,7 +278,8 @@
     - later
   - [x] digits
   - [-] hunnn, moving the text as particles seems also interesting
-  - [ ] fix black color issue when running it locally
+  - [x] fix black color issue when running it locally
+  - [x] fix blender reloading (:src in a system)
   - [ ] dialogue graphics
     - [ ] check if we can make a 3d balloon
     - [ ] test balloon with text

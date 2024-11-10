@@ -214,12 +214,12 @@
          [transforms material])))))
 
 (defn ambisonic
-  [sound-source pov-transform obj-transform]
+  [sound-source source-transform target-transform]
   (let [d (vr.c/vector-3-distance
-           (vg/matrix->translation pov-transform)
-           (vg/matrix->translation obj-transform))
-        [azim elev] (let [{:keys [x y z] :as _v} (-> obj-transform
-                                                     (vr.c/matrix-multiply (vr.c/matrix-invert pov-transform))
+           (vg/matrix->translation target-transform)
+           (vg/matrix->translation source-transform))
+        [azim elev] (let [{:keys [x y z] :as _v} (-> source-transform
+                                                     (vr.c/matrix-multiply (vr.c/matrix-invert target-transform))
                                                      vg/matrix->translation)]
                       (if (> z 0)
                         [(- (Math/atan2 x z))
@@ -380,10 +380,11 @@
     (vf/modified! w node c)))
 
 (vf/defsystem update-sound-sources _w
-  [_ :vg/camera-active
-   transform [vt/Transform :global]
-   sound-source-transform [:src (p :vg.gltf/sound_source) [vt/Transform :global]]]
-  (va/sound (ambisonic sound-d transform sound-source-transform)))
+  [_ :vg/sound-source
+   source-transform [vt/Transform :global]
+   _ [:src '?e :vg/camera-active]
+   target-transform [:src '?e [vt/Transform :global]]]
+  (va/sound (ambisonic sound-d source-transform target-transform)))
 
 (defn update-jolt-meshes
   [w]
@@ -837,9 +838,9 @@
     (vr.c/init-window screen-width screen-height "Opa")
     (vr.c/set-window-state (raylib/FLAG_WINDOW_UNFOCUSED))
     (vr.c/set-target-fps 60)
-    #_ (vr.c/set-target-fps 30)
-    #_ (vr.c/set-target-fps 10)
-    #_ (vr.c/set-target-fps 120)
+    #_(vr.c/set-target-fps 30)
+    #_(vr.c/set-target-fps 10)
+    #_(vr.c/set-target-fps 120)
     (vr.c/set-window-position 1120 200)
 
     ;; "Loading screen"
