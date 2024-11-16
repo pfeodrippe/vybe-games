@@ -20,12 +20,13 @@
    (org.vybe.flecs flecs)
    (org.vybe.raylib raylib)
    (org.vybe.jolt jolt)
-   (java.lang.foreign MemorySegment ValueLayout)))
+   (java.lang.foreign MemorySegment ValueLayout)
+   (com.github.psambit9791.jdsp.transform FastFourier)))
 
 (set! *warn-on-reflection* true)
 
 ;; Enable audio and require synth after it.
-(when-not *compile-files*
+#_(when-not *compile-files*
   (va/audio-enable!)
   (eval '(require '[overtone.inst.synth :as synth])))
 
@@ -639,6 +640,17 @@
 
 #_(init)
 
+(defn get-data
+  []
+  (let [{:keys [arr timeline]} (last @va/*buffers)
+        data (->> (mapv vector arr timeline)
+                  (sort-by last)
+                  (mapv first))
+        fft (FastFourier. (double-array data))]
+    (.transform fft)
+    {:data data
+     :fft (.getMagnitude fft true)}))
+
 (defn render
   [{:keys [render-texture shadowmap-shader dither-shader noise-blur-shader _default-shader]
     :as w}]
@@ -721,7 +733,7 @@
       (vg/draw-lights w (get shadowmap-shader vt/Shader) draw-scene {:scene :vg.gltf.scene/track_scene})
       (vg/with-multipass (get render-texture vr/RenderTexture2D) {:shaders
                                                                   [#_[(get noise-blur-shader vt/Shader)
-                                                                    {:u_radius #_(+ 1.0 #_(wobble-rand 2.0)) 0}]
+                                                                      {:u_radius #_(+ 1.0 #_(wobble-rand 2.0)) 0}]
                                                                    #_[(get dither-shader vt/Shader)
                                                                       {:u_offsets (vt/Vector3 (mapv #(* % 0.0)
                                                                                                     [0.02 (+ 0.016 (wobble 0.01))
@@ -773,7 +785,46 @@
         #_(vg/with-camera camera
             (vg/draw-scene w {:scene :vg.gltf.scene/track_scene}))
 
+        (defn aa []
+          (let [{:keys [data fft]} (get-data)
+                ;; Get the peak of the time data.
+                max-data (apply max (take 3900 data))
+                max-idx (.indexOf data max-data)
+                data (->> data
+                          (drop max-idx)
+                          ;; Normalize.
+                          (map #(/ % max-data))
+                          (partition 2 1)
+                          vec)
+                ;; Freq.
+                fft (vec (partition 2 1 fft))]
+
+            ;; Time domain.
+            (doseq [idx (range 0 (min 105 (count data)))]
+              (let [[v1 v2] (get data idx)]
+                (vr.c/draw-line-ex (vt/Vector2 [(+ (* idx 5) 20)
+                                                (- 80 (* v1 50))])
+                                   (vt/Vector2 [(+ (* (inc idx) 5) 20)
+                                                (- 80 (* v2 50))])
+                                   2
+                                   (vr/Color [255 200 155 255]))))
+
+            ;; Frequency domain.
+            (doseq [idx (range (count fft))]
+              (let [[f1 f2] (get fft idx)]
+                (vr.c/draw-line-ex (vt/Vector2 [(+ (* idx 0.13) 20)
+                                                (- 200 (* f1 1))])
+                                   (vt/Vector2 [(+ (* (inc idx) 0.13) 20)
+                                                (- 200 (* f2 1))])
+                                   2
+                                   (vr/Color [200 255 155 255]))))))
+        (aa)
+
+        #_(doseq [_ (range 5)]
+            (aa))
+
         (render-ui)
+
         (vr.c/draw-fps 510 570)))))
 
 #_(init)
