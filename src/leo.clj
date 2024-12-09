@@ -27,8 +27,8 @@
 
 ;; Enable audio and require synth after it.
 #_(when-not *compile-files*
-  (va/audio-enable!)
-  (eval '(require '[overtone.inst.synth :as synth])))
+    (va/audio-enable!)
+    (eval '(require '[overtone.inst.synth :as synth])))
 
 #_(init)
 
@@ -91,6 +91,10 @@
     (def sound-d (directional [:tail later-g] :in my-bus :out_bus 0))))
 
 (comment
+
+  (def kk (sample "resources/audio/keyboard.mp3"))
+  (kk :amp 3)
+  (stop)
 
   (boot-server)
 
@@ -191,7 +195,7 @@
   (memoize
    (fn [shader]
      (vp/with-arena-root
-       (let [transforms (vp/arr 1000 vr/Matrix)
+       (let [transforms (vp/arr 2000 vr/Matrix)
              {:keys [mesh material]} (vg/gen-cube {:x 1 :y 0.5 :z 0.3} 2)
              _ (def cube mesh)
              _ (assoc material :shader shader)
@@ -399,9 +403,9 @@
                               rotation (vj/rotation body)
                               translation (vt/Translation position)]
                           (if (< (:y translation) -20)
-                            (do #_(println :REMOVVVV id :position position :rotation rotation)
-                                #_(println (w (vf/path [:vg/phys (keyword (str "vj-" id))])))
-                                (dissoc w (vg/body-path body)))
+                            ;; We will delete the entity itself if it's far away.
+                            [(vg/body-path body) (vf/del)]
+                            ;; Update the entity.
                             [(vg/body-path body)
                              [translation (vt/Rotation rotation)
                               (vt/Scale [1 1 1])
