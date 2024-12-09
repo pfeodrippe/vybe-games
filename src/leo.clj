@@ -844,41 +844,6 @@
 
 #_(init)
 
-#_(defn aa []
-    (let [{:keys [data fft]} (get-data)
-          ;; Get the peak of the time data.
-          max-data (apply max (take 3900 data))
-          max-idx (.indexOf data max-data)
-          data (->> data
-                    (drop max-idx)
-                    ;; Normalize.
-                    (map #(/ % max-data))
-                    (partition 2 1)
-                    vec)
-          ;; Freq.
-          fft (vec (partition 2 1 fft))]
-
-      ;; Time domain.
-      (doseq [idx (range 0 (min 105 (count data)))]
-        (let [[v1 v2] (get data idx)]
-          (vr.c/draw-line-ex (vt/Vector2 [(+ (* idx 5) 20)
-                                          (- 80 (* v1 50))])
-                             (vt/Vector2 [(+ (* (inc idx) 5) 20)
-                                          (- 80 (* v2 50))])
-                             2
-                             (vr/Color [255 200 155 255]))))
-
-      ;; Frequency domain.
-      (doseq [idx (range (count fft))]
-        (let [[f1 f2] (get fft idx)]
-          (vr.c/draw-line-ex (vt/Vector2 [(+ (* idx 0.13) 20)
-                                          (- 200 (* f1 1))])
-                             (vt/Vector2 [(+ (* (inc idx) 0.13) 20)
-                                          (- 200 (* f2 1))])
-                             2
-                             (vr/Color [200 255 155 255]))))))
-#_(aa)
-
 (defn init
   []
   (when-not (vr.c/is-window-ready)
@@ -923,3 +888,38 @@
   ;; function for us.
   (future (init))
   (vr/-main))
+
+#_(defn aa []
+    (let [{:keys [data fft]} (get-data)
+          ;; Get the peak of the time data.
+          max-data (apply max (take 3900 data))
+          max-idx (.indexOf data max-data)
+          data (->> data
+                    (drop max-idx)
+                    ;; Normalize.
+                    (map #(/ % max-data))
+                    (partition 2 1)
+                    vec)
+          ;; Freq.
+          fft (vec (partition 2 1 fft))]
+
+      ;; Time domain.
+      (doseq [idx (range 0 (min 105 (count data)))]
+        (let [[v1 v2] (get data idx)]
+          (vr.c/draw-line-ex (vt/Vector2 [(+ (* idx 5) 20)
+                                          (- 80 (* v1 50))])
+                             (vt/Vector2 [(+ (* (inc idx) 5) 20)
+                                          (- 80 (* v2 50))])
+                             2
+                             (vr/Color [255 200 155 255]))))
+
+      ;; Frequency domain.
+      (doseq [idx (range (count fft))]
+        (let [[f1 f2] (get fft idx)]
+          (vr.c/draw-line-ex (vt/Vector2 [(+ (* idx 0.13) 20)
+                                          (- 200 (* f1 1))])
+                             (vt/Vector2 [(+ (* (inc idx) 0.13) 20)
+                                          (- 200 (* f2 1))])
+                             2
+                             (vr/Color [200 255 155 255]))))))
+#_(aa)
