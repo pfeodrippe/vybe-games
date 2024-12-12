@@ -303,21 +303,6 @@
       (assoc-in [:camera :position] translation)
       (assoc-in [:rotation] rotation)))
 
-;; -- Physics.
-;; Update model meshes from the Jolt bodies.
-(vf/defsystem update-model-meshes _w
-  [translation [:out vt/Translation]
-   rotation [:out vt/Rotation]
-   body vj/VyBody
-   :vf/always true ; TODO We shouldn't need this if we get the activate/deactivate events
-   #_ #_:vf/disabled true
-   _ :vg/dynamic]
-  (let [pos (vj/position body)
-        rot (vj/rotation body)]
-    (when (and pos rot)
-      (merge rotation (vt/Rotation rot))
-      (merge translation (vt/Translation pos)))))
-
 (defn- key-down?
   [k]
   (vr.c/is-key-down k))
@@ -813,7 +798,6 @@
 
     ;; Systems.
     (update-camera w)
-    (update-model-meshes w)
     (animation-controller w)
     (animation-node-player w)
     (update-sound-sources w)
@@ -850,23 +834,6 @@
 
 (defn init
   []
-  (when-not (vr.c/is-window-ready)
-    (vr.c/set-config-flags (raylib/FLAG_MSAA_4X_HINT))
-    (vr.c/init-window screen-width screen-height "Opa")
-    (vr.c/set-window-state (raylib/FLAG_WINDOW_UNFOCUSED))
-    (vr.c/set-target-fps 60)
-    #_(vr.c/set-target-fps 30)
-    #_(vr.c/set-target-fps 10)
-    #_(vr.c/set-target-fps 120)
-    (vr.c/set-window-position 1120 200)
-
-    ;; "Loading screen"
-    (vr.c/clear-background (vr/Color [10 100 200 255]))
-    (vr.c/draw-rectangle 30 50 100 200 (vr/Color [255 100 10 255]))
-    (vr.c/draw-rectangle 300 50 100 200 (vr/Color [255 100 10 255])))
-
-  (vr.c/gui-load-style-sunny)
-
   (let [w (vf/make-world)]
     ;; If you want to enable debugging (debug messages + clerk + flecs explorer),
     ;; uncomment line below.
@@ -874,6 +841,7 @@
 
     (vg/start! w screen-width screen-height #'draw
                (fn [w]
+                 (vr.c/gui-load-style-sunny)
                  (-> w
                      (merge {:render-texture [(vr/RenderTexture2D (vr.c/load-render-texture screen-width screen-height))]
                              :vg.sync/synced [(flecs/EcsPairIsTag) (flecs/EcsCanToggle)]})
@@ -881,7 +849,8 @@
                      (vg/shader-program :shadowmap-shader "shaders/shadowmap.vs" "shaders/shadowmap.fs")
                      (vg/shader-program :dither-shader "shaders/dither.fs")
                      (vg/shader-program :noise-blur-shader "shaders/noise_blur_2d.fs")
-                     (vg/shader-program :default-shader))))))
+                     (vg/shader-program :default-shader)))
+               {:window-name "Léo"})))
 
 #_(init)
 

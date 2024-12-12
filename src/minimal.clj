@@ -8,17 +8,23 @@
 
 (defn draw
   [w delta-time]
-  ;; Progress the systems.
+  ;; For debugging
+  #_(def w w)
+
+  ;; Update physics (using Jolt).
+  (vg/physics-update! w delta-time)
+
+  ;; Progress the systems (using Flecs).
   (vf/progress w delta-time)
 
-  ;; Some light.
+  ;; Add some lights (from the blender model).
   (vg/draw-lights w)
 
-  ;; Render stuff into the screen.
+  ;; Render stuff into the screen (using Raylib).
   (vg/with-drawing
     (vr.c/clear-background (vr/Color [255 20 100 255]))
 
-    ;; Here we do a query for the active camera (setup when loading the model).
+    ;; Here we do a query for the active camera (it's setup when loading the model).
     (vf/with-query w [_ :vg/camera-active
                       camera vt/Camera]
       (vg/with-camera camera
@@ -39,4 +45,4 @@
                (fn [w]
                  (-> w
                      ;; Load model (as a resource).
-                     (vg/model :my/model (vg/resource "minimal.glb")))))))
+                     (vg/model :my/model (vg/resource "noel.glb")))))))
