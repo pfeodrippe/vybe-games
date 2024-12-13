@@ -11,11 +11,11 @@
   ;; For debugging
   #_(def w w)
 
-  ;; Update physics (using Jolt).
-  (vg/physics-update! w delta-time)
-
   ;; Progress the systems (using Flecs).
   (vf/progress w delta-time)
+
+  ;; Update physics (using Jolt).
+  (vg/physics-update! w delta-time)
 
   ;; Add some lights (from the blender model).
   (vg/draw-lights w)

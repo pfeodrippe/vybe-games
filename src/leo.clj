@@ -15,7 +15,8 @@
    [vybe.type :as vt]
    [vybe.network :as vn]
    [clojure.edn :as edn]
-   [vybe.audio :as va])
+   [vybe.audio :as va]
+   [vybe.math :as vm])
   (:import
    (org.vybe.flecs flecs)
    (org.vybe.raylib raylib)
@@ -174,7 +175,7 @@
              _ (def cube mesh)
              _ (assoc material :shader shader)
              _ (doseq [[idx transform] (mapv vector (range) transforms)]
-                 (merge transform (vg/matrix-transform (vt/Translation
+                 (merge transform (vm/matrix-transform (vt/Translation
                                                         (mapv #(+ % (wobble-rand 0.5 (rand 0.25)))
                                                               [(- (* (mod idx 10) 0.5)
                                                                   2)
@@ -195,11 +196,11 @@
 (defn ambisonic
   [sound-source source-transform target-transform]
   (let [d (vr.c/vector-3-distance
-           (vg/matrix->translation target-transform)
-           (vg/matrix->translation source-transform))
+           (vm/matrix->translation target-transform)
+           (vm/matrix->translation source-transform))
         [azim elev] (let [{:keys [x y z] :as _v} (-> source-transform
                                                      (vr.c/matrix-multiply (vr.c/matrix-invert target-transform))
-                                                     vg/matrix->translation)]
+                                                     vm/matrix->translation)]
                       (if (> z 0)
                         [(- (Math/atan2 x z))
                          (Math/atan2 y z)
@@ -468,7 +469,7 @@
         (vp/set-mem expanded-mem (vp/bool* true))))))
 
 (defonce transform-identity
-  (vg/matrix-transform
+  (vm/matrix-transform
    (vt/Translation [0 0 0])
    (vt/Rotation [0 0 0 1])
    (vt/Scale [1 1 1])))
@@ -521,7 +522,7 @@
                                                                                             0))
                                                                                z)))
                 transform (cond->> (-> new-transform
-                                       (vr.c/matrix-multiply (vr.c/matrix-rotate (vg/matrix->translation new-transform)
+                                       (vr.c/matrix-multiply (vr.c/matrix-rotate (vm/matrix->translation new-transform)
                                                                                  (r 0 0.15))))
                             true
                             (vr.c/matrix-multiply (vr.c/matrix-scale 0.7 (if lower? 0.5 1) 1)))]

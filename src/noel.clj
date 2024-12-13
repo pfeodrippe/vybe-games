@@ -11,18 +11,12 @@
   ;; For debugging
   #_(def w w)
 
-  (vf/with-query w [_ [:or
-                       :vg.gltf.anim/bounce_action]
-                    _ :vg/animation
-                    e :vf/entity]
-    #_(println :Aa)
-    (conj e :vg.anim/active))
+  ;; Progress the systems (using Flecs).
+  #_(vg/default-systems w)
+  (vf/progress w delta-time)
 
   ;; Update physics (using Jolt).
   (vg/physics-update! w delta-time)
-
-  ;; Progress the systems (using Flecs).
-  (vf/progress w delta-time)
 
   ;; Add some lights (from the blender model).
   (vg/draw-lights w)
