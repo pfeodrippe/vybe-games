@@ -55,9 +55,6 @@
 
 #_(init)
 
-(defn indices [pred coll]
-  (keep-indexed #(when (pred %2) %1) coll))
-
 (defonce init-sound
   (va/sound
 
@@ -130,29 +127,6 @@
   (ctl aaa :mul 0.2)
 
   ())
-
-(defn lerp
-  ([a b]
-   (lerp a b 0.6))
-  ([a b t]
-   (+ a (* t (- b a)))))
-
-(defn lerp-p
-  [p1 p2 t]
-  (let [c (vp/component p1)]
-    (c (cond
-         (vp/layout-equal? c vt/Vector3)
-         (vr.c/vector-3-lerp p1 p2 t)
-
-         (vp/layout-equal? c vt/Rotation)
-         (vr.c/quaternion-slerp p1 p2 t)
-
-         :else
-         (mapv (fn [field]
-                 (lerp (get p1 field)
-                       (get p2 field)
-                       t))
-               (keys p1))))))
 
 #_ (init)
 
@@ -310,64 +284,6 @@
 (defn- key-pressed?
   [k]
   (vr.c/is-key-pressed k))
-
-(vf/defsystem animation-controller _w
-  [player [:mut vt/AnimationPlayer]
-   {speed :v} [:maybe {:flags #{:up}} [vt/Scalar :vg.anim/speed]]
-   _ :vg.anim/active
-   _loop [:maybe :vg.anim/loop]
-   stop [:maybe :vg.anim/stop]
-   e :vf/entity
-   {:keys [delta_time]} :vf/iter]
-  (let [step (cond
-               (key-down? (raylib/KEY_W))
-               1.5
-
-               (key-down? (raylib/KEY_S))
-               -1.5
-
-               :else
-               1)]
-    (if stop
-      (do (assoc player :current_time 0)
-          (-> e
-              (disj :vg.anim/active :vg.anim/started :vg.anim/stop)
-              (conj :vg/selected)))
-      (do
-        (conj e :vg.anim/started)
-        (update player :current_time + (* delta_time step (or speed 1)))))))
-
-(vf/defsystem animation-node-player w
-  [[_ node] [:vg.anim/target-node :*]
-   [_ c] [:vg.anim/target-component :*]
-   node-ref vf/Ref
-   {:keys [timeline_count values timeline]} vt/AnimationChannel
-   player [:meta {:flags #{:up :cascade}
-                  :inout :mut}
-           vt/AnimationPlayer]
-   parent-e [:vf/entity {:flags #{:up}} :vg.anim/active]
-   _ [:not {:flags #{:up}} :vg.anim/stop]]
-  (let [values (vp/arr values timeline_count c)
-        timeline (vp/arr timeline timeline_count :float)
-        idx* (first (indices #(>= % (:current_time player)) timeline))
-        idx (max (dec (or idx* (count timeline))) 0)
-        t (when idx*
-            (/ (- (:current_time player)
-                  (nth timeline idx))
-               (- (nth timeline (inc idx))
-                  (nth timeline idx))))]
-
-    (when-not idx*
-      (conj parent-e :vg.anim/stop))
-
-    ;; We modify the component from the ref and then we have to notify flecs
-    ;; that it was modified.
-    (merge @node-ref (if t
-                       (lerp-p (nth values idx)
-                               (nth values (inc idx))
-                               t)
-                       (nth values idx)))
-    (vf/modified! w node c)))
 
 (vf/defsystem update-sound-sources _w
   [_ :vg/sound-source
@@ -798,8 +714,6 @@
 
     ;; Systems.
     (update-camera w)
-    (animation-controller w)
-    (animation-node-player w)
     (update-sound-sources w)
 
     ;; Normal functions.

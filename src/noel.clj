@@ -11,6 +11,13 @@
   ;; For debugging
   #_(def w w)
 
+  (vf/with-query w [_ [:or
+                       :vg.gltf.anim/bounce_action]
+                    _ :vg/animation
+                    e :vf/entity]
+    #_(println :Aa)
+    (conj e :vg.anim/active))
+
   ;; Update physics (using Jolt).
   (vg/physics-update! w delta-time)
 
