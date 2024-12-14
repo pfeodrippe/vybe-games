@@ -256,28 +256,6 @@
   [_ [:event :vg.raycast/on-leave]]
   (merge w {(p :vg.gltf/Sphere) [(vt/Translation [-100 -100 -100])]}))
 
-;; -- Camera.
-(vf/defsystem update-camera _w
-  [_ :vg/camera-active
-   camera [:out vt/Camera]
-   translation vt/Translation
-   rotation vt/Rotation
-   e :vf/entity
-   {:keys [delta_time]} :vf/iter]
-  (let [cam-pos (get-in camera [:camera :position])
-        vel (vt/Velocity (mapv #(/ % delta_time)
-                               [(- (:x translation)
-                                   (:x cam-pos))
-                                (- (:y translation)
-                                   (:y cam-pos))
-                                (- (:z translation)
-                                   (:z cam-pos))]))]
-    (conj e vel))
-
-  (-> camera
-      (assoc-in [:camera :position] translation)
-      (assoc-in [:rotation] rotation)))
-
 (defn- key-down?
   [k]
   (vr.c/is-key-down k))
@@ -637,13 +615,13 @@
 
       ;; Track.
       (vg/draw-lights w (get shadowmap-shader vt/Shader) draw-scene {:scene :vg.gltf.scene/track_scene})
-      (vg/with-multipass (get render-texture vr/RenderTexture2D) {:shaders
-                                                                  [#_[(get noise-blur-shader vt/Shader)
-                                                                      {:u_radius #_(+ 1.0 #_(wobble-rand 2.0)) 0}]
-                                                                   #_[(get dither-shader vt/Shader)
-                                                                      {:u_offsets (vt/Vector3 (mapv #(* % 0.0)
-                                                                                                    [0.02 (+ 0.016 (wobble 0.01))
-                                                                                                     (+ 0.040 (wobble 0.01))]))}]]}
+      (vg/with-fx (get render-texture vr/RenderTexture2D) {:shaders
+                                                           [#_[(get noise-blur-shader vt/Shader)
+                                                               {:u_radius #_(+ 1.0 #_(wobble-rand 2.0)) 0}]
+                                                            #_[(get dither-shader vt/Shader)
+                                                               {:u_offsets (vt/Vector3 (mapv #(* % 0.0)
+                                                                                             [0.02 (+ 0.016 (wobble 0.01))
+                                                                                              (+ 0.040 (wobble 0.01))]))}]]}
         (vr.c/clear-background (vr/Color [5 5 5 255]))
         (vg/with-camera (get (w (p :vg.gltf/track_camera)) vt/Camera)
           (vg/draw-scene w {:scene :vg.gltf.scene/track_scene}))
@@ -653,17 +631,17 @@
 
       ;; General.
       (vg/draw-lights w (get shadowmap-shader vt/Shader) draw-scene {:scene :vg.gltf.scene/main_scene})
-      (vg/with-multipass (get render-texture vr/RenderTexture2D) {:shaders
-                                                                  [[(get noise-blur-shader vt/Shader)
-                                                                    {:u_radius (+ 1.0
-                                                                                  #_(* (vr.c/vector-3-length velocity) 0.1)
-                                                                                  (rand 1))}]
+      (vg/with-fx (get render-texture vr/RenderTexture2D) {:shaders
+                                                           [[(get noise-blur-shader vt/Shader)
+                                                             {:u_radius (+ 1.0
+                                                                           #_(* (vr.c/vector-3-length velocity) 0.1)
+                                                                           (rand 1))}]
 
-                                                                   [(get dither-shader vt/Shader)
-                                                                    {:u_offsets (vt/Vector3 (mapv #(* % (+ 0.6
-                                                                                                           (wobble 0.3)))
-                                                                                                  [0.02 (+ 0.016 (wobble 0.01))
-                                                                                                   (+ 0.040 (wobble 0.01))]))}]]}
+                                                            [(get dither-shader vt/Shader)
+                                                             {:u_offsets (vt/Vector3 (mapv #(* % (+ 0.6
+                                                                                                    (wobble 0.3)))
+                                                                                           [0.02 (+ 0.016 (wobble 0.01))
+                                                                                            (+ 0.040 (wobble 0.01))]))}]]}
         (vr.c/clear-background (vr/Color "#A98B39"))
         (vg/with-camera camera
           (draw-scene w))
@@ -714,7 +692,6 @@
     (on-raycast-hover w)
 
     ;; Systems.
-    (update-camera w)
     (update-sound-sources w)
 
     ;; Normal functions.

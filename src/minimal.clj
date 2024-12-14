@@ -20,8 +20,8 @@
   ;; Add some lights (from the blender model).
   (vg/draw-lights w)
 
-  ;; Render stuff into the screen (using Raylib).
-  (vg/with-drawing
+  ;; Render stuff into the screen (using Raylib) using a built-in effect.
+  (vg/with-drawing-fx w (vg/fx-painting w)
     (vr.c/clear-background (vr/Color [255 20 100 255]))
 
     ;; Here we do a query for the active camera (it's setup when loading the model).
@@ -45,4 +45,4 @@
                (fn [w]
                  (-> w
                      ;; Load model (as a resource).
-                     (vg/model :my/model (vg/resource "noel.glb")))))))
+                     (vg/model :my/model (vg/resource "minimal.glb")))))))
