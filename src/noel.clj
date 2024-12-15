@@ -4,12 +4,32 @@
    [vybe.game :as vg]
    [vybe.raylib.c :as vr.c]
    [vybe.raylib :as vr]
-   [vybe.type :as vt]))
+   [vybe.type :as vt]
+   [vybe.jolt :as vj]
+   [vybe.audio :as va]))
+
+(when-not *compile-files*
+  (va/audio-enable!)
+  (eval '(require '[overtone.inst.synth :as synth])))
+
+#_ (init)
+
+(vf/defobserver cccc _w
+  [{:keys [contact-manifold]} [:event vj/OnContactAdded]]
+  (va/sound
+    (synth/ks1-demo :note (+ (rand-int 3) 90)
+                    :amp (* (max (abs (:penetration_depth contact-manifold))
+                                 0.02)
+                            20))))
+
+#_(stop)
 
 (defn draw
   [w delta-time]
   ;; For debugging
-  #_(def w w)
+  (def w w)
+
+  (cccc w)
 
   ;; Progress the systems (using Flecs).
   #_(vg/default-systems w)

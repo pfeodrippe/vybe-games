@@ -235,8 +235,8 @@
     (merge w
            (if (contains? (w (c :vg.gltf.anim/CubeDown)) :vg/selected)
              {(c :vg.gltf.anim/CubeDown) [(vf/del :vg.anim/active) (vf/del :vg/selected)]
-              (c :vg.gltf.anim/CubeUp) [:vg.anim/active]}
-             {(c :vg.gltf.anim/CubeDown) [:vg.anim/active]
+              (c :vg.gltf.anim/CubeUp) [:vg.anim/active :vg/selected]}
+             {(c :vg.gltf.anim/CubeDown) [:vg.anim/active :vg/selected]
               (c :vg.gltf.anim/CubeUp) [(vf/del :vg.anim/active) (vf/del :vg/selected)]}))))
 
 (vf/defobserver on-raycast-hover w
@@ -723,13 +723,14 @@
     #_(println (.*state (vp/default-arena)))))
 
 #_(init)
+#_ (vr/t (vg/debug-init! w))
 
 (defn init
   []
   (let [w (vf/make-world)]
     ;; If you want to enable debugging (debug messages + clerk + flecs explorer),
     ;; uncomment line below.
-    #_(vg/debug-init! w)
+    #_ (vg/debug-init! w)
 
     (vg/start! w screen-width screen-height #'draw
                (fn [w]
