@@ -15,12 +15,31 @@
 #_ (init)
 
 (vf/defobserver cccc _w
-  [{:keys [contact-manifold]} [:event vj/OnContactAdded]]
-  (va/sound
-    (synth/ks1-demo :note (+ (rand-int 3) 90)
-                    :amp (* (max (abs (:penetration_depth contact-manifold))
-                                 0.02)
-                            20))))
+  [{:keys [contact-manifold body-1 body-2]} [:event vj/OnContactAdded]]
+  (let [l (* (vr.c/vector-3-length
+              (vr.c/vector-3-subtract (vj/linear-velocity body-1)
+                                      (vj/linear-velocity body-2)))
+             0.01)]
+    (va/sound
+      (cond
+        (or (zero? (vj/motion-type body-1))
+            (zero? (vj/motion-type body-2)))
+        (synth/ks1 :note (+ (rand-int 3) 50)
+                        :amp l)
+
+        (= (vj/motion-type body-1) (vj/motion-type body-2))
+        (synth/ks1-demo :note (+ (rand-int 3) 90)
+                        :amp l
+                        #_(* (max (abs (:penetration_depth contact-manifold))
+                                  0.02)
+                             20))
+
+        :else
+        (synth/ks1 :note (+ (rand-int 3) 70)
+                        :amp l
+                        #_(* (max (abs (:penetration_depth contact-manifold))
+                                  0.02)
+                             20))))))
 
 #_(stop)
 
