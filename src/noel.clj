@@ -6,40 +6,93 @@
    [vybe.raylib :as vr]
    [vybe.type :as vt]
    [vybe.jolt :as vj]
-   [vybe.audio :as va]))
+   [vybe.audio :as va]
+   #_[overtone.core :refer :all]
+   #_[overtone.inst.synth :as synth]))
 
-(when-not *compile-files*
+#_(definst simple-flute [freq 880
+                       amp 0.5
+                       attack 0.4
+                       decay 0.5
+                       sustain 0.8
+                       release 1
+                       gate 1
+                       out 0]
+  (let [env  (env-gen (adsr attack decay sustain release) gate :action FREE)
+        mod1 (lin-lin:kr (sin-osc:kr 6) -1 1 (* freq 0.99) (* freq 1.01))
+        mod2 (lin-lin:kr (lf-noise2:kr 1) -1 1 0.2 1)
+        mod3 (lin-lin:kr (sin-osc:kr (ranged-rand 4 6)) -1 1 0.5 1)
+        sig (distort (* env (sin-osc [freq mod1])))
+        sig (* amp sig mod2 mod3)]
+    sig))
+
+#_(when-not *compile-files*
   (va/audio-enable!)
-  (eval '(require '[overtone.inst.synth :as synth])))
+  #_(eval '(require '[overtone.inst.synth :as synth])))
 
-#_ (init)
+#_(va/sound
+  (inst-fx! synth/ks1 #_vybe.game.system/directional
+            fx-echo
+            :note (+ (rand-int 3) 50)
+            #_ #_:in (:bus synth/ks1))
+  (def aaa
+    (inst-fx! synth/ks1 vybe.game.system/directional
+              :azim (- (/ 3.14 2)) :elev 0 :distance 400.0
+              :in (:bus synth/ks1))))
 
-(vf/defobserver cccc _w
+#_(demo
+    (clear-fx synth/ks1)
+    (keys (synth/ks1))
+    (let [v (synth/ks1 :note (+ (rand-int 3) 50)
+                       :azim (- (/ 3.14 3)) :elev 400.2 :distance 400.0)]
+      (ctl aaa :azim (- (/ 3.14 3)))))
+
+#_(vf/defobserver cccc w
   [{:keys [contact-manifold body-1 body-2]} [:event vj/OnContactAdded]]
   (let [l (* (vr.c/vector-3-length
               (vr.c/vector-3-subtract (vj/linear-velocity body-1)
                                       (vj/linear-velocity body-2)))
              0.01)]
+
     (va/sound
-      (cond
-        (or (zero? (vj/motion-type body-1))
-            (zero? (vj/motion-type body-2)))
-        (synth/ks1 :note (+ (rand-int 3) 50)
-                        :amp l)
+     #_(merge w {(-> (get w (vybe.game.system/body-path body-1))
+                     (get vt/Eid)
+                     :id)
+                 [:vg/sound-source
+                  #_(-> (get w (vybe.game.system/body-path body-1))
+                        (get vt/Eid)
+                        :id)]})
+     (cond
+       (or (zero? (vj/motion-type body-1))
+           (zero? (vj/motion-type body-2)))
+       #_(synth/ks1 :note (+ (rand-int 3) 50)
+                    :amp l)
+       false
 
-        (= (vj/motion-type body-1) (vj/motion-type body-2))
-        (synth/ks1-demo :note (+ (rand-int 3) 90)
-                        :amp l
-                        #_(* (max (abs (:penetration_depth contact-manifold))
-                                  0.02)
-                             20))
+       (= (vj/motion-type body-1) (vj/motion-type body-2))
+       #_(merge w {(vf/_)
+                   [:vg/sound-source
+                    [(vybe.panama/clone (get-in w [(-> (get w (vybe.game.system/body-path body-1))
+                                                       (get vt/Eid)
+                                                       :id)
+                                                   vt/Transform]))
+                     :global]]})
+       #_(do #_(def body-1 body-1)
 
-        :else
-        (synth/ks1 :note (+ (rand-int 3) 70)
-                        :amp l
-                        #_(* (max (abs (:penetration_depth contact-manifold))
-                                  0.02)
-                             20))))))
+             (synth/ks1-demo :note (+ (rand-int 3) 90)
+                             :amp l
+                             #_(* (max (abs (:penetration_depth contact-manifold))
+                                       0.02)
+                                  20)))
+       false
+
+       :else
+       #_(synth/ks1 :note (+ (rand-int 3) 70)
+                    :amp l
+                    #_(* (max (abs (:penetration_depth contact-manifold))
+                              0.02)
+                         20))
+       false))))
 
 #_(stop)
 
@@ -48,10 +101,10 @@
   ;; For debugging
   (def w w)
 
-  (cccc w)
+  #_(cccc w)
 
   ;; Progress the systems (using Flecs).
-  #_(vg/default-systems w)
+  (vg/default-systems w)
   (vf/progress w delta-time)
 
   ;; Update physics (using Jolt).

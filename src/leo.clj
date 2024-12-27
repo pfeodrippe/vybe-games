@@ -16,7 +16,8 @@
    [vybe.network :as vn]
    [clojure.edn :as edn]
    [vybe.audio :as va]
-   [vybe.math :as vm])
+   [vybe.math :as vm]
+   [overtone.core :refer :all])
   (:import
    (org.vybe.flecs flecs)
    (org.vybe.raylib raylib)
@@ -27,9 +28,9 @@
 (set! *warn-on-reflection* true)
 
 ;; Enable audio and require synth after it.
-#_(when-not *compile-files*
-    (va/audio-enable!)
-    (eval '(require '[overtone.inst.synth :as synth])))
+(when-not *compile-files*
+  (va/audio-enable!)
+  (eval '(require '[overtone.inst.synth :as synth])))
 
 #_(init)
 
@@ -56,7 +57,7 @@
 
 #_(init)
 
-(defonce init-sound
+#_(defonce init-sound
   (va/sound
 
     (stop)
@@ -91,8 +92,38 @@
 (comment
 
   (def kk (sample "resources/audio/keyboard.mp3"))
-  (kk :amp 3)
+  (def kk (sample "resources/audio/speech_1.mp3"))
+
+  (definst my-music
+    [rate 0.4]
+    (* 7 (play-buf 2 kk (buf-rate-scale:ir kk) :loop 1 :rate rate)))
+
+  (my-music)
+
+  (do (clear-fx my-music)
+      (def ddd  (inst-fx! my-music
+                          (defsynth my-fx
+                            [bus 0 freq 240]
+                            (let [input (in bus)
+                                  bpf-snd (bpf input freq (/ freq 1000.0))
+                                  snd (select (>= freq 100)
+                                              [bpf-snd
+                                               #_(+ (* (/ (- 2400 freq) 2000.0)
+                                                       0.01
+                                                       (lf-noise0 2800))
+                                                    bpf-snd)
+                                               bpf-snd])]
+                              (replace-out bus (+ snd bpf-snd)))))))
+
   (stop)
+
+  (init)
+
+
+
+
+
+
 
   (boot-server)
 
@@ -229,8 +260,8 @@
 (vf/defobserver on-raycast-click w
   [_ [:event :vg.raycast/on-click]
    {:keys [id]} [:filter vt/Eid]]
-  (va/sound (mapv synth/ks1-demo
-                  (repeatedly 3 #(+ (rand-int 20) 55))))
+  #_(va/sound (mapv synth/ks1-demo
+                    (repeatedly 3 #(+ (rand-int 20) 55))))
   (let [c (fn [k] (vf/path [id k]))]
     (merge w
            (if (contains? (w (c :vg.gltf.anim/CubeDown)) :vg/selected)
@@ -250,7 +281,7 @@
 (vf/defobserver on-raycast-enter _w
   [_ [:event :vg.raycast/on-enter]
    _body [:filter vj/VyBody]]
-  (va/sound (synth/ks1 (+ (rand-int 20) 50))))
+  #_(va/sound (synth/ks1 (+ (rand-int 20) 50))))
 
 (vf/defobserver on-raycast-leave w
   [_ [:event :vg.raycast/on-leave]]
@@ -269,7 +300,7 @@
    source-transform [vt/Transform :global]
    _ [:src '?e :vg/camera-active]
    target-transform [:src '?e [vt/Transform :global]]]
-  (va/sound (ambisonic sound-d source-transform target-transform)))
+  #_(va/sound (ambisonic sound-d source-transform target-transform)))
 
 (defn update-jolt-meshes
   [w]
@@ -406,7 +437,7 @@
           :message "Generate a gamecode (as a host) and\n share it with your friends"
           :rect [x-offset y-offset 350 170]
           :on-close (fn [_]
-                      (va/sound (synth/ks1-demo :note 65))
+                      #_(va/sound (synth/ks1-demo :note 65))
                       (vp/set-mem expanded-mem (vp/bool* false)))
           :buttons [{:label (vr/gui-icon (raylib/ICON_STAR) "Gen")
                      :on-click (fn [mem]
@@ -443,7 +474,7 @@
                                    (vr/gui-icon (if (vn/connected? @*puncher)
                                                   (raylib/ICON_HEART)
                                                   (raylib/ICON_DEMON)))))
-        (va/sound (synth/ks1-demo :note 70))
+        #_(va/sound (synth/ks1-demo :note 70))
         (vp/set-mem expanded-mem (vp/bool* true))))))
 
 (defonce transform-identity
@@ -536,7 +567,8 @@
      :fft (.getMagnitude fft true)}))
 
 (defn render
-  [{:keys [render-texture shadowmap-shader dither-shader noise-blur-shader _default-shader]
+  [{:keys [render-texture shadowmap-shader dither-shader noise-blur-shader _default-shader
+           ::vg/edge-2d-shader]
     :as w}]
   (let [shader (get shadowmap-shader vt/Shader)
         [transforms material] (particles shader)
@@ -641,7 +673,29 @@
                                                              {:u_offsets (vt/Vector3 (mapv #(* % (+ 0.6
                                                                                                     (wobble 0.3)))
                                                                                            [0.02 (+ 0.016 (wobble 0.01))
-                                                                                            (+ 0.040 (wobble 0.01))]))}]]}
+                                                                                            (+ 0.040 (wobble 0.01))]))}]
+
+                                                            [(get edge-2d-shader vt/Shader)
+                                                             {:edge_fill (vr.c/remap (get-in (w (p :vg.gltf/Cube))
+                                                                                             [vt/Translation
+                                                                                              :y])
+                                                                                     -0.058608275 0.096363540
+                                                                                     -0.5 1)
+                                                              #_(vr.c/get-time)}]]}
+
+        (ctl ddd :freq (vr.c/remap (get-in (w (p :vg.gltf/Cube))
+                                           [vt/Translation
+                                            :y])
+                                   -0.058608275 0.096363540
+                                   2400 1000))
+
+        (ctl my-music :rate (vr.c/remap (get-in (w (p :vg.gltf/Cube))
+                                           [vt/Translation
+                                            :y])
+                                   -0.058608275 0.096363540
+                                   1.0 (/ (math/pow 2 11/12)
+                                          2)))
+
         (vr.c/clear-background (vr/Color "#A98B39"))
         (vg/with-camera camera
           (draw-scene w))
