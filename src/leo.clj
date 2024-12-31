@@ -28,7 +28,7 @@
 (set! *warn-on-reflection* true)
 
 ;; Enable audio and require synth after it.
-(when-not *compile-files*
+#_(when-not *compile-files*
   (va/audio-enable!)
   (eval '(require '[overtone.inst.synth :as synth])))
 
@@ -567,8 +567,9 @@
      :fft (.getMagnitude fft true)}))
 
 (defn render
-  [{:keys [render-texture shadowmap-shader dither-shader noise-blur-shader _default-shader
-           ::vg/edge-2d-shader]
+  [{:keys [render-texture render-texture-2
+           shadowmap-shader dither-shader noise-blur-shader _default-shader
+           ::vg/shader-edge-2d ::vg/shader-mixer]
     :as w}]
   (let [shader (get shadowmap-shader vt/Shader)
         [transforms material] (particles shader)
@@ -642,10 +643,13 @@
         (vr/material-get (raylib/MATERIAL_MAP_DIFFUSE))
         (assoc-in [:texture] (:texture (get render-texture vr/RenderTexture2D))))
 
-    (vf/with-query w [_ :vg/camera-active
-                      camera vt/Camera]
+    (let [[camera] (vf/with-query w [_ :vg/camera-active
+                                     camera vt/Camera]
+                     camera)]
 
-      ;; Track.
+      (vf/disable (w (p :vg.gltf/rotator)))
+
+      ;; For the track.
       (vg/draw-lights w (get shadowmap-shader vt/Shader) draw-scene {:scene :vg.gltf.scene/track_scene})
       (vg/with-fx (get render-texture vr/RenderTexture2D) {:shaders
                                                            [#_[(get noise-blur-shader vt/Shader)
@@ -673,28 +677,20 @@
                                                              {:u_offsets (vt/Vector3 (mapv #(* % (+ 0.6
                                                                                                     (wobble 0.3)))
                                                                                            [0.02 (+ 0.016 (wobble 0.01))
-                                                                                            (+ 0.040 (wobble 0.01))]))}]
+                                                                                            (+ 0.040 (wobble 0.01))]))}]]}
 
-                                                            [(get edge-2d-shader vt/Shader)
-                                                             {:edge_fill (vr.c/remap (get-in (w (p :vg.gltf/Cube))
-                                                                                             [vt/Translation
-                                                                                              :y])
-                                                                                     -0.058608275 0.096363540
-                                                                                     -0.5 1)
-                                                              #_(vr.c/get-time)}]]}
+        (va/sound (ctl ddd :freq (vr.c/remap (get-in (w (p :vg.gltf/Cube))
+                                                     [vt/Translation
+                                                      :y])
+                                             -0.058608275 0.096363540
+                                             2400 1000)))
 
-        (ctl ddd :freq (vr.c/remap (get-in (w (p :vg.gltf/Cube))
-                                           [vt/Translation
-                                            :y])
-                                   -0.058608275 0.096363540
-                                   2400 1000))
-
-        (ctl my-music :rate (vr.c/remap (get-in (w (p :vg.gltf/Cube))
-                                           [vt/Translation
-                                            :y])
-                                   -0.058608275 0.096363540
-                                   1.0 (/ (math/pow 2 11/12)
-                                          2)))
+        (va/sound (ctl my-music :rate (vr.c/remap (get-in (w (p :vg.gltf/Cube))
+                                                          [vt/Translation
+                                                           :y])
+                                                  -0.058608275 0.096363540
+                                                  1.0 (/ (math/pow 2 11/12)
+                                                         2))))
 
         (vr.c/clear-background (vr/Color "#A98B39"))
         (vg/with-camera camera
@@ -711,11 +707,71 @@
         #_(vr.c/gui-dummy-rec (vr/Rectangle [340 340 180 80])
                               "Que tu quer???????????\n???"))
 
+      ;; Track.
+      #_(vg/with-fx (get render-texture vr/RenderTexture2D) {:shaders
+                                                             [#_[(get noise-blur-shader vt/Shader)
+                                                                 {:u_radius #_(+ 1.0 #_(wobble-rand 2.0)) 0}]
+                                                              #_[(get dither-shader vt/Shader)
+                                                                 {:u_offsets (vt/Vector3 (mapv #(* % 0.0)
+                                                                                               [0.02 (+ 0.016 (wobble 0.01))
+                                                                                                (+ 0.040 (wobble 0.01))]))}]]}
+          (vr.c/clear-background (vr/Color [5 5 5 255]))
+          (vg/with-camera (get (w (p :vg.gltf/track_camera)) vt/Camera)
+            (vg/draw-scene w {:scene :vg.gltf.scene/track_scene}))
+
+          (vr.c/gui-group-box (vr/Rectangle [330 330 200 100]) "Monster")
+          (vr.c/gui-dummy-rec (vr/Rectangle [340 340 180 80]) "Que tu quer???????????\n???"))
+
+      ;; General again.
+      (vg/with-fx (get render-texture-2 vr/RenderTexture2D) {:shaders
+                                                             [[(get noise-blur-shader vt/Shader)
+                                                               {:u_radius (+ 1.0
+                                                                             #_(* (vr.c/vector-3-length velocity) 0.1)
+                                                                             (rand 1))}]
+
+                                                              [(get dither-shader vt/Shader)
+                                                               {:u_offsets (vt/Vector3 (mapv #(* % (+ 0.6
+                                                                                                      (wobble 0.3)))
+                                                                                             [0.02 (+ 0.016 (wobble 0.01))
+                                                                                              (+ 0.040 (wobble 0.01))]))}]
+
+                                                              [(get shader-edge-2d vt/Shader)
+                                                               {:edge_fill 1.0}]]}
+
+        (vr.c/clear-background (vr/Color "#A98B39"))
+
+        (vf/enable (w (p :vg.gltf/rotator)))
+        (vg/with-camera camera
+          (draw-scene w)))
+
+      ;; Mix render textures.
+      (vg/with-fx (get render-texture-2 vr/RenderTexture2D) {:shaders [[(get shader-mixer vt/Shader)
+                                                                        {:fill (vr.c/remap (get-in (w (p :vg.gltf/Cube))
+                                                                                                   [vt/Translation
+                                                                                                    :y])
+                                                                                           -0.058608275 0.096363540
+                                                                                           -0.5 1)}]]}
+        (let [tex-id (get-in render-texture-2 [vr/RenderTexture2D :texture :id])]
+          (vr.c/rl-active-texture-slot tex-id)
+          (vr.c/rl-enable-texture tex-id)
+          (vg/set-uniform (get shader-mixer vt/Shader) {:texture1 tex-id}))
+
+        ;; This will be texture0.
+        (vr.c/draw-texture-pro (:texture (get render-texture vr/RenderTexture2D))
+                               (vr/Rectangle [0 0 screen-width (- screen-height)])
+                               (vr/Rectangle [0 0  screen-width screen-height])
+                               (vr/Vector2 [0 0]) 0 vg/color-white))
+
       ;; -- Draw to the screen.
       (vg/with-drawing
         (vr.c/clear-background (vr/Color [255 20 100 255]))
 
-        (vr.c/draw-texture-pro (:texture (get render-texture vr/RenderTexture2D))
+        #_(vr.c/draw-texture-pro (:texture (get render-texture vr/RenderTexture2D))
+                                 (vr/Rectangle [0 0 screen-width (- screen-height)])
+                                 (vr/Rectangle [0 0  screen-width screen-height])
+                                 (vr/Vector2 [0 0]) 0 vg/color-white)
+
+        (vr.c/draw-texture-pro (:texture (get render-texture-2 vr/RenderTexture2D))
                                (vr/Rectangle [0 0 screen-width (- screen-height)])
                                (vr/Rectangle [0 0  screen-width screen-height])
                                (vr/Vector2 [0 0]) 0 vg/color-white)
@@ -762,6 +818,7 @@
     ;; -- Trigger some animations continuously so they never stop.
     (vf/with-query w [_ [:or
                          :vg.gltf.anim/my-cubeAction.005
+                         :vg.gltf.anim/my-cubeAction.004
                          :vg.gltf.anim/sound_sourceAction
                          :vg.gltf.anim/pilot_axisAction.001
                          :vg.gltf.anim/pilot_axisAction.002
@@ -791,6 +848,7 @@
                  (vr.c/gui-load-style-sunny)
                  (-> w
                      (merge {:render-texture [(vr/RenderTexture2D (vr.c/load-render-texture screen-width screen-height))]
+                             :render-texture-2 [(vr/RenderTexture2D (vr.c/load-render-texture screen-width screen-height))]
                              :vg.sync/synced [(flecs/EcsPairIsTag) (flecs/EcsCanToggle)]})
                      (vg/model :my/model (vy.u/extract-resource "models.glb"))
                      (vg/shader-program :shadowmap-shader "shaders/shadowmap.vs" "shaders/shadowmap.fs")
