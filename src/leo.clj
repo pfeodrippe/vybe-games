@@ -647,7 +647,7 @@
                                      camera vt/Camera]
                      camera)]
 
-      (vf/disable (w (p :vg.gltf/rotator)))
+      (vf/disable (w (p :vg.gltf/dark_world)))
 
       ;; For the track.
       (vg/draw-lights w (get shadowmap-shader vt/Shader) draw-scene {:scene :vg.gltf.scene/track_scene})
@@ -740,17 +740,18 @@
 
         (vr.c/clear-background (vr/Color "#A98B39"))
 
-        (vf/enable (w (p :vg.gltf/rotator)))
+        (vf/enable (w (p :vg.gltf/dark_world)))
         (vg/with-camera camera
           (draw-scene w)))
 
       ;; Mix render textures.
       (vg/with-fx (get render-texture-2 vr/RenderTexture2D) {:shaders [[(get shader-mixer vt/Shader)
-                                                                        {:fill (vr.c/remap (get-in (w (p :vg.gltf/Cube))
-                                                                                                   [vt/Translation
-                                                                                                    :y])
-                                                                                           -0.058608275 0.096363540
-                                                                                           -0.5 1)}]]}
+                                                                        {:u_fill (vr.c/remap (get-in (w (p :vg.gltf/Cube))
+                                                                                                     [vt/Translation
+                                                                                                      :y])
+                                                                                             -0.058608275 0.096363540
+                                                                                             -0.5 1)
+                                                                         :u_time (vr.c/get-time)}]]}
         (let [tex-id (get-in render-texture-2 [vr/RenderTexture2D :texture :id])]
           (vr.c/rl-active-texture-slot tex-id)
           (vr.c/rl-enable-texture tex-id)
@@ -850,6 +851,7 @@
                      (merge {:render-texture [(vr/RenderTexture2D (vr.c/load-render-texture screen-width screen-height))]
                              :render-texture-2 [(vr/RenderTexture2D (vr.c/load-render-texture screen-width screen-height))]
                              :vg.sync/synced [(flecs/EcsPairIsTag) (flecs/EcsCanToggle)]})
+                     ;; `models.glb` comes from https://www.icloud.com/iclouddrive/03bfmWIccIucY5aa4j4CpCvwA#leo
                      (vg/model :my/model (vy.u/extract-resource "models.glb"))
                      (vg/shader-program :shadowmap-shader "shaders/shadowmap.vs" "shaders/shadowmap.fs")
                      (vg/shader-program :dither-shader "shaders/dither.fs")
