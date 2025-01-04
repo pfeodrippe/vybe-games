@@ -14,7 +14,6 @@
    [vybe.util :as vy.u]
    [vybe.type :as vt]
    [vybe.network :as vn]
-   [clojure.edn :as edn]
    [vybe.audio :as va]
    [vybe.math :as vm]
    [overtone.core :refer :all])
@@ -29,8 +28,8 @@
 
 ;; Enable audio and require synth after it.
 #_(when-not *compile-files*
-  (va/audio-enable!)
-  (eval '(require '[overtone.inst.synth :as synth])))
+    (va/audio-enable!)
+    (eval '(require '[overtone.inst.synth :as synth])))
 
 #_(init)
 
@@ -89,14 +88,16 @@
     (my-noise [:tail early-g] :out_bus my-bus)
     (def sound-d (directional [:tail later-g] :in my-bus :out_bus 0))))
 
+(declare ddd my-music)
+
 (comment
 
   (def kk (sample "resources/audio/keyboard.mp3"))
   (def kk (sample "resources/audio/speech_1.mp3"))
 
   (definst my-music
-    [rate 0.4]
-    (* 7 (play-buf 2 kk (buf-rate-scale:ir kk) :loop 1 :rate rate)))
+    [rate 1.0]
+    (* 8 (play-buf 2 kk (buf-rate-scale:ir kk) :loop 1 :rate rate)))
 
   (my-music)
 
@@ -108,10 +109,10 @@
                                   bpf-snd (bpf input freq (/ freq 1000.0))
                                   snd (select (>= freq 100)
                                               [bpf-snd
-                                               #_(+ (* (/ (- 2400 freq) 2000.0)
-                                                       0.01
-                                                       (lf-noise0 2800))
-                                                    bpf-snd)
+                                               (+ (* (/ (- 2400 freq) 2000.0)
+                                                     0.1
+                                                     (lf-noise0 2800))
+                                                  bpf-snd)
                                                bpf-snd])]
                               (replace-out bus (+ snd bpf-snd)))))))
 
@@ -692,7 +693,8 @@
                                                   1.0 (/ (math/pow 2 11/12)
                                                          2))))
 
-        (vr.c/clear-background (vr/Color "#A98B39"))
+        (vr.c/clear-background (vr/Color "#000000")
+                               #_(vr/Color "#A98B39"))
         (vg/with-camera camera
           (draw-scene w))
 
