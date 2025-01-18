@@ -7,11 +7,12 @@
           :ns-default build}
 
   :dev {:extra-deps {nubank/matcher-combinators {:mvn/version "3.9.1"}
-                     io.github.pfeodrippe/vybe {:local/root "../vybe"}}}
+                     io.github.pfeodrippe/vybe {:local/root "../vybe"}}
+        :extra-paths ["test" "test-resources"]}
 
   ;; -- Linux
   :linux
-  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.490-linux-x64-SNAPSHOT"}}
+  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.494-linux-x64-SNAPSHOT"}}
    :jvm-opts ["--enable-native-access=ALL-UNNAMED"
               "-Djava.library.path=vybe_native"
 
@@ -20,7 +21,7 @@
 
   ;; -- Mac
   :osx
-  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.490-macos-universal-SNAPSHOT"} #_{:local/root "../vybe"}}
+  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.494-macos-universal-SNAPSHOT"} #_{:local/root "../vybe"}}
    :jvm-opts ["--enable-native-access=ALL-UNNAMED"
               "-Djava.library.path=vybe_native"
 
@@ -31,7 +32,7 @@
 
   ;; -- Windows
   :win
-  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.490-win-x64-SNAPSHOT"}}
+  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.494-win-x64-SNAPSHOT"}}
    :jvm-opts ["--enable-native-access=ALL-UNNAMED"
               "-Djava.library.path=vybe_native"
 

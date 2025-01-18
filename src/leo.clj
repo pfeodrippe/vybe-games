@@ -252,11 +252,6 @@
   [& ks]
   (vf/path (vec (concat [:my/model] ks))))
 
-;; -- Observers.
-(vf/defobserver on-close _w
-  [_ [:event :vg.window/on-close]]
-  (System/exit 0))
-
 ;; ---- Raycast.
 (vf/defobserver on-raycast-click w
   [_ [:event :vg.raycast/on-click]

@@ -15,7 +15,7 @@ clj -M:linux -m vybe.native.loader && clj -M:linux -m vybe.raylib
 clj -M:osx -m vybe.native.loader && clj -M:osx -m vybe.raylib
 
 # Windows (x64)
-clj -M:win -m vybe.native.loader && clj -M:win -m vybe.raylib
+clj -M:win -m vybe.native.loader ; clj -M:win -m vybe.raylib
 ```
 
 If you want to test it using the local vybe project, append `:dev` to the
@@ -29,6 +29,6 @@ clj -T:build uber
 # -- OSX
 rm -rf target/classes && jpackage --java-options '-XstartOnFirstThread' --java-options '--enable-native-access=ALL-UNNAMED' -i target -n leo --main-class leo --main-jar leo-0.1.0-standalone.jar
 
-# -- Linux or Windows
+# -- Linux or Windows (using WSL)
 rm -rf target/classes && jpackage --java-options '--enable-native-access=ALL-UNNAMED' -i target -n leo --main-class leo --main-jar leo-0.1.0-standalone.jar
 ```
