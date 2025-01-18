@@ -42,6 +42,7 @@ jobs:
           clojure -M:win -m vybe.native.loader
           clojure -T:build uber
           dir vybe_native
+          clojure -M:win -e "(require 'leo)"
 
       - name: package
         run: |
@@ -88,6 +89,7 @@ jobs:
           clojure -M:linux -m vybe.native.loader
           clojure -T:build uber
           ls vybe_native
+          clojure -M:linux -e "(require 'leo)"
 
       - name: package
         run: |
@@ -141,6 +143,7 @@ jobs:
           clojure -M:osx -m vybe.native.loader
           clojure -T:build uber
           ls vybe_native
+          clojure -M:osx -e "(require 'leo)"
 
       - name: package
         run: |

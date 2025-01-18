@@ -793,7 +793,6 @@
     (vg/default-systems w)
 
     ;; Observers.
-    (on-close w)
     (on-raycast-click w)
     (on-raycast-enter w)
     (on-raycast-leave w)
