@@ -88,7 +88,7 @@
     (my-noise [:tail early-g] :out_bus my-bus)
     (def sound-d (directional [:tail later-g] :in my-bus :out_bus 0))))
 
-(declare ddd my-music)
+(declare music-bg my-music)
 
 (comment
 
@@ -102,19 +102,19 @@
   (my-music)
 
   (do (clear-fx my-music)
-      (def ddd  (inst-fx! my-music
-                          (defsynth my-fx
-                            [bus 0 freq 240]
-                            (let [input (in bus)
-                                  bpf-snd (bpf input freq (/ freq 1000.0))
-                                  snd (select (>= freq 100)
-                                              [bpf-snd
-                                               (+ (* (/ (- 2400 freq) 2000.0)
-                                                     0.1
-                                                     (lf-noise0 2800))
-                                                  bpf-snd)
-                                               bpf-snd])]
-                              (replace-out bus (+ snd bpf-snd)))))))
+      (def music-bg (inst-fx! my-music
+                              (defsynth my-fx
+                                [bus 0 freq 240]
+                                (let [input (in bus)
+                                      bpf-snd (bpf input freq (/ freq 1000.0))
+                                      snd (select (>= freq 100)
+                                                  [bpf-snd
+                                                   (+ (* (/ (- 2400 freq) 2000.0)
+                                                         0.1
+                                                         (lf-noise0 2800))
+                                                      bpf-snd)
+                                                   bpf-snd])]
+                                  (replace-out bus (+ snd bpf-snd)))))))
 
   (stop)
 
@@ -658,8 +658,11 @@
         (vg/with-camera (get (w (p :vg.gltf/track_camera)) vt/Camera)
           (vg/draw-scene w {:scene :vg.gltf.scene/track_scene}))
 
-        (vr.c/gui-group-box (vr/Rectangle [330 330 200 100]) "Monster")
-        (vr.c/gui-dummy-rec (vr/Rectangle [340 340 180 80]) "Que tu quer???????????\n???"))
+        ;; Linux may have some issue with fonts
+        ;; https://github.com/pfeodrippe/vybe/issues/4#issuecomment-2610297230
+        (when-not vp/linux?
+          (vr.c/gui-group-box (vr/Rectangle [330 330 200 100]) "Monster")
+          (vr.c/gui-dummy-rec (vr/Rectangle [340 340 180 80]) "Que tu quer???????????\n???")))
 
       ;; General.
       (vg/draw-lights w (get shadowmap-shader vt/Shader) draw-scene {:scene :vg.gltf.scene/main_scene})
@@ -675,7 +678,7 @@
                                                                                            [0.02 (+ 0.016 (wobble 0.01))
                                                                                             (+ 0.040 (wobble 0.01))]))}]]}
 
-        #_(va/sound (ctl ddd :freq (vr.c/remap (get-in (w (p :vg.gltf/Cube))
+        #_(va/sound (ctl  music-bg :freq (vr.c/remap (get-in (w (p :vg.gltf/Cube))
                                                      [vt/Translation
                                                       :y])
                                              -0.058608275 0.096363540
@@ -703,21 +706,6 @@
 
         #_(vr.c/gui-dummy-rec (vr/Rectangle [340 340 180 80])
                               "Que tu quer???????????\n???"))
-
-      ;; Track.
-      #_(vg/with-fx (get render-texture vr/RenderTexture2D) {:shaders
-                                                             [#_[(get noise-blur-shader vt/Shader)
-                                                                 {:u_radius #_(+ 1.0 #_(wobble-rand 2.0)) 0}]
-                                                              #_[(get dither-shader vt/Shader)
-                                                                 {:u_offsets (vt/Vector3 (mapv #(* % 0.0)
-                                                                                               [0.02 (+ 0.016 (wobble 0.01))
-                                                                                                (+ 0.040 (wobble 0.01))]))}]]}
-          (vr.c/clear-background (vr/Color [5 5 5 255]))
-          (vg/with-camera (get (w (p :vg.gltf/track_camera)) vt/Camera)
-            (vg/draw-scene w {:scene :vg.gltf.scene/track_scene}))
-
-          (vr.c/gui-group-box (vr/Rectangle [330 330 200 100]) "Monster")
-          (vr.c/gui-dummy-rec (vr/Rectangle [340 340 180 80]) "Que tu quer???????????\n???"))
 
       ;; General again.
       (vg/with-fx (get render-texture-2 vr/RenderTexture2D) {:shaders
@@ -777,9 +765,17 @@
         #_(vg/with-camera camera
             (vg/draw-scene w {:scene :vg.gltf.scene/track_scene}))
 
-        (render-ui)
+        ;; Linux may have some issue with fonts
+        ;; https://github.com/pfeodrippe/vybe/issues/4#issuecomment-2610297230
+        (when-not vp/linux?
+          (render-ui))
 
         (vr.c/draw-fps 510 570)))))
+
+#_ (vy.u/debug-set! true)
+#_ (vr.c/set-target-fps 480)
+#_ (vr.c/set-target-fps 240)
+#_ (vr.c/set-target-fps 60)
 
 #_(init)
 
@@ -853,7 +849,7 @@
                      (vg/shader-program :dither-shader "shaders/dither.fs")
                      (vg/shader-program :noise-blur-shader "shaders/noise_blur_2d.fs")
                      (vg/shader-program :default-shader)))
-               {:window-name "Léo"})))
+               {:window-name "Leo"})))
 
 #_(init)
 
