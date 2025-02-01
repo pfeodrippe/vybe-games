@@ -374,7 +374,8 @@
                                            body (vj/body-add phys settings)
                                            {:keys [mesh material]} (vg/gen-cube {:x 0.5 :y 0.5 :z 0.5} (rand-int 10))]
                                        [(vg/body-path body) [mesh material body phys :vg.gltf.scene/main_scene]])))
-                             (into {}))))]
+                             (into {}))))
+        cam :vg.gltf/CameraFar #_:vg.gltf/Camera.001]
     (cond
       (key-pressed? (raylib/KEY_C))
       (cubes! w)
@@ -387,14 +388,14 @@
       (key-pressed? (raylib/KEY_SPACE))
       (vf/with-query w [_ :vg/camera-active
                         e :vf/entity]
-        (if (= e (w (p :vg.gltf/CameraFar)))
+        (if (= e (w (p cam)))
           (assoc w (p :vg.gltf/Camera) [:vg/camera-active])
-          (assoc w (p :vg.gltf/CameraFar) [:vg/camera-active])))
+          (assoc w (p cam) [:vg/camera-active])))
 
       (key-pressed? (raylib/KEY_M))
       (-> w
           (merge
-           {(p :vg.gltf/CameraFar :vg.gltf.anim/CameraFarAction) [:vg.anim/active]})))))
+           {(p cam :vg.gltf.anim/CameraFarAction) [:vg.anim/active]})))))
 
 #_(defn input-monster
   [w]
@@ -647,13 +648,7 @@
 
       ;; For the track.
       (vg/draw-lights w (get shadowmap-shader vt/Shader) draw-scene {:scene :vg.gltf.scene/track_scene})
-      (vg/with-fx (get render-texture vr/RenderTexture2D) {:shaders
-                                                           [#_[(get noise-blur-shader vt/Shader)
-                                                               {:u_radius #_(+ 1.0 #_(wobble-rand 2.0)) 0}]
-                                                            #_[(get dither-shader vt/Shader)
-                                                               {:u_offsets (vt/Vector3 (mapv #(* % 0.0)
-                                                                                             [0.02 (+ 0.016 (wobble 0.01))
-                                                                                              (+ 0.040 (wobble 0.01))]))}]]}
+      (vg/with-fx (get render-texture vr/RenderTexture2D) {:flip-y true}
         (vr.c/clear-background (vr/Color [5 5 5 255]))
         (vg/with-camera (get (w (p :vg.gltf/track_camera)) vt/Camera)
           (vg/draw-scene w {:scene :vg.gltf.scene/track_scene}))
@@ -663,6 +658,8 @@
         (when-not vp/linux?
           (vr.c/gui-group-box (vr/Rectangle [330 330 200 100]) "Monster")
           (vr.c/gui-dummy-rec (vr/Rectangle [340 340 180 80]) "Que tu quer???????????\n???")))
+
+      #_ (init)
 
       ;; General.
       (vg/draw-lights w (get shadowmap-shader vt/Shader) draw-scene {:scene :vg.gltf.scene/main_scene})
@@ -679,17 +676,17 @@
                                                                                             (+ 0.040 (wobble 0.01))]))}]]}
 
         #_(va/sound (ctl  music-bg :freq (vr.c/remap (get-in (w (p :vg.gltf/Cube))
-                                                     [vt/Translation
-                                                      :y])
-                                             -0.058608275 0.096363540
-                                             2400 1000)))
+                                                             [vt/Translation
+                                                              :y])
+                                                     -0.058608275 0.096363540
+                                                     2400 1000)))
 
         #_(va/sound (ctl my-music :rate (vr.c/remap (get-in (w (p :vg.gltf/Cube))
-                                                          [vt/Translation
-                                                           :y])
-                                                  -0.058608275 0.096363540
-                                                  1.0 (/ (math/pow 2 11/12)
-                                                         2))))
+                                                            [vt/Translation
+                                                             :y])
+                                                    -0.058608275 0.096363540
+                                                    1.0 (/ (math/pow 2 11/12)
+                                                           2))))
 
         (vr.c/clear-background (vr/Color "#000000")
                                #_(vr/Color "#A98B39"))
@@ -732,8 +729,7 @@
       ;; Mix render textures.
       (vg/with-fx (get render-texture-2 vr/RenderTexture2D) {:shaders [[(get shader-mixer vt/Shader)
                                                                         {:u_fill (vr.c/remap (get-in (w (p :vg.gltf/Cube))
-                                                                                                     [vt/Translation
-                                                                                                      :y])
+                                                                                                     [vt/Translation :y])
                                                                                              -0.058608275 0.096363540
                                                                                              -0.5 1)
                                                                          :u_time (vr.c/get-time)}]]}
