@@ -398,23 +398,23 @@
            {(p cam :vg.gltf.anim/CameraFarAction) [:vg.anim/active]})))))
 
 #_(defn input-monster
-  [w]
-  (let [key-down? #(vr.c/is-key-down %1)]
-    (when (key-down? (raylib/KEY_UP))
-      (-> w
-          (update-in [(p :vg.gltf/monster_parent :vg.gltf/monster) vt/Translation :z] + 0.018)))
+    [w]
+    (let [key-down? #(vr.c/is-key-down %1)]
+      (when (key-down? (raylib/KEY_UP))
+        (-> w
+            (update-in [(p :vg.gltf/monster_parent :vg.gltf/monster) vt/Translation :z] + 0.018)))
 
-    (when (key-down? (raylib/KEY_DOWN))
-      (-> w
-          (update-in [(p :vg.gltf/monster_parent :vg.gltf/monster) vt/Translation :z] - 0.018)))
+      (when (key-down? (raylib/KEY_DOWN))
+        (-> w
+            (update-in [(p :vg.gltf/monster_parent :vg.gltf/monster) vt/Translation :z] - 0.018)))
 
-    (when (key-down? (raylib/KEY_I))
-      (-> w
-          (update-in [(p :vg.gltf/monster_parent.001 :vg.gltf/monster.001) vt/Translation :z] + 0.018)))
+      (when (key-down? (raylib/KEY_I))
+        (-> w
+            (update-in [(p :vg.gltf/monster_parent.001 :vg.gltf/monster.001) vt/Translation :z] + 0.018)))
 
-    (when (key-down? (raylib/KEY_K))
-      (-> w
-          (update-in [(p :vg.gltf/monster_parent.001 :vg.gltf/monster.001) vt/Translation :z] - 0.018)))))
+      (when (key-down? (raylib/KEY_K))
+        (-> w
+            (update-in [(p :vg.gltf/monster_parent.001 :vg.gltf/monster.001) vt/Translation :z] - 0.018)))))
 
 (defn render-ui
   []
