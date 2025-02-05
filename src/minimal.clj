@@ -4,7 +4,8 @@
    [vybe.game :as vg]
    [vybe.raylib.c :as vr.c]
    [vybe.raylib :as vr]
-   [vybe.type :as vt])
+   [vybe.type :as vt]
+   [vybe.panama :as vp])
   (:import
    (org.vybe.raylib raylib)))
 
@@ -28,7 +29,7 @@
   (vf/with-query w [_ :vg/camera-active
                     translation [:mut vt/Translation]
                     rotation [:mut vt/Rotation]
-                      transform vt/Transform]
+                    transform vt/Transform]
     (let [key-down? #(vr.c/is-key-down %1)
           move-forward (delay
                          (fn [pos v]
@@ -54,12 +55,14 @@
                                (vr.c/vector-3-scale (* delta-time 8.0))
                                (vr.c/vector-3-add translation))))
 
-      (merge rotation (-> rotation
-                          (vr.c/quaternion-multiply
-                           (vr.c/quaternion-from-axis-angle unit-y (* (:x (vr.c/get-mouse-delta))
-                                                                      -0.7
-                                                                      delta-time)))
-                          vr.c/quaternion-normalize))))
+      (when (and (< 0 (vr.c/get-mouse-x) 600)
+                 (< 0 (vr.c/get-mouse-y) 600))
+        (merge rotation (-> rotation
+                            (vr.c/quaternion-multiply
+                             (vr.c/quaternion-from-axis-angle unit-y (* (:x (vr.c/get-mouse-delta))
+                                                                        -0.7
+                                                                        delta-time)))
+                            vr.c/quaternion-normalize)))))
 
   ;; Progress the systems (using Flecs).
   (vf/progress w delta-time)
@@ -74,14 +77,26 @@
   #_(vg/draw-lights w (get (::vg/shader-default w) vt/Shader))
 
   ;; Render stuff into the screen (using Raylib) using a built-in effect.
-  (vg/with-drawing-fx w (vg/fx-painting w)
-    (vr.c/clear-background (vr/Color [255 255 255 255]))
+  (vg/with-drawing-fx w (vg/fx-painting w {:dither-radius 0.2})
+    (vr.c/clear-background (vr/Color [20 20 20 255]))
 
     ;; Here we do a query for the active camera (it's setup when loading the model).
     (vf/with-query w [_ :vg/camera-active
                       camera vt/Camera]
       (vg/with-camera camera
         (vg/draw-scene w)))
+
+    #_(vr.c/draw-text (-> (w (vf/path [:my/model :vg.gltf/Scene :vg.gltf/Cube :vg.gltf/lamp]))
+                          vybe.blender/entity-trs
+                          :rotation
+                          ((juxt :x :y :z :w))
+                          str)
+                      20 190 27 (vr/Color [228 128 228 255]))
+
+    #_(vybe.blender/entity-sync!
+       (w (vf/path [:my/model :vg.gltf/Scene :vg.gltf/Cube])))
+    #_(vybe.blender/entity-sync!
+       (w (vf/path [:my/model :vg.gltf/Scene :vg.gltf/Cube :vg.gltf/lamp])))
 
     (vr.c/draw-fps 510 570)))
 
