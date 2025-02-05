@@ -663,6 +663,7 @@
 
       ;; General.
       (vg/draw-lights w (get shadowmap-shader vt/Shader) draw-scene {:scene :vg.gltf.scene/main_scene})
+      #_(vg/draw-lights w (get (::vg/shader-default w) vt/Shader) draw-scene {:scene :vg.gltf.scene/main_scene})
       (vg/with-fx (get render-texture vr/RenderTexture2D) {:shaders
                                                            [[(get noise-blur-shader vt/Shader)
                                                              {:u_radius (+ 1.0
@@ -673,7 +674,8 @@
                                                              {:u_offsets (vt/Vector3 (mapv #(* % (+ 0.6
                                                                                                     (wobble 0.3)))
                                                                                            [0.02 (+ 0.016 (wobble 0.01))
-                                                                                            (+ 0.040 (wobble 0.01))]))}]]}
+                                                                                            (+ 0.040 (wobble 0.01))]))
+                                                              #_ #_:u_radius 0.1}]]}
 
         #_(va/sound (ctl  music-bg :freq (vr.c/remap (get-in (w (p :vg.gltf/Cube))
                                                              [vt/Translation
@@ -715,7 +717,8 @@
                                                                {:u_offsets (vt/Vector3 (mapv #(* % (+ 0.6
                                                                                                       (wobble 0.3)))
                                                                                              [0.02 (+ 0.016 (wobble 0.01))
-                                                                                              (+ 0.040 (wobble 0.01))]))}]
+                                                                                              (+ 0.040 (wobble 0.01))]))
+                                                                #_ #_:u_radius 0.5}]
 
                                                               [(get shader-edge-2d vt/Shader)
                                                                {:edge_fill 1.0}]]}
