@@ -647,7 +647,7 @@
       (vf/disable (w (p :vg.gltf/dark_world)))
 
       ;; For the track.
-      (vg/draw-lights w (get shadowmap-shader vt/Shader) draw-scene {:scene :vg.gltf.scene/track_scene})
+      (vg/draw-lights w {:shader (get shadowmap-shader vt/Shader) :draw draw-scene :scene :vg.gltf.scene/track_scene})
       (vg/with-fx (get render-texture vr/RenderTexture2D) {:flip-y true}
         (vr.c/clear-background (vr/Color [5 5 5 255]))
         (vg/with-camera (get (w (p :vg.gltf/track_camera)) vt/Camera)
@@ -662,7 +662,7 @@
       #_ (init)
 
       ;; General.
-      (vg/draw-lights w (get shadowmap-shader vt/Shader) draw-scene {:scene :vg.gltf.scene/main_scene})
+      (vg/draw-lights w {:shader (get shadowmap-shader vt/Shader) :draw draw-scene :scene :vg.gltf.scene/main_scene})
       #_(vg/draw-lights w (get (::vg/shader-default w) vt/Shader) draw-scene {:scene :vg.gltf.scene/main_scene})
       (vg/with-fx (get render-texture vr/RenderTexture2D) {:shaders
                                                            [[(get noise-blur-shader vt/Shader)

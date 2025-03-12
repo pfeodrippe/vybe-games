@@ -12,7 +12,7 @@
 
   ;; -- Linux
   :linux
-  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.522-linux-x64"}}
+  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.565-linux-x64"}}
    :jvm-opts ["--enable-native-access=ALL-UNNAMED"
               "-Djava.library.path=vybe_native"
 
@@ -21,7 +21,7 @@
 
   ;; -- Mac
   :osx
-  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.522-macos-universal"} #_{:local/root "../vybe"}}
+  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.565-macos-universal"} #_{:local/root "../vybe"}}
    :jvm-opts ["--enable-native-access=ALL-UNNAMED"
               "-Djava.library.path=vybe_native"
 
@@ -32,7 +32,7 @@
 
   ;; -- Windows
   :win
-  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.522-win-x64"}}
+  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.565-win-x64"}}
    :jvm-opts ["--enable-native-access=ALL-UNNAMED"
               "-Djava.library.path=vybe_native"
 

@@ -26,16 +26,17 @@
   #_(vg/draw-lights w (get (::vg/shader-default w) vt/Shader))
 
   ;; Render stuff into the screen (using Raylib) using a built-in effect.
-  (vg/with-drawing-fx w (vg/fx-painting w {:dither-radius 0.2})
-    (vr.c/clear-background (vr/Color [20 20 20 255]))
+  (vg/with-drawing
+    (vg/with-drawing-fx w (vg/fx-painting w {:dither-radius 0.2})
+      (vr.c/clear-background (vr/Color [20 20 20 255]))
 
-    ;; Here we do a query for the active camera (it's setup when loading the model).
-    (vf/with-query w [_ :vg/camera-active
-                      camera vt/Camera]
-      (vg/with-camera camera
-        (vg/draw-scene w)))
+      ;; Here we do a query for the active camera (it's setup when loading the model).
+      (vf/with-query w [_ :vg/camera-active
+                        camera vt/Camera]
+        (vg/with-camera camera
+          (vg/draw-scene w)))
 
-    (vr.c/draw-fps 510 570)))
+      (vr.c/draw-fps 510 570))))
 
 #_ (init)
 
@@ -50,7 +51,10 @@
                (fn [w]
                  (-> w
                      ;; Load model (as a resource).
-                     (vg/model :my/model (vg/resource "com/pfeodrippe/vybe/model/minimal.glb")))))))
+                     (vg/model :my/model (vg/resource "com/pfeodrippe/vybe/model/minimal.glb"))))
+               {:screen-loader (fn []
+                                 (vr.c/clear-background (vr/Color [10 100 200 255]))
+                                 (vr.c/draw-text "Loading..." 200 270 40 (vr/Color [235 220 200 255])))})))
 
 #_(init)
 

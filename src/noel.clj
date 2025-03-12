@@ -185,8 +185,6 @@
 
   #_ (init)
 
-  ;; Track
-  (vg/draw-lights w {:scene :vg.gltf.scene/track_scene})
   (let [raycasted (= (vf/get-name (raycasted-entity w))
                      (vf/path [:my/model :vg.gltf/office :vg.gltf/tv]))
         switch? (and raycasted (vr.c/is-mouse-button-released (raylib/MOUSE_BUTTON_LEFT)))
@@ -196,6 +194,8 @@
               (disj tv ::turned-off)
               (conj tv ::turned-off)))
         turned-off (get tv ::turned-off)]
+    ;; Track
+    (vg/draw-lights w {:scene :vg.gltf.scene/track_scene})
     (vg/with-target (w (vf/path [:my/model :vg.gltf/office :vg.gltf/tv :vg.gltf/screen]))
       (if turned-off
         (vr.c/clear-background (vr/Color [10 10 10 255]))
