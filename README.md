@@ -12,7 +12,7 @@ Sample games for Vybe (https://github.com/pfeodrippe/vybe).
 clj -M:linux -m vybe.native.loader && clj -M:linux -m vybe.raylib
 
 # Linux (x64) Basic, for example, if you don't have access to AVX2 instructions
-clj -M:linux -m vybe.native.loader && clj -M:linux -m vybe.raylib
+clj -M:linux -m vybe.native.loader && clj -M:linux-basic -m vybe.raylib
 
 # Mac (Universal)
 clj -M:osx -m vybe.native.loader && clj -M:osx -m vybe.raylib
