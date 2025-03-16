@@ -12,7 +12,15 @@
 
   ;; -- Linux
   :linux
-  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.565-linux-x64"}}
+  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.568-linux-x64"}}
+   :jvm-opts ["--enable-native-access=ALL-UNNAMED"
+              "-Djava.library.path=vybe_native"
+
+              ;; For tracing panama calls.
+              #_"-Djextract.trace.downcalls=true"]}
+
+  :linux-basic
+  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.568-linux-x64--basic"}}
    :jvm-opts ["--enable-native-access=ALL-UNNAMED"
               "-Djava.library.path=vybe_native"
 
@@ -21,7 +29,7 @@
 
   ;; -- Mac
   :osx
-  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.565-macos-universal"} #_{:local/root "../vybe"}}
+  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.568-macos-universal"}}
    :jvm-opts ["--enable-native-access=ALL-UNNAMED"
               "-Djava.library.path=vybe_native"
 
@@ -32,7 +40,7 @@
 
   ;; -- Windows
   :win
-  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.565-win-x64"}}
+  {:extra-deps {io.github.pfeodrippe/vybe {:mvn/version "0.7.568-win-x64"}}
    :jvm-opts ["--enable-native-access=ALL-UNNAMED"
               "-Djava.library.path=vybe_native"
 
