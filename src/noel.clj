@@ -59,7 +59,7 @@
    vel [:out [:src '?e vt/Velocity]]
    phys [:src (vg/root) vj/PhysicsSystem]
    w :vf/world]
-  (let [collider (w (vf/path [:my/model #_:vg.gltf/Cube :vg.gltf/player__collider]))
+  (let [collider (w (vf/path [:my/model :vg.gltf/player__collider]))
         [body n] (cond
                    (= (vg/body->entity w body-1) collider)
                    [body-1 :a]
@@ -140,13 +140,14 @@
   ;; Physics.
   (conj (w (vf/path [:my/model :vg.gltf/Cube])) :vg/dynamic)
   (conj (w (vf/path [:my/model #_:vg.gltf/Camera :vg.gltf/player__collider])) :vg/collide-with-static :lala)
-  (conj (w (vf/path [:my/model :vg.gltf/office :vg.gltf/tv])) :vg/kinematic)
+  (conj (w (vf/path [:my/model :vg.gltf/office :vg.gltf/table2 :vg.gltf/tv.001])) :vg/kinematic)
 
   ;; Accept inputs (mouse + WASD) to move the camera (or any other character via
   ;; a tag).
   (vg/camera-move! w {:sensitivity 0.5
                       :rot-sensitivity 1.5
-                      :entity-tag #_:vg/camera-active :lala})
+                      :entity-tag #_:vg/camera-active :lala
+                      :rot-pitch-limit (/ Math/PI 3)})
 
   ;; Replicate rotation + translation from collider to camera.
   (merge (get (w (vf/path [:my/model :vg.gltf/Camera])) vt/Translation)
@@ -185,10 +186,10 @@
 
   #_ (init)
 
-  (let [raycasted (= (vf/get-name (raycasted-entity w))
-                     (vf/path [:my/model :vg.gltf/office :vg.gltf/tv]))
+  (let [tv-path (vf/path [:my/model :vg.gltf/office :vg.gltf/table2 :vg.gltf/tv.001])
+        raycasted (= (vf/get-name (raycasted-entity w)) tv-path)
         switch? (and raycasted (vr.c/is-mouse-button-released (raylib/MOUSE_BUTTON_LEFT)))
-        tv (w (vf/path [:my/model :vg.gltf/office :vg.gltf/tv]))
+        tv (w tv-path)
         _ (when switch?
             (if (::turned-off tv)
               (disj tv ::turned-off)
@@ -196,7 +197,7 @@
         turned-off (get tv ::turned-off)]
     ;; Track
     (vg/draw-lights w {:scene :vg.gltf.scene/track_scene})
-    (vg/with-target (w (vf/path [:my/model :vg.gltf/office :vg.gltf/tv :vg.gltf/screen]))
+    (vg/with-target (w (vf/path [:my/model :vg.gltf/office :vg.gltf/table2 :vg.gltf/tv.001 :vg.gltf/screen]))
       (if turned-off
         (vr.c/clear-background (vr/Color [10 10 10 255]))
         (do
@@ -214,11 +215,13 @@
 
     ;; General.
     (vg/draw-lights w {:scene :vg.gltf.scene/Scene})
-    #_ (vg/draw-lights w (get (::vg/shader-default w) vt/Shader))
+    (vg/draw-lights w {:scene :vg.gltf.scene/Scene :shader (get (::vg/shader-default w) vt/Shader)})
 
     (vg/with-drawing
 
-      (vg/with-drawing-fx w (vg/fx-painting w {:dither-radius 0.2 #_dither-radius})
+      (vg/with-drawing-fx w (concat [[(get (::vg/shader-edge-2d w) vt/Shader)
+                                      {:edge_fill 1.0}]]
+                                    (vg/fx-painting w {:dither-radius 0.3 #_dither-radius}))
         (vr.c/clear-background (vr/Color [15 15 17 255]))
 
         (vf/with-query w [_ :vg/camera-active
