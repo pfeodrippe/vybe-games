@@ -9,7 +9,9 @@
    [vybe.c :as vc]
    [vybe.math :as vm]
    [vybe.jolt :as vj]
-   [vybe.jolt.c :as vj.c])
+   [vybe.jolt.c :as vj.c]
+   [fs]
+   [flow-storm.runtime.debuggers-api :refer [set-recording]])
   (:import
    (org.vybe.raylib raylib)))
 
@@ -162,6 +164,9 @@
         (assoc w (vf/path [:my/model :vg.gltf/Camera.001]) [:vg/camera-active])
         (assoc w (vf/path [:my/model :vg.gltf/Camera]) [:vg/camera-active]))))
 
+  (when (vg/key-pressed? :r) (set-recording true))
+  (when (vg/key-pressed? :g) (set-recording false))
+
   (vg/default-systems w)
   ;; Progress the systems (using Flecs).
   (vf/progress w delta-time)
@@ -190,6 +195,8 @@
         switch? (and raycasted (vr.c/is-mouse-button-released (raylib/MOUSE_BUTTON_LEFT)))
         tv (w (vf/path [:my/model :vg.gltf/office :vg.gltf/tv]))
         _ (when switch?
+            (debugger)
+
             (if (::turned-off tv)
               (disj tv ::turned-off)
               (conj tv ::turned-off)))

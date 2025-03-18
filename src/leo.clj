@@ -16,6 +16,7 @@
    [vybe.network :as vn]
    #_[vybe.audio :as va]
    [vybe.math :as vm]
+   [fs]
    #_[overtone.core :refer :all])
   (:import
    (org.vybe.flecs flecs)
