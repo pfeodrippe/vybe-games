@@ -51,18 +51,21 @@
 
   ;; -- FlowStorm.
   ;; See instructions at https://github.com/pfeodrippe/vybe-games/pull/2/files (thanks to Juan Monetta!)
-  :storm {:classpath-overrides {org.clojure/clojure nil}
-          :extra-deps {com.github.flow-storm/clojure {:mvn/version "1.12.0-9"}
-                       com.github.flow-storm/flow-storm-dbg {:mvn/version "4.2.2"}}
-          :jvm-opts ["-Dflowstorm.theme=dark"
-                     "-Dflowstorm.callTreeUpdate=false"
-                     "-Dflowstorm.autoUpdateUI=false"
-                     "-Dclojure.storm.instrumentAutoPrefixes=false"
+  :runtime-storm {:classpath-overrides {org.clojure/clojure nil}
+                  :extra-deps {com.github.flow-storm/clojure {:mvn/version "1.12.0-9"}
+                               com.github.flow-storm/flow-storm-inst {:mvn/version "4.2.2"}}
+                  :jvm-opts ["-Dclojure.storm.instrumentAutoPrefixes=false"
 
-                     ;; Instrumentation
-                     ;; Only games
-                     "-Dclojure.storm.instrumentOnlyPrefixes=minimal,leo,noel"
+                             ;; Instrumentation
+                             ;; Only games
+                             "-Dclojure.storm.instrumentOnlyPrefixes=minimal,leo,noel"
 
-                     ;; games + vybe
-                     #_"-Dclojure.storm.instrumentOnlyPrefixes=vybe.,minimal,leo,noel"
-                     #_"-Dclojure.storm.instrumentSkipPrefixes=vybe.flecs,vybe.panama"]}}}
+                             ;; games + vybe
+                             #_"-Dclojure.storm.instrumentOnlyPrefixes=vybe.,minimal,leo,noel"
+                             #_"-Dclojure.storm.instrumentSkipPrefixes=vybe.flecs,vybe.panama"]}
+  :ui-storm {:extra-deps {com.github.flow-storm/flow-storm-dbg {:mvn/version "4.2.2"}}
+             :exec-fn flow-storm.debugger.main/start-debugger
+             :exec-args {:port 7888}
+             :jvm-opts ["-Dflowstorm.theme=dark"
+                        "-Dflowstorm.callTreeUpdate=false"
+                        "-Dflowstorm.autoUpdateUI=false"]}}}

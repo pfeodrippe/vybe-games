@@ -45,11 +45,11 @@
            (:normal contact-manifold))
     #_(va/sound (synth/ks1 (+ (rand-int 20) 50))))
 
-(def screen-width 600)
-(def screen-height 600)
+#_(def screen-width 600)
+#_(def screen-height 600)
 
-(def screen-width-half (/ screen-width 2.0))
-(def screen-height-half (/ screen-height 2.0))
+#_(def screen-width-half (/ screen-width 2.0))
+#_(def screen-height-half (/ screen-height 2.0))
 
 (vf/defobserver on-contact-added _w
   [{:keys [body-1 body-2 contact-manifold]} [:event vj/OnContactAdded]
@@ -81,7 +81,8 @@
 
 (defn raycasted-entity
   [w]
-  (let [{:keys [position direction]} (-> (vt/Vector2 [screen-width-half screen-height-half])
+  (let [{:keys [position direction]} (-> (vt/Vector2 [(/ (vr.c/get-screen-width) 2.0)
+                                                      (/ (vr.c/get-screen-height) 2.0)])
                                          (vr.c/vy-get-screen-to-world-ray (-> (w (vf/path [:my/model :vg.gltf/Camera]))
                                                                               (get vt/Camera))))
         pos (vr.c/vector-3-add position (-> (vt/Vector3 direction)
@@ -100,13 +101,15 @@
           radius-outer 8
           size 0.8}}]
    (let [radius-inner (* radius-inner size)
-         radius-outer (* radius-outer size)]
+         radius-outer (* radius-outer size)
+         width (/ (vr.c/get-screen-width) 2.0)
+         height (/ (vr.c/get-screen-height) 2.0)]
      (doseq [i (range 2)]
-       (vr.c/draw-circle-lines 301 301 (+ radius-outer (* i 3 size)) (vr/Color [20 20 20 255]))
-       (vr.c/draw-circle-lines 300 300 (+ radius-outer (* i 3 size)) (vr/Color color-fg)))
+       (vr.c/draw-circle-lines (+ width 1) (+ height 1) (+ radius-outer (* i 3 size)) (vr/Color [20 20 20 255]))
+       (vr.c/draw-circle-lines width height (+ radius-outer (* i 3 size)) (vr/Color color-fg)))
 
-     (vr.c/draw-circle 301 301 radius-inner (vr/Color [20 20 20 255]))
-     (vr.c/draw-circle 300 300 radius-inner color-fg))))
+     (vr.c/draw-circle (+ width 1) (+ height 1) radius-inner (vr/Color [20 20 20 255]))
+     (vr.c/draw-circle  width height radius-inner color-fg))))
 
 (defn- draw-text
   ([text x y]
@@ -134,7 +137,7 @@
                        :vg.gltf.anim/pilot_axisAction.004]
                     _ :vg/animation
                     e :vf/entity]
-    (conj e [(vt/Scalar 0.5) :vg.anim/speed])
+    (conj e [(vt/Scalar 0.4) :vg.anim/speed])
     (conj e :vg.anim/active))
 
   ;; Physics.
@@ -174,16 +177,6 @@
   #_(vr.c/rl-set-clip-planes -1000 1000)
   #_(vr.c/rl-set-clip-planes 0.01 1000)
 
-  ;; Message.
-  (vg/with-fx-default w {:flip-y true}
-    (vr.c/clear-background (vr/Color [20 20 20 0]))
-    (vr.c/draw-rectangle-pro (vr/Rectangle [320 325 225 120]) (vt/Vector2 [0 0]) 0
-                             (vr/Color [20 30 40 255]))
-    (vr.c/draw-rectangle-pro (vr/Rectangle [320 320 215 115]) (vt/Vector2 [0 0]) 0
-                             (vr/Color [255 234 235 255]))
-    (vr.c/gui-group-box (vr/Rectangle [330 330 200 100]) "MONSTER")
-    (vr.c/gui-dummy-rec (vr/Rectangle [340 340 180 80]) "Que tu quer???????????\n??? Por quê?"))
-
   #_ (init)
 
   (let [tv-path (vf/path [:my/model :vg.gltf/office :vg.gltf/table2 :vg.gltf/tv.001])
@@ -195,9 +188,22 @@
               (disj tv ::turned-off)
               (conj tv ::turned-off)))
         turned-off (get tv ::turned-off)]
+
+    ;; Message.
+    (vg/with-fx-default w {:flip-y true
+                           :rt (get (::screen-rt w) vr/RenderTexture2D)}
+      (vr.c/clear-background (vr/Color [20 20 20 0]))
+      (vr.c/draw-rectangle-pro (vr/Rectangle [320 325 225 120]) (vt/Vector2 [0 0]) 0
+                               (vr/Color [20 30 40 255]))
+      (vr.c/draw-rectangle-pro (vr/Rectangle [320 320 215 115]) (vt/Vector2 [0 0]) 0
+                               (vr/Color [255 234 235 255]))
+      (vr.c/gui-group-box (vr/Rectangle [330 330 200 100]) "MONSTER")
+      (vr.c/gui-dummy-rec (vr/Rectangle [340 340 180 80]) "Que tu quer???????????\n??? Por quê?"))
+
     ;; Track
     (vg/draw-lights w {:scene :vg.gltf.scene/track_scene})
-    (vg/with-target (w (vf/path [:my/model :vg.gltf/office :vg.gltf/table2 :vg.gltf/tv.001 :vg.gltf/screen]))
+    (vg/with-target {:target (w (vf/path [:my/model :vg.gltf/office :vg.gltf/table2 :vg.gltf/tv.001 :vg.gltf/screen]))
+                     :rt (get (::screen-rt w) vr/RenderTexture2D)}
       (if turned-off
         (vr.c/clear-background (vr/Color [10 10 10 255]))
         (do
@@ -205,7 +211,7 @@
           (vg/with-camera (get (w (vf/path [:my/model :vg.gltf/track_camera])) vt/Camera)
             (vg/draw-scene w {:scene :vg.gltf.scene/track_scene})
             (vg/draw-billboard (w (vf/path [:my/model :vg.gltf/track_camera]))
-                               (get-in (::vg/render-texture w) [vr/RenderTexture2D :texture])
+                               (get-in (::screen-rt w) [vr/RenderTexture2D :texture])
                                (-> (vp/clone (get (w (vf/path [:my/model :vg.gltf/pilot_d])) vt/Translation))
                                    (update :y + 2.2)
                                    (update :x + 0)
@@ -214,38 +220,51 @@
 
 
     ;; General.
-    (vg/draw-lights w {:scene :vg.gltf.scene/Scene})
+    #_(vg/draw-lights w {:scene :vg.gltf.scene/Scene})
     (vg/draw-lights w {:scene :vg.gltf.scene/Scene :shader (get (::vg/shader-default w) vt/Shader)})
 
     (vg/with-drawing
 
-      (vg/with-drawing-fx w (concat [[(get (::vg/shader-edge-2d w) vt/Shader)
-                                      {:edge_fill 1.0}]]
-                                    (vg/fx-painting w {:dither-radius 0.3 #_dither-radius}))
-        (vr.c/clear-background (vr/Color [15 15 17 255]))
+      (let [fx #_(vg/fx-painting w {:dither-radius 0.4}) []]
 
+        (vr.c/clear-background (vr/Color [15 15 17 255]))
         (vf/with-query w [_ :vg/camera-active
                           camera vt/Camera]
-          (vg/with-camera camera
-            (vg/draw-scene w (merge {:scene :vg.gltf.scene/Scene}
-                                    #_{:colliders true}))
 
-            #_(vr.c/draw-grid 10 0.5)
+          ;; Edge shader (no tv screen).
+          (vg/with-drawing-fx w (concat [[(get (::vg/shader-edge-2d w) vt/Shader)
+                                          {:edge_fill 1.0}]]
+                                        fx)
+            (vg/with-camera camera
+              (vg/draw-scene w (merge {:scene :vg.gltf.scene/Scene
+                                       #_ #_                         :entities-exclude #{(vf/path [:my/model :vg.gltf/office :vg.gltf/table2 :vg.gltf/tv.001 :vg.gltf/screen])}}
+                                      #_{:colliders true}))
 
-            #_(vg/draw-debug w {:scene :vg.gltf.scene/Scene})))
+              #_(vr.c/draw-grid 10 0.5)
 
+              #_(vg/draw-debug w {:scene :vg.gltf.scene/Scene})))
+
+          ;; With tv screen.
+          #_(vg/with-camera camera
+            (vg/draw-scene w (merge {:scene :vg.gltf.scene/Scene
+                                     :entities #{(vf/path [:my/model :vg.gltf/office :vg.gltf/table2 #_ #_:vg.gltf/tv.001 :vg.gltf/screen])}})))))
+
+      ;; Text
+      (vg/with-drawing-fx w [[(get (::vg/shader-dither w) vt/Shader)
+                              {:u_radius 1.0
+                               :u_offsets (vt/Vector3 (mapv #(* % (+ 0.1
+                                                                     (vg/wobble 0.2))
+                                                                0.5)
+                                                            [0.02 (+ 0.016 (vg/wobble 0.01))
+                                                             (+ 0.040 (vg/wobble 0.01))]))}]
+
+                             [(get (::vg/shader-noise-blur w) vt/Shader)
+                              {:u_radius (+ 1.0 (rand 1))}]]
         (when raycasted
-          #_(vr.c/draw-rectangle-pro (vr/Rectangle [300 314 170 40]) (vt/Vector2 [0 0]) 0 (vr/Color [150 230 190 255]))
-          #_(vr.c/draw-rectangle-pro (vr/Rectangle [300 310 170 39]) (vt/Vector2 [0 0]) 0 (vr/Color [20 30 40 255]))
           (draw-text (if turned-off "Turn On" "Turn Off")
-                     288 310 {:size 45}))
-
-        #_(draw-cursor #_{#_ #_:radius-inner (+ (Math/sin (* (vr.c/get-time) 2))
-                                                8)
-                          :size (+ (* (Math/sin (* (vr.c/get-time) 8))
-                                      0.1)
-                                   0.5)}
-                       {:size 0.8}))
+                     (- (/ (vr.c/get-screen-width) 2.0) 12)
+                     (+ (/ (vr.c/get-screen-height) 2.0) 10)
+                     {:size 45})))
 
       (draw-cursor #_{#_ #_:radius-inner (+ (Math/sin (* (vr.c/get-time) 2))
                                             8)
@@ -259,9 +278,22 @@
                                          (vr/Color [210 220 120 255])
                                          (vr/Color [210 190 200 255]))})))
 
-      (vr.c/draw-fps 510 570))))
+      (vr.c/draw-fps (- (vr.c/get-screen-width) 90) (- (vr.c/get-screen-height) 30)))))
 
 #_ (init)
+
+(def game-config
+  ;; iPad config.
+  #_{:screen-size [1080 700]
+     :window-position [0 0]}
+
+  ;; Full-screen config.
+  #_{:full-screen true
+     :window-position [0 0]}
+
+  ;; 600x600 config.
+  {:screen-size [600 600]
+   :window-position [1120 200]})
 
 (defn init
   []
@@ -271,14 +303,19 @@
     #_ (vg/debug-init! w)
     #_(vybe.blender/gltf-model-path! model-path)
 
-    (vg/start! w screen-width screen-height #'draw
-               (fn [w]
-                 (vr.c/hide-cursor)
-                 (vr.c/gui-load-style-sunny)
-                 (-> w
-                     (vg/model :my/model model-path))))))
+    (vg/start! w (-> {:draw-var #'draw
+                      :init-fn (fn [w]
+                                 (vr.c/hide-cursor)
+                                 (vr.c/gui-load-style-sunny)
+                                 (-> w
+                                     (vg/model :my/model model-path)
+                                     (vg/render-texture ::screen-rt 600 600)
+                                     (vg/render-texture ::render-texture
+                                                        (vr.c/get-screen-width)
+                                                        (vr.c/get-screen-height))))}
+                     (merge game-config)))))
 
-#_(init)
+#_ (init)
 
 (defn -main
   [& _args]
