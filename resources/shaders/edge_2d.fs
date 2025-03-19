@@ -26,7 +26,7 @@ void main (void) {
     vec2 st = fragTexCoord;
     vec4 texelColor = texture(texture0, fragTexCoord);
     // Higher radius is like an out of focus effect.
-    float radius = 1.1;
+    float radius = 1.0;
 
     float c = 1.0;
 
@@ -36,14 +36,16 @@ void main (void) {
         //st.y > sin(edge_fill * 0.41 * c) * 0.4 && st.y < sin(edge_fill * 0.46 * c)
         ;
 
-    float th = 0.5;
+    float th = 0.6;
 
     if (trigger && texelColor.r > th && texelColor.g > th && texelColor.b > th) {
         //color += edgePrewitt(texture0, st, pixel * radius) * vec3(0.9, 0.3, 0.4);
         //color += edgePrewitt(texture0, st, pixel * radius) * vec3(0.9, 0.7, 0.5) + 0.2;
         color += edgePrewitt(texture0, st, pixel * radius) + (texelColor*colDiffuse*fragColor).xyz*0.2;
+        //color += edgePrewitt(texture0, st, pixel * radius);// + (texelColor*colDiffuse*fragColor).xyz;
+        //color += edgePrewitt(texture0, st, pixel * radius) * (texelColor*colDiffuse*fragColor).zyx*1.0;
 
-        finalColor = vec4((1-color), 1.0);
+        finalColor = vec4((1 - color), 1.0);
     } else {
         // Texel color fetching from texture sampler
         vec4 texelColor = texture(texture0, fragTexCoord);

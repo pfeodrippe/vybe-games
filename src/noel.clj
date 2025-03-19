@@ -138,7 +138,7 @@
     (conj e :vg.anim/active))
 
   ;; Physics.
-  (conj (w (vf/path [:my/model :vg.gltf/Cube])) :vg/dynamic)
+  #_(conj (w (vf/path [:my/model :vg.gltf/Cube])) :vg/dynamic)
   (conj (w (vf/path [:my/model #_:vg.gltf/Camera :vg.gltf/player__collider])) :vg/collide-with-static :lala)
   (conj (w (vf/path [:my/model :vg.gltf/office :vg.gltf/table2 :vg.gltf/tv.001])) :vg/kinematic)
 
