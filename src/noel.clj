@@ -119,6 +119,21 @@
    (vr.c/draw-text text (+ x 3) (+ y 3) size (vr/Color [20 20 20 255]))
    (vr.c/draw-text text x y size (vr/Color [210 220 120 255]))))
 
+(defn- scene->entity-path
+  [w camera scene]
+  (let [rt (get (::vg/rt-1-by-1 w) vr/RenderTexture2D)]
+    (vg/with-render-texture rt
+      (vg/with-camera camera
+        (vg/draw-scene w {:scene scene
+                          :use-color-ids true})))
+
+    (->> (-> (vr.c/rl-read-texture-pixels (:id (:texture rt))
+                                          1 1 (raylib/RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8))
+             (vp/arr (* 1 1) vr/Color)
+             first)
+         (vg/color-identifier->entity w)
+         vf/get-path)))
+
 (defn draw
   [w delta-time]
   ;; For debugging
@@ -218,36 +233,51 @@
                                    (update :z + 0))
                                {:scale 8})))))
 
-
     ;; General.
     #_(vg/draw-lights w {:scene :vg.gltf.scene/Scene})
     (vg/draw-lights w {:scene :vg.gltf.scene/Scene :shader (get (::vg/shader-default w) vt/Shader)})
 
     (vg/with-drawing
 
-      (let [fx #_(vg/fx-painting w {:dither-radius 0.4}) []]
+      (let [fx (vg/fx-painting w {:dither-radius 0.4})]
 
         (vr.c/clear-background (vr/Color [15 15 17 255]))
         (vf/with-query w [_ :vg/camera-active
                           camera vt/Camera]
+
+          ;; Copy cursor's entity path to the clipboard.
+          (when (vg/key-pressed? :z)
+            (when-let [path (scene->entity-path w camera :vg.gltf.scene/Scene)]
+              (println (format "Copied path %s to clipboard" path))
+              (vr.c/set-clipboard-text (pr-str path))))
+
+          ;; Below RT and shader activation/enabling can be moved to `vybe.game` and
+          ;; supported from `with-fx`.
+          (vg/with-render-texture (get (::vg/render-texture w) vr/RenderTexture2D)
+            (vg/with-camera camera
+              (vg/draw-scene w {:scene :vg.gltf.scene/Scene
+                                :use-color-ids true})))
+
+          (let [shader (get (::vg/shader-edge-2d w) vt/Shader)]
+            (vr.c/rl-active-texture-slot 15)
+            (vr.c/rl-enable-texture (:id (:texture (get (::vg/render-texture w) vr/RenderTexture2D))))
+            (vr.c/rl-enable-shader (:id shader))
+            (vg/set-uniform shader
+                            {:u_color_ids_tex 15
+                             :u_color_ids_bypass_count 1
+                             :u_color_ids_bypass [(get (w (vf/path [:my/model :vg.gltf/office :vg.gltf/table2 :vg.gltf/tv.001 :vg.gltf/screen]))
+                                                       [vr/Color :color-identifier])]}))
 
           ;; Edge shader (no tv screen).
           (vg/with-drawing-fx w (concat [[(get (::vg/shader-edge-2d w) vt/Shader)
                                           {:edge_fill 1.0}]]
                                         fx)
             (vg/with-camera camera
-              (vg/draw-scene w (merge {:scene :vg.gltf.scene/Scene
-                                       #_ #_                         :entities-exclude #{(vf/path [:my/model :vg.gltf/office :vg.gltf/table2 :vg.gltf/tv.001 :vg.gltf/screen])}}
+              (vg/draw-scene w (merge {:scene :vg.gltf.scene/Scene}
                                       #_{:colliders true}))
 
               #_(vr.c/draw-grid 10 0.5)
-
-              #_(vg/draw-debug w {:scene :vg.gltf.scene/Scene})))
-
-          ;; With tv screen.
-          #_(vg/with-camera camera
-            (vg/draw-scene w (merge {:scene :vg.gltf.scene/Scene
-                                     :entities #{(vf/path [:my/model :vg.gltf/office :vg.gltf/table2 #_ #_:vg.gltf/tv.001 :vg.gltf/screen])}})))))
+              #_(vg/draw-debug w {:scene :vg.gltf.scene/Scene})))))
 
       ;; Text
       (vg/with-drawing-fx w [[(get (::vg/shader-dither w) vt/Shader)
@@ -266,19 +296,15 @@
                      (+ (/ (vr.c/get-screen-height) 2.0) 10)
                      {:size 45})))
 
-      (draw-cursor #_{#_ #_:radius-inner (+ (Math/sin (* (vr.c/get-time) 2))
-                                            8)
-                      :size (+ (* (Math/sin (* (vr.c/get-time) 8))
-                                  0.1)
-                               0.5)}
-                   (merge {:size 0.8}
+      (draw-cursor (merge {:size 0.8}
                           (when raycasted
                             {:radius-inner (if raycasted 8 3)
                              :color-fg (if raycasted
                                          (vr/Color [210 220 120 255])
                                          (vr/Color [210 190 200 255]))})))
 
-      (vr.c/draw-fps (- (vr.c/get-screen-width) 90) (- (vr.c/get-screen-height) 30)))))
+      (vr.c/draw-fps (- (vr.c/get-screen-width) 90)
+                     (- (vr.c/get-screen-height) 30)))))
 
 #_ (init)
 

@@ -11,6 +11,10 @@ uniform float edge_fill;
 // Output fragment color
 out vec4 finalColor;
 
+uniform sampler2D u_color_ids_tex;
+uniform vec4 u_color_ids_bypass[10];
+uniform int u_color_ids_bypass_count;
+
 // #define NOISEBLUR_SECS u_time
 // #define NOISEBLUR_GAUSSIAN_K 2.0
 // #define BLUENOISE_TEXTURE u_noise
@@ -25,6 +29,7 @@ void main (void) {
     vec2 pixel = 1.0/vec2(1200., 1200.);
     vec2 st = fragTexCoord;
     vec4 texelColor = texture(texture0, fragTexCoord);
+    vec4 color_id = texture(u_color_ids_tex, fragTexCoord);
     // Higher radius is like an out of focus effect.
     float radius = 1.0;
 
@@ -35,6 +40,17 @@ void main (void) {
         //st.x > sin(edge_fill * 0.24) * 1.0 && st.x < sin(edge_fill * 0.87 * c)
         //st.y > sin(edge_fill * 0.41 * c) * 0.4 && st.y < sin(edge_fill * 0.46 * c)
         ;
+
+    bool is_bypassing = false;
+    for (int i = 0; i < u_color_ids_bypass_count; i++) {
+        if (abs(color_id.r - (u_color_ids_bypass[i]/255.0).r) < 0.001 &&
+            abs(color_id.g - (u_color_ids_bypass[i]/255.0).g) < 0.001 &&
+            abs(color_id.b - (u_color_ids_bypass[i]/255.0).b) < 0.001) {
+            is_bypassing = true;
+        }
+    }
+
+    trigger = trigger && !is_bypassing;
 
     float th = .02;
 
