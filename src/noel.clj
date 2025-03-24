@@ -134,6 +134,23 @@
          (vg/color-identifier->entity w)
          vf/get-path)))
 
+(defn- shader-bypass-entities
+  [w {:keys [shader entities draw]}]
+  ;; Below RT and shader activation/enabling can be moved to `vybe.game` and
+  ;; supported from `with-fx`.
+  (vg/with-render-texture (get (::vg/render-texture w) vr/RenderTexture2D)
+    (draw {}))
+
+  (vr.c/rl-active-texture-slot 15)
+  (vr.c/rl-enable-texture (:id (:texture (get (::vg/render-texture w) vr/RenderTexture2D))))
+  (vr.c/rl-enable-shader (:id shader))
+  (vg/set-uniform shader
+                  {:u_color_ids_tex 15
+                   :u_color_ids_bypass_count (count entities)
+                   :u_color_ids_bypass (->> entities
+                                            (mapv #(or (get % [vr/Color :color-identifier])
+                                                       %)))}))
+
 (defn draw
   [w delta-time]
   ;; For debugging
@@ -199,10 +216,10 @@
         switch? (and raycasted (vr.c/is-mouse-button-released (raylib/MOUSE_BUTTON_LEFT)))
         tv (w tv-path)
         _ (when switch?
-            (if (::turned-off tv)
-              (disj tv ::turned-off)
-              (conj tv ::turned-off)))
-        turned-off (get tv ::turned-off)]
+            (if (::turned-on tv)
+              (disj tv ::turned-on)
+              (conj tv ::turned-on)))
+        turned-on (get tv ::turned-on)]
 
     ;; Message.
     (vg/with-fx-default w {:flip-y true
@@ -212,26 +229,54 @@
                                (vr/Color [20 30 40 255]))
       (vr.c/draw-rectangle-pro (vr/Rectangle [320 320 215 115]) (vt/Vector2 [0 0]) 0
                                (vr/Color [255 234 235 255]))
-      (vr.c/gui-group-box (vr/Rectangle [330 330 200 100]) "MONSTER")
-      (vr.c/gui-dummy-rec (vr/Rectangle [340 340 180 80]) "Que tu quer???????????\n??? Por quê?"))
+      (vr.c/gui-group-box (vr/Rectangle [330 330 200 100]) (condp #(< (mod %2 6) %1) (vr.c/get-time)
+                                                             1 "MONSTER +++"
+                                                             3 "MONSTER ++"
+                                                             5 "MONSTER +"
+                                                             "MONSTER"))
+      (vr.c/gui-dummy-rec (vr/Rectangle [340 340 180 80]) (condp #(< (mod %2 5) %1) (vr.c/get-time)
+                                                            1 "Que tu quer???????????\n??? Por quê?"
+                                                            "Que tu quer???????????")))
+
+    (vg/with-fx (get (::screen-rt-2 w) vr/RenderTexture2D) {:shaders [[(get (::vg/shader-solid w) vt/Shader)
+                                                                     {:u_color (vg/color-identifier w ::message-color)}]]}
+      (let [{:keys [width height] :as tex} (get-in (::screen-rt w) [vr/RenderTexture2D :texture])
+            rect (vr/Rectangle [0 0 width height])]
+        (vr.c/draw-texture-rec tex (update rect :height -) (vr/Vector2 [0 0]) (vr/Color [255 255 255 255]))))
 
     ;; Track
     (vg/draw-lights w {:scene :vg.gltf.scene/track_scene})
-    (vg/with-target {:target (w (vf/path [:my/model :vg.gltf/office :vg.gltf/table2 :vg.gltf/tv.001 :vg.gltf/screen]))
-                     :rt (get (::screen-rt w) vr/RenderTexture2D)}
-      (if turned-off
-        (vr.c/clear-background (vr/Color [10 10 10 255]))
-        (do
-          (vr.c/clear-background (vr/Color [100 100 200 255]))
-          (vg/with-camera (get (w (vf/path [:my/model :vg.gltf/track_camera])) vt/Camera)
-            (vg/draw-scene w {:scene :vg.gltf.scene/track_scene})
-            (vg/draw-billboard (w (vf/path [:my/model :vg.gltf/track_camera]))
-                               (get-in (::screen-rt w) [vr/RenderTexture2D :texture])
-                               (-> (vp/clone (get (w (vf/path [:my/model :vg.gltf/pilot_d])) vt/Translation))
-                                   (update :y + 2.2)
-                                   (update :x + 0)
-                                   (update :z + 0))
-                               {:scale 8})))))
+    (let [draw (fn [{:keys [use-color-ids]
+                     :or {use-color-ids true}}]
+                 (vg/with-camera (get (w (vf/path [:my/model :vg.gltf/track_camera])) vt/Camera)
+                   (vg/draw-scene w {:scene :vg.gltf.scene/track_scene
+                                     :use-color-ids use-color-ids})
+                   (vg/draw-billboard (w (vf/path [:my/model :vg.gltf/track_camera]))
+                                      (:texture (get (if use-color-ids
+                                                       (::screen-rt-2 w)
+                                                       (::screen-rt w))
+                                                     vr/RenderTexture2D))
+                                      (-> (vp/clone (get (w (vf/path [:my/model :vg.gltf/pilot_d])) vt/Translation))
+                                          (update :y + 2.2)
+                                          (update :x + 0)
+                                          (update :z + 0))
+                                      {:scale 8})))]
+      ;; Bypass some entities.
+      (when turned-on
+        (shader-bypass-entities
+         w {:draw draw
+            :shader (get (::vg/shader-edge-2d w) vt/Shader)
+            :entities [(w (vf/path [:my/model :vg.gltf/track_path.001]))
+                       (vg/color-identifier w ::message-color)]}))
+      ;; Draw to RT.
+      (vg/with-target {:target (w (vf/path [:my/model :vg.gltf/office :vg.gltf/table2 :vg.gltf/tv.001 :vg.gltf/screen]))
+                       :rt (get (::screen-rt w) vr/RenderTexture2D)
+                       :shaders [[(get (::vg/shader-edge-2d w) vt/Shader)
+                                  {:edge_fill 1.0}]]}
+        (if turned-on
+          (do (vr.c/clear-background (vr/Color [100 100 200 255]))
+              (draw {:use-color-ids false}))
+          (vr.c/clear-background (vr/Color [10 10 10 255])))))
 
     ;; General.
     #_(vg/draw-lights w {:scene :vg.gltf.scene/Scene})
@@ -239,7 +284,7 @@
 
     (vg/with-drawing
 
-      (let [fx (vg/fx-painting w {:dither-radius 0.4})]
+      (let [fx (vg/fx-painting w {:dither-radius 0.5})]
 
         (vr.c/clear-background (vr/Color [15 15 17 255]))
         (vf/with-query w [_ :vg/camera-active
@@ -251,22 +296,15 @@
               (println (format "Copied path %s to clipboard" path))
               (vr.c/set-clipboard-text (pr-str path))))
 
-          ;; Below RT and shader activation/enabling can be moved to `vybe.game` and
-          ;; supported from `with-fx`.
-          (vg/with-render-texture (get (::vg/render-texture w) vr/RenderTexture2D)
-            (vg/with-camera camera
-              (vg/draw-scene w {:scene :vg.gltf.scene/Scene
-                                :use-color-ids true})))
-
-          (let [shader (get (::vg/shader-edge-2d w) vt/Shader)]
-            (vr.c/rl-active-texture-slot 15)
-            (vr.c/rl-enable-texture (:id (:texture (get (::vg/render-texture w) vr/RenderTexture2D))))
-            (vr.c/rl-enable-shader (:id shader))
-            (vg/set-uniform shader
-                            {:u_color_ids_tex 15
-                             :u_color_ids_bypass_count 1
-                             :u_color_ids_bypass [(get (w (vf/path [:my/model :vg.gltf/office :vg.gltf/table2 :vg.gltf/tv.001 :vg.gltf/screen]))
-                                                       [vr/Color :color-identifier])]}))
+          (shader-bypass-entities
+           w {:draw (fn [_]
+                      (vg/with-camera camera
+                        (vg/draw-scene w {:scene :vg.gltf.scene/Scene
+                                          :use-color-ids true})))
+              :shader (get (::vg/shader-edge-2d w) vt/Shader)
+              :entities [(w (vf/path [:my/model :vg.gltf/office :vg.gltf/table2 :vg.gltf/tv.001 :vg.gltf/screen]))
+                         (w (vf/path [:my/model :vg.gltf/office :vg.gltf/floor :vg.gltf/_nomad_unskew :vg.gltf/Boîte.003 :vg.gltf/_nomad_unskew.001 :vg.gltf/button_red]))
+                         (w (vf/path [:my/model :vg.gltf/office :vg.gltf/floor :vg.gltf/_nomad_unskew :vg.gltf/Boîte.003 :vg.gltf/_nomad_unskew.002 :vg.gltf/button_green]))]})
 
           ;; Edge shader (no tv screen).
           (vg/with-drawing-fx w (concat [[(get (::vg/shader-edge-2d w) vt/Shader)
@@ -291,7 +329,7 @@
                              [(get (::vg/shader-noise-blur w) vt/Shader)
                               {:u_radius (+ 1.0 (rand 1))}]]
         (when raycasted
-          (draw-text (if turned-off "Turn On" "Turn Off")
+          (draw-text (if turned-on "Turn Off" "Turn On")
                      (- (/ (vr.c/get-screen-width) 2.0) 12)
                      (+ (/ (vr.c/get-screen-height) 2.0) 10)
                      {:size 45})))
@@ -336,6 +374,7 @@
                                  (-> w
                                      (vg/model :my/model model-path)
                                      (vg/render-texture ::screen-rt 600 600)
+                                     (vg/render-texture ::screen-rt-2 600 600)
                                      (vg/render-texture ::render-texture
                                                         (vr.c/get-screen-width)
                                                         (vr.c/get-screen-height))))}

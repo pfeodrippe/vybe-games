@@ -43,9 +43,10 @@ void main (void) {
 
     bool is_bypassing = false;
     for (int i = 0; i < u_color_ids_bypass_count; i++) {
-        if (abs(color_id.r - (u_color_ids_bypass[i]/255.0).r) < 0.001 &&
-            abs(color_id.g - (u_color_ids_bypass[i]/255.0).g) < 0.001 &&
-            abs(color_id.b - (u_color_ids_bypass[i]/255.0).b) < 0.001) {
+        if (abs(color_id.r - (u_color_ids_bypass[i]).r) < 0.001 &&
+            abs(color_id.g - (u_color_ids_bypass[i]).g) < 0.001 &&
+            abs(color_id.b - (u_color_ids_bypass[i]).b) < 0.001 &&
+            abs(color_id.a - (u_color_ids_bypass[i]).a) < 0.001) {
             is_bypassing = true;
         }
     }
