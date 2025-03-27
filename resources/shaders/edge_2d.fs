@@ -8,12 +8,14 @@ uniform sampler2D texture0;
 uniform vec4 colDiffuse;
 uniform float edge_fill;
 
-// Output fragment color
-out vec4 finalColor;
-
 uniform sampler2D u_color_ids_tex;
 uniform vec4 u_color_ids_bypass[10];
 uniform int u_color_ids_bypass_count;
+
+uniform vec2 u_resolution;
+
+// Output fragment color
+out vec4 finalColor;
 
 // #define NOISEBLUR_SECS u_time
 // #define NOISEBLUR_GAUSSIAN_K 2.0
@@ -26,7 +28,7 @@ uniform int u_color_ids_bypass_count;
 
 void main (void) {
     vec3 color = vec3(0.0);
-    vec2 pixel = 1.0/vec2(1200., 1200.);
+    vec2 pixel = 1.0/u_resolution;
     vec2 st = fragTexCoord;
     vec4 texelColor = texture(texture0, fragTexCoord);
     vec4 color_id = texture(u_color_ids_tex, fragTexCoord);
@@ -53,14 +55,20 @@ void main (void) {
 
     trigger = trigger && !is_bypassing;
 
-    float th = .02;
+    float th = 0.0;
 
     if (trigger && texelColor.r > th && texelColor.g > th && texelColor.b > th) {
+        // If we comment all 4 below, we have good effect as well.
         //color += edgePrewitt(texture0, st, pixel * radius) * vec3(0.9, 0.3, 0.4);
         //color += edgePrewitt(texture0, st, pixel * radius) * vec3(0.9, 0.7, 0.5) + 0.2;
         //color += edgePrewitt(texture0, st, pixel * radius) + (texelColor*colDiffuse*fragColor).xyz*0.2;
-        color += edgePrewitt(texture0, st, pixel * radius);// + (texelColor*colDiffuse*fragColor).xyz;
-        //color += edgePrewitt(texture0, st, pixel * radius) * (texelColor*colDiffuse*fragColor).zyx*1.0;
+
+        // By adjusting the negative factor in the second term, we can adjust light intensity.
+        color += edgePrewitt(texture0, st, pixel * radius) + (texelColor*colDiffuse*fragColor).xyz*-0.3;
+
+        // More effect.
+        //color += edgePrewitt(texture0, st, pixel * radius) * (texelColor*colDiffuse*fragColor).zyx*8.0;
+        //color += edgePrewitt(texture0, st, pixel * radius) * (texelColor*colDiffuse*fragColor).zyx*-9.0;
 
         finalColor = vec4((vec3(0.9, 0.7, 0.5)- color), 1.0);
     } else {
