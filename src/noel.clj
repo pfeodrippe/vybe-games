@@ -172,7 +172,11 @@
 
     ;; Message.
     (vg/with-fx w {:rt ::screen-rt
+                   ;; With `:entity` set, we can refer to `::message` in the shader entities
+                   ;; bypassing, for example.
+                   :entity ::message
                    :flip-y true}
+      #_ (vf/target (w ::screen-rt))
       (let [[x y] [330 330]]
         (vr.c/clear-background (vr/Color [20 20 20 0]))
         (vr.c/draw-rectangle-pro (vr/Rectangle [(- x 10) (- y 5) 215 115]) (vt/Vector2 [0 0]) 0
@@ -190,11 +194,6 @@
                               1 "Que tu quer???????????\n??? Por quê?"
                               "Que tu quer???????????"))))
 
-    ;; Message being identified by a color id so we can use it when shading.
-    (vg/with-fx w {:rt (vg/rt-get ::message-id 600 600)
-                   :shaders [[::vg/shader-solid {:u_color (vg/color-identifier w ::message-color)}]]}
-      (vg/draw-rt w ::screen-rt))
-
     ;; Track
     (vg/draw-lights w {:scene :vg.gltf.scene/track_scene})
     ;; Draw to RT.
@@ -204,15 +203,13 @@
                                                    :vg.shader.bypass/entities
                                                    (when turned-on
                                                      [(w (vf/path [:my/model :vg.gltf/track_path.001]))
-                                                      (vg/color-identifier w ::message-color)])}]]}
+                                                      ::message])}]]}
       (if turned-on
         (do (vr.c/clear-background (vr/Color [100 100 200 255]))
             (vg/with-camera (get (w (vf/path [:my/model :vg.gltf/track_camera])) vt/Camera)
               (vg/draw-scene w {:scene :vg.gltf.scene/track_scene})
-              (vg/draw-billboard (w (vf/path [:my/model :vg.gltf/track_camera]))
-                                 (:texture (if (:use-color-ids vg/*context*)
-                                             (vg/rt-get ::message-id 600 600)
-                                             (vg/->rt w ::screen-rt)))
+              (vg/draw-billboard w (vf/path [:my/model :vg.gltf/track_camera])
+                                 ::screen-rt
                                  (-> (vp/clone (get (w (vf/path [:my/model :vg.gltf/pilot_d])) vt/Translation))
                                      (update :y + 2.2)
                                      (update :x + 0)
@@ -263,7 +260,6 @@
                                                                                      0.5)
                                                                                  [0.02 (+ 0.016 (vg/wobble 0.01))
                                                                                   (+ 0.040 (vg/wobble 0.01))]))}]
-
                                [::vg/shader-noise-blur {:u_radius (+ 1.0 (rand 1))}]]}
         (when raycasted
           (draw-text (if turned-on "Turn Off" "Turn On")
@@ -277,8 +273,6 @@
                              :color-fg (if raycasted
                                          (vr/Color [210 220 120 255])
                                          (vr/Color [210 190 200 255]))})))
-
-      #_(vg/draw-rt (vg/rt-get ::ddd 600 600))
 
       (vr.c/draw-fps (- (vr.c/get-screen-width) 90)
                      (- (vr.c/get-screen-height) 30)))))
