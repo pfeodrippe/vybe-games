@@ -166,7 +166,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
            name: leo-linux-basic
-           path: leo_1.0_amd64_basic.deb
+           path: leo_1.0_amd64.deb
            if-no-files-found: error
            retention-days: 30
            compression-level: 6
