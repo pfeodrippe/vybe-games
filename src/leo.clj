@@ -564,12 +564,11 @@
      :fft (.getMagnitude fft true)}))
 
 (defn render
-  [{:keys [render-texture render-texture-2
-           shadowmap-shader dither-shader noise-blur-shader _default-shader
-           ::vg/shader-edge-2d ::vg/shader-mixer]
+  [{:keys [::vg/shader-mixer]
     :as w}]
-  (let [shader (get shadowmap-shader vt/Shader)
+  (let [shader (vg/->shader w ::vg/shader-shadowmap)
         [transforms material] (particles shader)
+        render-texture-2 (vg/rt-get ::render-texture-2 screen-width screen-height)
         draw-scene (fn [w]
                      ;; Particles.
                      (vg/set-uniform shader {:shaderType 1})
@@ -638,7 +637,7 @@
     (-> (w (p :vg.gltf/tv :vg.gltf/screen :vg.gltf.mesh/data))
         (get vr/Material)
         (vr/material-get (raylib/MATERIAL_MAP_DIFFUSE))
-        (assoc-in [:texture] (:texture (get render-texture vr/RenderTexture2D))))
+        (assoc-in [:texture] (:texture (vg/->rt w ::vg/render-texture))))
 
     (let [[camera] (vf/with-query w [_ :vg/camera-active
                                      camera vt/Camera]
@@ -647,35 +646,32 @@
       (vf/disable (w (p :vg.gltf/dark_world)))
 
       ;; For the track.
-      (vg/draw-lights w {:shader (get shadowmap-shader vt/Shader) :draw draw-scene :scene :vg.gltf.scene/track_scene})
-      (vg/with-fx (get render-texture vr/RenderTexture2D) {:flip-y true}
+      (vg/draw-lights w {:shader ::vg/shader-shadowmap :draw draw-scene :scene :vg.gltf.scene/track_scene})
+      (vg/with-fx w {:flip-y true}
         (vr.c/clear-background (vr/Color [5 5 5 255]))
         (vg/with-camera (get (w (p :vg.gltf/track_camera)) vt/Camera)
           (vg/draw-scene w {:scene :vg.gltf.scene/track_scene}))
 
-        ;; Linux may have some issue with fonts
-        ;; https://github.com/pfeodrippe/vybe/issues/4#issuecomment-2610297230
-        (when-not vp/linux?
-          (vr.c/gui-group-box (vr/Rectangle [330 330 200 100]) "Monster")
-          (vr.c/gui-dummy-rec (vr/Rectangle [340 340 180 80]) "Que tu quer???????????\n???")))
+        (vr.c/gui-group-box (vr/Rectangle [330 330 200 100]) "Monster")
+        (vr.c/gui-dummy-rec (vr/Rectangle [340 340 180 80]) "Que tu quer???????????\n???"))
 
       #_ (init)
 
       ;; General.
-      (vg/draw-lights w {:shader (get shadowmap-shader vt/Shader) :draw draw-scene :scene :vg.gltf.scene/main_scene})
-      #_(vg/draw-lights w (get (::vg/shader-default w) vt/Shader) draw-scene {:scene :vg.gltf.scene/main_scene})
-      (vg/with-fx (get render-texture vr/RenderTexture2D) {:shaders
-                                                           [[(get noise-blur-shader vt/Shader)
-                                                             {:u_radius (+ 1.0
-                                                                           #_(* (vr.c/vector-3-length velocity) 0.1)
-                                                                           (rand 1))}]
+      (vg/draw-lights w {:shader ::vg/shader-shadowmap :draw draw-scene :scene :vg.gltf.scene/main_scene})
+      #_(vg/draw-lights w {:shader ::vg/shader-default :draw draw-scene :scene :vg.gltf.scene/main_scene})
+      (vg/with-fx w {:shaders
+                     [[::vg/shader-noise-blur
+                       {:u_radius (+ 1.0
+                                     #_(* (vr.c/vector-3-length velocity) 0.1)
+                                     (rand 1))}]
 
-                                                            [(get dither-shader vt/Shader)
-                                                             {:u_offsets (vt/Vector3 (mapv #(* % (+ 0.6
-                                                                                                    (wobble 0.3)))
-                                                                                           [0.02 (+ 0.016 (wobble 0.01))
-                                                                                            (+ 0.040 (wobble 0.01))]))
-                                                              #_ #_:u_radius 0.1}]]}
+                      [::vg/shader-dither
+                       {:u_offsets (vt/Vector3 (mapv #(* % (+ 0.6
+                                                              (wobble 0.3)))
+                                                     [0.02 (+ 0.016 (wobble 0.01))
+                                                      (+ 0.040 (wobble 0.01))]))
+                        #_ #_:u_radius 0.1}]]}
 
         #_(va/sound (ctl  music-bg :freq (vr.c/remap (get-in (w (p :vg.gltf/Cube))
                                                              [vt/Translation
@@ -690,15 +686,10 @@
                                                     1.0 (/ (math/pow 2 11/12)
                                                            2))))
 
-        (vr.c/clear-background (vr/Color "#000000")
+        #_(vr.c/clear-background (vr/Color "#000000")
                                #_(vr/Color "#A98B39"))
         (vg/with-camera camera
           (draw-scene w))
-
-        #_(vr.c/draw-texture-pro (:texture (get render-texture vr/RenderTexture2D))
-                                 (vr/Rectangle [0 0 screen-width (- screen-height)])
-                                 (vr/Rectangle [0 0  (/ screen-width 3) (/ screen-height 3)])
-                                 (vr/Vector2 [-390 -300]) 0 vg/color-white)
 
         #_(vr.c/gui-group-box (vr/Rectangle [330 330 200 100])
                               "Monster")
@@ -707,21 +698,18 @@
                               "Que tu quer???????????\n???"))
 
       ;; General again.
-      (vg/with-fx (get render-texture-2 vr/RenderTexture2D) {:shaders
-                                                             [[(get noise-blur-shader vt/Shader)
-                                                               {:u_radius (+ 1.0
-                                                                             #_(* (vr.c/vector-3-length velocity) 0.1)
-                                                                             (rand 1))}]
+      (vg/with-fx w {:rt render-texture-2
+                     :shaders [[::vg/shader-noise-blur {:u_radius (+ 1.0
+                                                                     #_(* (vr.c/vector-3-length velocity) 0.1)
+                                                                     (rand 1))}]
 
-                                                              [(get dither-shader vt/Shader)
-                                                               {:u_offsets (vt/Vector3 (mapv #(* % (+ 0.6
-                                                                                                      (wobble 0.3)))
-                                                                                             [0.02 (+ 0.016 (wobble 0.01))
-                                                                                              (+ 0.040 (wobble 0.01))]))
-                                                                #_ #_:u_radius 0.5}]
+                               [::vg/shader-dither {:u_offsets (vt/Vector3 (mapv #(* % (+ 0.6
+                                                                                          (wobble 0.3)))
+                                                                                 [0.02 (+ 0.016 (wobble 0.01))
+                                                                                  (+ 0.040 (wobble 0.01))]))
+                                                    #_ #_:u_radius 0.5}]
 
-                                                              [(get shader-edge-2d vt/Shader)
-                                                               {:edge_fill 1.0}]]}
+                               [::vg/shader-edge-2d {:edge_fill 1.0}]]}
 
         (vr.c/clear-background (vr/Color "#A98B39"))
 
@@ -730,19 +718,19 @@
           (draw-scene w)))
 
       ;; Mix render textures.
-      (vg/with-fx (get render-texture-2 vr/RenderTexture2D) {:shaders [[(get shader-mixer vt/Shader)
-                                                                        {:u_fill (vr.c/remap (get-in (w (p :vg.gltf/Cube))
-                                                                                                     [vt/Translation :y])
-                                                                                             -0.058608275 0.096363540
-                                                                                             -0.5 1)
-                                                                         :u_time (vr.c/get-time)}]]}
-        (let [tex-id (get-in render-texture-2 [vr/RenderTexture2D :texture :id])]
+      (vg/with-fx w {:rt render-texture-2
+                     :shaders [[::vg/shader-mixer {:u_fill (vr.c/remap (get-in (w (p :vg.gltf/Cube))
+                                                                               [vt/Translation :y])
+                                                                       -0.058608275 0.096363540
+                                                                       -0.5 1)
+                                                   :u_time (vr.c/get-time)}]]}
+        (let [tex-id (-> render-texture-2 :texture :id)]
           (vr.c/rl-active-texture-slot tex-id)
           (vr.c/rl-enable-texture tex-id)
           (vg/set-uniform (get shader-mixer vt/Shader) {:texture1 tex-id}))
 
         ;; This will be texture0.
-        (vr.c/draw-texture-pro (:texture (get render-texture vr/RenderTexture2D))
+        (vr.c/draw-texture-pro (:texture (vg/->rt w ::vg/render-texture))
                                (vr/Rectangle [0 0 screen-width (- screen-height)])
                                (vr/Rectangle [0 0  screen-width screen-height])
                                (vr/Vector2 [0 0]) 0 vg/color-white))
@@ -751,23 +739,15 @@
       (vg/with-drawing
         (vr.c/clear-background (vr/Color [255 20 100 255]))
 
-        #_(vr.c/draw-texture-pro (:texture (get render-texture vr/RenderTexture2D))
-                                 (vr/Rectangle [0 0 screen-width (- screen-height)])
-                                 (vr/Rectangle [0 0  screen-width screen-height])
-                                 (vr/Vector2 [0 0]) 0 vg/color-white)
-
-        (vr.c/draw-texture-pro (:texture (get render-texture-2 vr/RenderTexture2D))
+        (vr.c/draw-texture-pro (:texture render-texture-2)
                                (vr/Rectangle [0 0 screen-width (- screen-height)])
                                (vr/Rectangle [0 0  screen-width screen-height])
                                (vr/Vector2 [0 0]) 0 vg/color-white)
 
         #_(vg/with-camera camera
-            (vg/draw-scene w {:scene :vg.gltf.scene/track_scene}))
+          (draw-scene w))
 
-        ;; Linux may have some issue with fonts
-        ;; https://github.com/pfeodrippe/vybe/issues/4#issuecomment-2610297230
-        (when-not vp/linux?
-          (render-ui))
+        (render-ui)
 
         (vr.c/draw-fps 510 570)))))
 
@@ -825,7 +805,7 @@
     (render w)
     #_(println (.*state (vp/default-arena)))))
 
-#_(init)
+#_ (init)
 #_ (vr/t (vg/debug-init! w))
 
 (defn init
@@ -835,22 +815,19 @@
     ;; uncomment line below.
     #_ (vg/debug-init! w)
 
-    (vg/start! w screen-width screen-height #'draw
-               (fn [w]
-                 (vr.c/gui-load-style-sunny)
-                 (-> w
-                     (merge {:render-texture [(vr/RenderTexture2D (vr.c/load-render-texture screen-width screen-height))]
-                             :render-texture-2 [(vr/RenderTexture2D (vr.c/load-render-texture screen-width screen-height))]
-                             :vg.sync/synced [(flecs/EcsPairIsTag) (flecs/EcsCanToggle)]})
-                     ;; `models.glb` comes from https://www.icloud.com/iclouddrive/03bfmWIccIucY5aa4j4CpCvwA#leo
-                     (vg/model :my/model (vy.u/extract-resource "models.glb"))
-                     (vg/shader-program :shadowmap-shader "shaders/shadowmap.vs" "shaders/shadowmap.fs")
-                     (vg/shader-program :dither-shader "shaders/dither.fs")
-                     (vg/shader-program :noise-blur-shader "shaders/noise_blur_2d.fs")
-                     (vg/shader-program :default-shader)))
-               {:window-name "Leo"})))
+    (vg/start! w {:screen-size [screen-width screen-height]
+                  :draw-var #'draw
+                  :init-fn  (fn [w]
+                              (vr.c/gui-load-style-sunny)
+                              (-> w
+                                  (merge {#_ #_ #_ #_:render-texture [(vr/RenderTexture2D (vr.c/load-render-texture screen-width screen-height))]
+                                          :render-texture-2 [(vr/RenderTexture2D (vr.c/load-render-texture screen-width screen-height))]
+                                          :vg.sync/synced [(flecs/EcsPairIsTag) (flecs/EcsCanToggle)]})
+                                  ;; `models.glb` comes from https://www.icloud.com/iclouddrive/03bfmWIccIucY5aa4j4CpCvwA#leo
+                                  (vg/model :my/model (vy.u/extract-resource "models.glb"))))
+                  :window-name "Leo"})))
 
-#_(init)
+#_ (init)
 
 (defn -main
   [& _args]
