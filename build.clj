@@ -4,11 +4,12 @@
    [clojure.tools.build.api :as b]))
 
 (def os
-  (let [os? #(str/includes? (str/lower-case (System/getProperty "os.name")) %)]
-    (cond
-      (os? "win") :win
-      (os? "mac") :osx
-      :else :linux)))
+  (or (some-> (System/getenv "VYBE_ALIAS") keyword)
+      (let [os? #(str/includes? (str/lower-case (System/getProperty "os.name")) %)]
+        (cond
+          (os? "win") :win
+          (os? "mac") :osx
+          :else :linux))))
 
 (println :OS_while_building os)
 

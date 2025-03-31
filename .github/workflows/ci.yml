@@ -115,6 +115,63 @@ jobs:
            compression-level: 6
            overwrite: true
 
+  build-linux-basic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: true
+    env:
+      VYBE_VERSION_SUFFIX: linux-x64
+      VYBE_ALIAS: linux-basic
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+         ref: ${{ github.head_ref }}   # checkout the correct branch name
+         fetch-depth: 0                # fetch the whole repo history
+
+      - name: Prepare java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '22'
+
+      - name: Install clojure tools
+        uses: DeLaGuardo/setup-clojure@12.5
+        with:
+          cli: latest
+
+      - name: build
+        run: |
+          clojure -M:linux-basic -m vybe.native.loader
+          clojure -T:build uber
+          ls vybe_native
+          clojure -M:linux-basic -e "(require 'leo)"
+
+      - name: package
+        run: |
+          mv resources target/resources
+          mv vybe_native target/vybe_native
+          rm -rf target/classes && jpackage \
+             --java-options '--enable-native-access=ALL-UNNAMED' \
+             --java-options '-Djava.library.path=vybe_native:$APPDIR/vybe_native' \
+             --java-options '-DVYBE_APPDIR=$APPDIR' \
+             -i target \
+             -n leo \
+             --main-class leo.main \
+             --main-jar leo-0.1.0-standalone.jar
+          ls
+
+      - name: upload package
+        uses: actions/upload-artifact@v4
+        with:
+           name: leo-linux-basic
+           path: leo_1.0_amd64_basic.deb
+           if-no-files-found: error
+           retention-days: 30
+           compression-level: 6
+           overwrite: true
+
   build-macos:
     runs-on: macos-14
     timeout-minutes: 30
