@@ -22,7 +22,7 @@
    _ [:src '?e :vg/camera-active]
    vel [:out [:src '?e vt/Velocity]]
    w :vf/world]
-  (let [collider (w (vf/path [:my/model :vg.gltf/player__collider]))
+  (let [collider (w [:my/model :vg.gltf/player__collider])
         body (cond
                (= (vg/body->entity w body-1) collider)
                body-1
@@ -32,7 +32,7 @@
 
     (when body
       (let [vel (vr.c/vector-3-multiply (vt/Velocity (:normal contact-manifold)) vel)]
-        (merge (get (w (vf/path [:my/model :vg.gltf/player__collider])) vt/Velocity)
+        (merge (get (w [:my/model :vg.gltf/player__collider]) vt/Velocity)
                {:x (* (if (neg? (nth (:normal contact-manifold) 0))
                         (:x vel)
                         (- (:x vel)))
@@ -46,7 +46,7 @@
   [w]
   (let [{:keys [position direction]} (-> (vt/Vector2 [(/ (vr.c/get-screen-width) 2.0)
                                                       (/ (vr.c/get-screen-height) 2.0)])
-                                         (vr.c/vy-get-screen-to-world-ray (-> (w (vf/path [:my/model :vg.gltf/Camera]))
+                                         (vr.c/vy-get-screen-to-world-ray (-> (w [:my/model :vg.gltf/Camera])
                                                                               (get vt/Camera))))
         pos (vr.c/vector-3-add position (-> (vt/Vector3 direction)
                                             (vr.c/vector-3-scale 0.2)))
@@ -106,6 +106,11 @@
 
   (on-contact-added w)
 
+  #_(vybe.flecs.c/ecs-set-alias w (vf/eid (w (vf/vybe-name [:a :b]))
+
+                                          (w [:my/model :vg.gltf/office :vg.gltf/ceil])
+                                          (w [:my/model :vg.gltf/office :vg.gltf/ceil])))
+
   #_(do (vybe.blender/entities-ignore! w [:pilot_a :pilot_b :pilot_c :pilot_d :Cube #_:player__collider])
         (vybe.blender/entity-sync! w))
 
@@ -121,8 +126,8 @@
     (conj e :vg.anim/active))
 
   ;; Physics.
-  (conj (w (vf/path [:my/model :vg.gltf/player__collider])) :vg/collide-with-static ::player-collider)
-  (conj (w (vf/path [:my/model :vg.gltf/office :vg.gltf/table2 :vg.gltf/tv.001])) :vg/kinematic)
+  (conj (w [:my/model :vg.gltf/player__collider]) :vg/collide-with-static ::player-collider)
+  (conj (w [:my/model :vg.gltf/office :vg.gltf/table2 :vg.gltf/tv.001]) :vg/kinematic)
 
   ;; Accept inputs (mouse + WASD) to move the camera (or any other character via
   ;; a tag).
@@ -132,20 +137,20 @@
                       :rot-pitch-limit (/ Math/PI 3)})
 
   ;; Replicate rotation + translation from collider to camera.
-  (merge (get (w (vf/path [:my/model :vg.gltf/Camera])) vt/Translation)
-         (get (w (vf/path [:my/model :vg.gltf/player__collider])) vt/Translation))
-  (merge (get (w (vf/path [:my/model :vg.gltf/Camera])) vt/Rotation)
-         (get (w (vf/path [:my/model :vg.gltf/player__collider])) vt/Rotation))
+  (merge (get (w [:my/model :vg.gltf/Camera]) vt/Translation)
+         (get (w [:my/model :vg.gltf/player__collider]) vt/Translation))
+  (merge (get (w [:my/model :vg.gltf/Camera]) vt/Rotation)
+         (get (w [:my/model :vg.gltf/player__collider]) vt/Rotation))
 
   ;; Switch cameras.
   (when (vg/key-pressed? :space)
     (vf/with-query w [_ :vg/camera-active
                       e :vf/entity]
-      (if (= e (w (vf/path [:my/model :vg.gltf/Camera])))
-        (do (assoc w (vf/path [:my/model :vg.gltf/Camera.001]) [:vg/camera-active])
-            (vf/disable (w (vf/path [:my/model :vg.gltf/office :vg.gltf/ceil]))))
-        (do (assoc w (vf/path [:my/model :vg.gltf/Camera]) [:vg/camera-active])
-            (vf/enable (w (vf/path [:my/model :vg.gltf/office :vg.gltf/ceil])))))))
+      (if (= e (w [:my/model :vg.gltf/Camera]))
+        (do (assoc w [:my/model :vg.gltf/Camera.001] [:vg/camera-active])
+            (vf/disable (w [:my/model :vg.gltf/office :vg.gltf/ceil])))
+        (do (assoc w [:my/model :vg.gltf/Camera] [:vg/camera-active])
+            (vf/enable (w [:my/model :vg.gltf/office :vg.gltf/ceil]))))))
 
   (vg/default-systems w)
   ;; Progress the systems (using Flecs).
@@ -160,7 +165,7 @@
 
   #_ (init)
 
-  (let [tv-path (vf/path [:my/model :vg.gltf/office :vg.gltf/table2 :vg.gltf/tv.001])
+  (let [tv-path [:my/model :vg.gltf/office :vg.gltf/table2 :vg.gltf/tv.001]
         raycasted (= (vf/get-name (raycasted-entity w)) tv-path)
         switch? (and raycasted (vr.c/is-mouse-button-released (raylib/MOUSE_BUTTON_LEFT)))
         tv (w tv-path)
@@ -198,19 +203,19 @@
     (vg/draw-lights w {:scene :vg.gltf.scene/track_scene})
     ;; Draw to RT.
     (vg/with-fx w {:rt ::screen-rt
-                   :target (w (vf/path [:my/model :vg.gltf/office :vg.gltf/table2 :vg.gltf/tv.001 :vg.gltf/screen]))
+                   :target (w [:my/model :vg.gltf/office :vg.gltf/table2 :vg.gltf/tv.001 :vg.gltf/screen])
                    :shaders [[::vg/shader-edge-2d {:edge_fill 1.0
                                                    :vg.shader.bypass/entities
                                                    (when turned-on
-                                                     [(w (vf/path [:my/model :vg.gltf/track_path.001]))
+                                                     [[:my/model :vg.gltf/track_path.001]
                                                       ::message])}]]}
       (if turned-on
         (do (vr.c/clear-background (vr/Color [100 100 200 255]))
-            (vg/with-camera (get (w (vf/path [:my/model :vg.gltf/track_camera])) vt/Camera)
+            (vg/with-camera (get (w [:my/model :vg.gltf/track_camera]) vt/Camera)
               (vg/draw-scene w {:scene :vg.gltf.scene/track_scene})
               (vg/draw-billboard w (vf/path [:my/model :vg.gltf/track_camera])
                                  ::screen-rt
-                                 (-> (vp/clone (get (w (vf/path [:my/model :vg.gltf/pilot_d])) vt/Translation))
+                                 (-> (vp/clone (get (w [:my/model :vg.gltf/pilot_d]) vt/Translation))
                                      (update :y + 2.2)
                                      (update :x + 0)
                                      (update :z + 0))
@@ -239,11 +244,11 @@
           (vg/with-fx w {:drawing true
                          :shaders (-> [[::vg/shader-edge-2d {:edge_fill 1.0
                                                              :vg.shader.bypass/entities
-                                                             [(w (vf/path [:my/model :vg.gltf/office :vg.gltf/table2 :vg.gltf/tv.001 :vg.gltf/screen]))
-                                                              (w (vf/path [:my/model :vg.gltf/office :vg.gltf/floor :vg.gltf/_nomad_unskew
-                                                                           :vg.gltf/Boîte.003 :vg.gltf/_nomad_unskew.001 :vg.gltf/button_red]))
-                                                              (w (vf/path [:my/model :vg.gltf/office :vg.gltf/floor :vg.gltf/_nomad_unskew
-                                                                           :vg.gltf/Boîte.003 :vg.gltf/_nomad_unskew.002 :vg.gltf/button_green]))]}]]
+                                                             [(w [:my/model :vg.gltf/office :vg.gltf/table2 :vg.gltf/tv.001 :vg.gltf/screen])
+                                                              (w [:my/model :vg.gltf/office :vg.gltf/floor :vg.gltf/_nomad_unskew
+                                                                  :vg.gltf/Boîte.003 :vg.gltf/_nomad_unskew.001 :vg.gltf/button_red])
+                                                              (w [:my/model :vg.gltf/office :vg.gltf/floor :vg.gltf/_nomad_unskew
+                                                                  :vg.gltf/Boîte.003 :vg.gltf/_nomad_unskew.002 :vg.gltf/button_green])]}]]
                                       (concat fx))}
             (vg/with-camera camera
               (vg/draw-scene w (merge {:scene :vg.gltf.scene/Scene}
