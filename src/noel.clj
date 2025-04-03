@@ -99,6 +99,8 @@
 
 #_(init)
 
+(defonce *factor (atom 0.0))
+
 (defn draw
   [w delta-time]
   ;; For debugging
@@ -161,13 +163,18 @@
   #_ (init)
 
   (let [tv (w :vg.gltf/tv.001)
-        raycasted (= (raycasted-entity w) tv)
+        raycasted #_(= (raycasted-entity w) tv) false
         switch? (and raycasted (vr.c/is-mouse-button-released (raylib/MOUSE_BUTTON_LEFT)))
         _ (when switch?
             (if (::turned-on tv)
               (disj tv ::turned-on)
               (conj tv ::turned-on)))
         turned-on (get tv ::turned-on)]
+
+    (if turned-on
+      (swap! *factor + (* (vg/get-delta-time) 1))
+      (swap! *factor - (* (vg/get-delta-time) 3)))
+    (reset! *factor (max (min @*factor 1.0) 0.0))
 
     ;; Message.
     (vg/with-fx w {:rt ::screen-rt
@@ -198,11 +205,21 @@
     ;; Draw to RT.
     (vg/with-fx w {:rt ::screen-rt
                    :target (w :vg.gltf/screen)
-                   :shaders [[::vg/shader-edge-2d {:edge_fill 1.0
-                                                   :vg.shader.bypass/entities
-                                                   (when turned-on
-                                                     [:vg.gltf/track_path.001
-                                                      ::message])}]]}
+                   :shaders [(when turned-on
+                               [::vg/shader-edge-2d {:edge_fill 1.0
+                                                     :u_rgb (vr.c/vector-3-lerp
+                                                             (vt/Vector3 [7 7 7])
+                                                             (vt/Vector3 (mapv #(* % 0.9) [0.8 0.9 1.0]))
+                                                             @*factor)
+                                                     :vg.shader.bypass/entities
+                                                     (when (and turned-on
+                                                                (> @*factor 0.7))
+                                                       [:vg.gltf/pilot_a
+                                                        :vg.gltf/pilot_b
+                                                        :vg.gltf/pilot_c
+                                                        :vg.gltf/pilot_d
+                                                        :vg.gltf/track_path.001
+                                                        ::message])}])]}
       (if turned-on
         (do (vr.c/clear-background (vr/Color [100 100 200 255]))
             (vg/with-camera (get (w :vg.gltf/track_camera) vt/Camera)
@@ -222,26 +239,33 @@
 
     (vg/with-drawing
 
-      (let [fx (vg/fx-painting w {:dither-radius 0.9})]
+      (vr.c/clear-background (vr/Color [15 15 17 255]))
+      (vf/with-query w [_ :vg/camera-active
+                        camera vt/Camera]
 
-        (vr.c/clear-background (vr/Color [15 15 17 255]))
-        (vf/with-query w [_ :vg/camera-active
-                          camera vt/Camera]
+        ;; Copy cursor's entity path to the clipboard.
+        (when (vg/key-pressed? :z)
+          (when-let [path (scene->entity-path w camera :vg.gltf.scene/Scene)]
+            (println (format "Copied path %s to clipboard" path))
+            (vr.c/set-clipboard-text (pr-str path))))
 
-          ;; Copy cursor's entity path to the clipboard.
-          (when (vg/key-pressed? :z)
-            (when-let [path (scene->entity-path w camera :vg.gltf.scene/Scene)]
-              (println (format "Copied path %s to clipboard" path))
-              (vr.c/set-clipboard-text (pr-str path))))
-
-          ;; Edge shader (no tv screen).
+        ;; Edge shader (no tv screen).
+        (let [bypassed-entities (concat [:vg.gltf/screen]
+                                        (when (and turned-on
+                                                   (> @*factor 0.86))
+                                          [:vg.gltf/button_red
+                                           :vg.gltf/button_green]))]
           (vg/with-fx w {:drawing true
                          :shaders (-> [[::vg/shader-edge-2d {:edge_fill 1.0
-                                                             :vg.shader.bypass/entities
-                                                             [:vg.gltf/screen
-                                                              :vg.gltf/button_red
-                                                              :vg.gltf/button_green]}]]
-                                      (concat fx))}
+                                                             :u_rgb (if turned-on
+                                                                      (vt/Vector3 [0.5 0.4 0.4])
+                                                                      (vt/Vector3 [0.1 0.1 0.1]))
+                                                             #_(vr.c/vector-3-lerp
+                                                                (vt/Vector3 [0.1 0.1 0.1])
+                                                                (vt/Vector3 [0.5 0.4 0.4])
+                                                                (min (* @*factor 10) 1))
+                                                             :vg.shader.bypass/entities bypassed-entities}]]
+                                      (concat (vg/fx-painting w {:dither-radius 0.9})))}
             (vg/with-camera camera
               (vg/draw-scene w (merge {:scene :vg.gltf.scene/Scene}
                                       #_{:colliders true}))
@@ -251,25 +275,26 @@
 
       ;; Text
       (vg/with-fx w {:drawing true
-                     :shaders [[::vg/shader-dither {:u_radius 1.0
+                     #_ #_:shaders [[::vg/shader-dither {:u_radius 3.0
                                                     :u_offsets (vt/Vector3 (mapv #(* % (+ 0.1
                                                                                           (vg/wobble 0.2))
-                                                                                     0.5)
+                                                                                     0.1)
                                                                                  [0.02 (+ 0.016 (vg/wobble 0.01))
                                                                                   (+ 0.040 (vg/wobble 0.01))]))}]
-                               [::vg/shader-noise-blur {:u_radius (+ 1.0 (rand 1))}]]}
+                                    [::vg/shader-noise-blur {:u_radius (+ 1.0 (rand 1))}]]}
         (when raycasted
           (draw-text (if turned-on "Turn Off" "Turn On")
                      (- (/ (vr.c/get-screen-width) 2.0) 12)
                      (+ (/ (vr.c/get-screen-height) 2.0) 10)
-                     {:size 45})))
+                     {:size 45}))
 
-      (draw-cursor (merge {:size 0.8}
-                          (when raycasted
-                            {:radius-inner (if raycasted 8 3)
-                             :color-fg (if raycasted
-                                         (vr/Color [210 220 120 255])
-                                         (vr/Color [210 190 200 255]))})))
+        (draw-cursor (merge {:size 0.8}
+                            (when raycasted
+                              {:radius-inner (if raycasted 8 3)
+                               :color-fg (if raycasted
+                                           (vr/Color [210 220 120 255])
+                                           (vr/Color [210 190 200 255]))}))))
+
 
       (vr.c/draw-fps (- (vr.c/get-screen-width) 90)
                      (- (vr.c/get-screen-height) 30)))))

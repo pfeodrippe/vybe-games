@@ -7,9 +7,10 @@ in vec4 fragColor;
 uniform sampler2D texture0;
 uniform vec4 colDiffuse;
 uniform float edge_fill;
+uniform vec3 u_rgb;
 
 uniform sampler2D u_color_ids_tex;
-uniform vec4 u_color_ids_bypass[10];
+uniform vec4 u_color_ids_bypass[30];
 uniform int u_color_ids_bypass_count;
 
 uniform vec2 u_resolution;
@@ -29,11 +30,13 @@ out vec4 finalColor;
 void main (void) {
     vec3 color = vec3(0.0);
     vec2 pixel = 1.0/u_resolution;
+    // This give us a good flare effect.
+    //vec2 pixel = 2000.0/u_resolution;
     vec2 st = fragTexCoord;
     vec4 texelColor = texture(texture0, fragTexCoord);
     vec4 color_id = texture(u_color_ids_tex, fragTexCoord);
     // Higher radius is like an out of focus effect.
-    float radius = 1.0;
+    float radius = 1.5;
 
     float c = 1.0;
 
@@ -55,22 +58,29 @@ void main (void) {
 
     trigger = trigger && !is_bypassing;
 
-    float th = 0.0;
-
-    if (trigger && texelColor.r > th && texelColor.g > th && texelColor.b > th) {
+    if (trigger) {
         // If we comment all 4 below, we have good effect as well.
         //color += edgePrewitt(texture0, st, pixel * radius) * vec3(0.9, 0.3, 0.4);
         //color += edgePrewitt(texture0, st, pixel * radius) * vec3(0.9, 0.7, 0.5) + 0.2;
         //color += edgePrewitt(texture0, st, pixel * radius) + (texelColor*colDiffuse*fragColor).xyz*0.2;
 
         // By adjusting the negative factor in the second term, we can adjust light intensity.
-        color += edgePrewitt(texture0, st, pixel * radius) + (texelColor*colDiffuse*fragColor).xyz*-0.3;
+        color += edgePrewitt(texture0, st, pixel * radius) + (texelColor*colDiffuse*fragColor).xyz*-0.5;
 
-        // More effect.
+        // Flare
+        //color += edgePrewitt(texture0, st, pixel * radius*2000)*0.2;
+
+        //color += edgePrewitt(texture0, st, pixel * radius*2);
+
+        // More effects.
         //color += edgePrewitt(texture0, st, pixel * radius) * (texelColor*colDiffuse*fragColor).zyx*8.0;
-        //color += edgePrewitt(texture0, st, pixel * radius) * (texelColor*colDiffuse*fragColor).zyx*-9.0;
+        //color += edgePrewitt(texture0, st, pixel * radius) * (texelColor*colDiffuse*fragColor).zyx*0.3;
 
-        finalColor = vec4((vec3(0.9, 0.7, 0.5)- color), 1.0);
+        //finalColor = vec4(u_rgb - color, 1.0);
+        if (color.r < 0.0 && color.g < 0.0 && color.b < 0)
+            finalColor = vec4(u_rgb, 1.0);
+        else
+            finalColor = vec4(vec3(0.2), 1.0);
     } else {
         // Texel color fetching from texture sampler
         vec4 texelColor = texture(texture0, fragTexCoord);
