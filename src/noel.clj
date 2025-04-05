@@ -97,6 +97,13 @@
          (vg/color-identifier->entity w)
          vf/get-path)))
 
+(defn- hover-text
+  [v]
+  (draw-text v
+             (- (/ (vr.c/get-screen-width) 2.0) 12)
+             (+ (/ (vr.c/get-screen-height) 2.0) 10)
+             {:size 30}))
+
 #_(init)
 
 (defonce *factor (atom 0.0))
@@ -125,6 +132,7 @@
   ;; Physics.
   (conj (w :vg.gltf/player__collider) :vg/collide-with-static ::player-collider)
   (conj (w :vg.gltf/tv.001) :vg/kinematic)
+  (conj (w :vg.gltf/audiobox) :vg/kinematic)
 
   ;; Accept inputs (mouse + WASD) to move the camera (or any other character via
   ;; a tag).
@@ -163,7 +171,7 @@
   #_ (init)
 
   (let [tv (w :vg.gltf/tv.001)
-        raycasted #_(= (raycasted-entity w) tv) false
+        raycasted (= (raycasted-entity w) tv) #_false
         switch? (and raycasted (vr.c/is-mouse-button-released (raylib/MOUSE_BUTTON_LEFT)))
         _ (when switch?
             (if (::turned-on tv)
@@ -237,20 +245,42 @@
     #_(vg/draw-lights w {:scene :vg.gltf.scene/Scene})
     (vg/draw-lights w {:scene :vg.gltf.scene/Scene :shader ::vg/shader-default})
 
+    (vg/with-fx w {:rt (vg/rt-get ::audiobox-message 300 300)
+                   :target :vg.gltf/audiobox_message}
+      (let [[x y] [10 10]]
+        (vr.c/clear-background (vr/Color [20 20 20 0]))
+        #_(vr.c/draw-rectangle-pro (vr/Rectangle [(- x 10) (- y 5) 215 115]) (vt/Vector2 [0 0]) 0
+                                 (vr/Color [20 30 40 200]))
+        #_(vr.c/draw-rectangle-pro (vr/Rectangle [(- x 10) (- y 10) 215 115]) (vt/Vector2 [0 0]) 0
+                                 (vr/Color [255 234 235 255]))
+        #_(vr.c/gui-group-box (vr/Rectangle [x y 200 100])
+                            #_(condp #(< (mod %2 6) %1) (vr.c/get-time)
+                                1 "MONSTER +++"
+                                3 "MONSTER ++"
+                                5 "MONSTER +"
+                                "MONSTER")
+                            "")
+        (vr.c/gui-dummy-rec (vr/Rectangle [(+ x 10) (+ y 10) 180 80])
+                            (if-let [m (get (w ::audiobox-message) [vt/Str :uma-mensagem])]
+                              m
+                              (condp #(< (mod %2 3) %1) (* (vr.c/get-time) 5)
+                                2 "1 nova mensagem"
+                                "")))))
+
     (vg/with-drawing
 
       (vr.c/clear-background (vr/Color [15 15 17 255]))
       (vf/with-query w [_ :vg/camera-active
                         camera vt/Camera]
 
-        ;; Copy cursor's entity path to the clipboard.
         (when (vg/key-pressed? :z)
           (when-let [path (scene->entity-path w camera :vg.gltf.scene/Scene)]
-            (println (format "Copied path %s to clipboard" path))
-            (vr.c/set-clipboard-text (pr-str path))))
+            (println (format "Copied path %s to clipboard" (last path)))
+            (vr.c/set-clipboard-text (pr-str (last path)))))
 
         ;; Edge shader (no tv screen).
-        (let [bypassed-entities (concat [:vg.gltf/screen]
+        (let [bypassed-entities (concat [:vg.gltf/screen
+                                         :vg.gltf/audiobox_message]
                                         (when (and turned-on
                                                    (> @*factor 0.86))
                                           [:vg.gltf/button_red
@@ -260,10 +290,6 @@
                                                              :u_rgb (if turned-on
                                                                       (vt/Vector3 [0.5 0.4 0.4])
                                                                       (vt/Vector3 [0.1 0.1 0.1]))
-                                                             #_(vr.c/vector-3-lerp
-                                                                (vt/Vector3 [0.1 0.1 0.1])
-                                                                (vt/Vector3 [0.5 0.4 0.4])
-                                                                (min (* @*factor 10) 1))
                                                              :vg.shader.bypass/entities bypassed-entities}]]
                                       (concat (vg/fx-painting w {:dither-radius 0.9})))}
             (vg/with-camera camera
@@ -276,25 +302,35 @@
       ;; Text
       (vg/with-fx w {:drawing true
                      #_ #_:shaders [[::vg/shader-dither {:u_radius 3.0
-                                                    :u_offsets (vt/Vector3 (mapv #(* % (+ 0.1
-                                                                                          (vg/wobble 0.2))
-                                                                                     0.1)
-                                                                                 [0.02 (+ 0.016 (vg/wobble 0.01))
-                                                                                  (+ 0.040 (vg/wobble 0.01))]))}]
+                                                         :u_offsets (vt/Vector3 (mapv #(* % (+ 0.1
+                                                                                               (vg/wobble 0.2))
+                                                                                          0.1)
+                                                                                      [0.02 (+ 0.016 (vg/wobble 0.01))
+                                                                                       (+ 0.040 (vg/wobble 0.01))]))}]
                                     [::vg/shader-noise-blur {:u_radius (+ 1.0 (rand 1))}]]}
-        (when raycasted
-          (draw-text (if turned-on "Turn Off" "Turn On")
-                     (- (/ (vr.c/get-screen-width) 2.0) 12)
-                     (+ (/ (vr.c/get-screen-height) 2.0) 10)
-                     {:size 45}))
+        (let [raycasted (raycasted-entity w)]
+          (cond
+            (= (raycasted-entity w) (w :vg.gltf/tv.001))
+            (hover-text (if turned-on "Turn Off" "Turn On"))
 
-        (draw-cursor (merge {:size 0.8}
-                            (when raycasted
-                              {:radius-inner (if raycasted 8 3)
-                               :color-fg (if raycasted
-                                           (vr/Color [210 220 120 255])
-                                           (vr/Color [210 190 200 255]))}))))
+            ;; We will implement a simple message change.
+            (= (raycasted-entity w) (w :vg.gltf/audiobox))
+            (if (get (w ::audiobox-message) [vt/Str :uma-mensagem])
+              (do
+                (when (vr.c/is-mouse-button-released (raylib/MOUSE_BUTTON_LEFT))
+                  (disj (w ::audiobox-message) [vt/Str :uma-mensagem]))
+                (hover-text "Close mailbox!"))
+              (do
+                (when (vr.c/is-mouse-button-released (raylib/MOUSE_BUTTON_LEFT))
+                  (assoc w ::audiobox-message [[(vt/Str "Olha só, eita danado!") :uma-mensagem]]))
+                (hover-text "Read Message"))))
 
+          (draw-cursor (merge {:size 0.8}
+                              (when raycasted
+                                {:radius-inner (if raycasted 8 3)
+                                 :color-fg (if raycasted
+                                             (vr/Color [210 220 120 255])
+                                             (vr/Color [210 190 200 255]))})))))
 
       (vr.c/draw-fps (- (vr.c/get-screen-width) 90)
                      (- (vr.c/get-screen-height) 30)))))
