@@ -9,10 +9,13 @@
    [vybe.c :as vc]
    [vybe.math :as vm]
    [vybe.jolt :as vj]
-   [vybe.jolt.c :as vj.c])
+   [vybe.jolt.c :as vj.c]
+   [vybe.audio :as va]
+   [overtone.core :refer :all])
   (:import
    (org.vybe.raylib raylib)))
 
+(va/audio-enable!)
 (vg/try-requiring-flow-storm!)
 
 #_ (init)
@@ -114,6 +117,7 @@
   (def w w)
 
   (on-contact-added w)
+  (va/systems w)
 
   #_(do (vybe.blender/entities-ignore! w [:pilot_a :pilot_b :pilot_c :pilot_d :Cube #_:player__collider])
         (vybe.blender/entity-sync! w))
@@ -129,10 +133,11 @@
     (conj e [(vt/Scalar 0.4) :vg.anim/speed])
     (conj e :vg.anim/active))
 
-  ;; Physics.
-  (conj (w :vg.gltf/player__collider) :vg/collide-with-static ::player-collider)
-  (conj (w :vg.gltf/tv.001) :vg/kinematic)
-  (conj (w :vg.gltf/audiobox) :vg/kinematic)
+  (merge w {:vg.gltf/player__collider [:vg/collide-with-static ::player-collider]
+            :vg.gltf/tv.001 [:vg/kinematic]
+            :vg.gltf/audiobox [:vg/kinematic]
+            :vg.gltf/window_1_audio [(va/SoundSource {:synth #'va/noise-wind :mul 0.5 :args {:freq-min 100 :freq-max 200}})]
+            :vg.gltf/window_2_audio [(va/SoundSource {:synth #'va/noise-wind :mul 0.2 :args {:freq-min 500 :freq-max 1000}})]})
 
   ;; Accept inputs (mouse + WASD) to move the camera (or any other character via
   ;; a tag).
@@ -250,22 +255,25 @@
       (let [[x y] [10 10]]
         (vr.c/clear-background (vr/Color [20 20 20 0]))
         #_(vr.c/draw-rectangle-pro (vr/Rectangle [(- x 10) (- y 5) 215 115]) (vt/Vector2 [0 0]) 0
-                                 (vr/Color [20 30 40 200]))
+                                   (vr/Color [20 30 40 200]))
         #_(vr.c/draw-rectangle-pro (vr/Rectangle [(- x 10) (- y 10) 215 115]) (vt/Vector2 [0 0]) 0
-                                 (vr/Color [255 234 235 255]))
+                                   (vr/Color [255 234 235 255]))
         #_(vr.c/gui-group-box (vr/Rectangle [x y 200 100])
-                            #_(condp #(< (mod %2 6) %1) (vr.c/get-time)
-                                1 "MONSTER +++"
-                                3 "MONSTER ++"
-                                5 "MONSTER +"
-                                "MONSTER")
-                            "")
+                              #_(condp #(< (mod %2 6) %1) (vr.c/get-time)
+                                  1 "MONSTER +++"
+                                  3 "MONSTER ++"
+                                  5 "MONSTER +"
+                                  "MONSTER")
+                              "")
         (vr.c/gui-dummy-rec (vr/Rectangle [(+ x 10) (+ y 10) 180 80])
                             (if-let [m (get (w ::audiobox-message) [vt/Str :uma-mensagem])]
-                              m
-                              (condp #(< (mod %2 3) %1) (* (vr.c/get-time) 5)
-                                2 "1 nova mensagem"
-                                "")))))
+                              (do (merge w {:vg.gltf/audiobox (va/SoundSource {:synth #'va/alarm :mul 0.0})})
+                                  m)
+                              (condp #(< (mod %2 3) %1) (* (vr.c/get-time) 2)
+                                0.5 (do (merge w {:vg.gltf/audiobox (va/SoundSource {:synth #'va/alarm :mul 0.3})})
+                                      "1 nova mensagem")
+                                (do (merge w {:vg.gltf/audiobox (va/SoundSource {:synth #'va/alarm :mul 0.0})})
+                                    ""))))))
 
     (vg/with-drawing
 
@@ -318,11 +326,13 @@
             (if (get (w ::audiobox-message) [vt/Str :uma-mensagem])
               (do
                 (when (vr.c/is-mouse-button-released (raylib/MOUSE_BUTTON_LEFT))
-                  (disj (w ::audiobox-message) [vt/Str :uma-mensagem]))
+                  (merge w
+                         {::audiobox-message (vf/del [vt/Str :uma-mensagem])}))
                 (hover-text "Close mailbox!"))
               (do
                 (when (vr.c/is-mouse-button-released (raylib/MOUSE_BUTTON_LEFT))
-                  (assoc w ::audiobox-message [[(vt/Str "Olha só, eita danado!") :uma-mensagem]]))
+                  (merge w
+                         {::audiobox-message [[(vt/Str "Olha só, eita danado!") :uma-mensagem]]}))
                 (hover-text "Read Message"))))
 
           (draw-cursor (merge {:size 0.8}
