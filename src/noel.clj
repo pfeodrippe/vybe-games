@@ -11,11 +11,11 @@
    [vybe.jolt :as vj]
    [vybe.jolt.c :as vj.c]
    [vybe.audio :as va]
+   [vybe.util :as vy.u]
    [overtone.core :refer :all])
   (:import
    (org.vybe.raylib raylib)))
 
-(va/audio-enable!)
 (vg/try-requiring-flow-storm!)
 
 #_ (init)
@@ -111,6 +111,54 @@
 
 (defonce *factor (atom 0.0))
 
+;; -- Audio.
+;; Try to initialize overtone (supercollider), it will warn only if not
+;; correctly initialized.
+(va/audio-enable!)
+
+;; We initialize synths here hoping that Linux users without supercollider won't
+;; be affected (other than not having audio).
+(defn synths-init!
+  []
+
+  (defonce music-1 (sample (vy.u/app-resource "audio/keyboard.mp3")))
+
+  (defsynth my-music-synth
+    [rate 1.0 out_bus 0]
+    (out out_bus
+         (* 12 (play-buf 2 music-1 (buf-rate-scale:ir music-1) :loop 1 :rate 4))))
+  #_ (stop)
+
+  (defsynth noise-wind
+    [freq-min 500, freq-max 1000 mul 1, out_bus 0]
+    (out out_bus
+         (let [noise (-> (pink-noise)
+                         (lpf freq-max)
+                         (hpf freq-min)
+                         (* 0.2 mul))]
+           noise)))
+
+  (defsynth alarm
+    [mul 1 out_bus 0]
+    (let [v (-> (sin-osc (* 3000 1))
+                #_(* (env-gen (env-adsr :atack 0.4 :sustain 0.1 :decay 0.1)))
+                #_(lpf 300)
+                #_(hpf 200)
+                (* 0.05 mul))]
+      (out out_bus v)))
+
+  (defonce hover-sound (sample (vy.u/app-resource "audio/hover.mp3")))
+
+  (defonce cling-sound (sample (vy.u/app-resource "audio/cling.mp3"))))
+
+;; The `sound` macro will run its body when overtone is correctly initialized,
+;; otherwise it won't do nothing.
+(va/sound (synths-init!))
+#_(stop)
+
+#_ (init)
+
+;; -- Draw.
 (defn draw
   [w delta-time]
   ;; For debugging
@@ -136,8 +184,8 @@
   (merge w {:vg.gltf/player__collider [:vg/collide-with-static ::player-collider]
             :vg.gltf/tv.001 [:vg/kinematic]
             :vg.gltf/audiobox [:vg/kinematic]
-            :vg.gltf/window_1_audio [(va/SoundSource {:synth #'va/noise-wind :mul 0.5 :args {:freq-min 100 :freq-max 200}})]
-            :vg.gltf/window_2_audio [(va/SoundSource {:synth #'va/noise-wind :mul 0.2 :args {:freq-min 500 :freq-max 1000}})]})
+            :vg.gltf/window_1_audio [(va/SoundSource {:synth #'noise-wind :mul 0.5 :args {:freq-min 100 :freq-max 200}})]
+            :vg.gltf/window_2_audio [(va/SoundSource {:synth #'noise-wind :mul 0.2 :args {:freq-min 500 :freq-max 1000}})]})
 
   ;; Accept inputs (mouse + WASD) to move the camera (or any other character via
   ;; a tag).
@@ -169,10 +217,6 @@
   ;; Update physics (using Jolt).
   (vg/physics-update! w delta-time)
 
-  ;; Add some lights (from the blender model).
-  #_(vr.c/rl-set-clip-planes -1000 1000)
-  #_(vr.c/rl-set-clip-planes 0.01 1000)
-
   #_ (init)
 
   (let [tv (w :vg.gltf/tv.001)
@@ -180,8 +224,11 @@
         switch? (and raycasted (vr.c/is-mouse-button-released (raylib/MOUSE_BUTTON_LEFT)))
         _ (when switch?
             (if (::turned-on tv)
-              (disj tv ::turned-on)
-              (conj tv ::turned-on)))
+              (do
+                (disj tv ::turned-on)
+                (va/sound (hover-sound :amp 0.03 :rate 1.3)))
+              (do (conj tv ::turned-on)
+                  (va/sound (cling-sound :amp 0.03 :rate 1.6)))))
         turned-on (get tv ::turned-on)]
 
     (if turned-on
@@ -266,13 +313,23 @@
                                   "MONSTER")
                               "")
         (vr.c/gui-dummy-rec (vr/Rectangle [(+ x 10) (+ y 10) 180 80])
+                            #_(if-let [m (get (w ::audiobox-message) [vt/Str :uma-mensagem])]
+                                (do (merge w {:vg.gltf/audiobox (va/SoundSource {:synth #'alarm :mul 0.0})})
+                                    m)
+                                (condp #(< (mod %2 3) %1) (* (vr.c/get-time) 2)
+                                  0.5 (do (merge w {:vg.gltf/audiobox (va/SoundSource {:synth #'alarm :mul 0.3})})
+                                          "1 nova mensagem")
+                                  #_ #_7 (do (merge w {:vg.gltf/audiobox (va/SoundSource {:synth #'my-music-synth :mul 0.02})})
+                                             "1 nova mensagem")
+                                  (do (merge w {:vg.gltf/audiobox (va/SoundSource {:synth #'alarm :mul 0.0})})
+                                      "")))
                             (if-let [m (get (w ::audiobox-message) [vt/Str :uma-mensagem])]
-                              (do (merge w {:vg.gltf/audiobox (va/SoundSource {:synth #'va/alarm :mul 0.0})})
+                              (do (merge w {:vg.gltf/audiobox (va/SoundSource {:synth #'my-music-synth :mul 0.0})})
                                   m)
                               (condp #(< (mod %2 3) %1) (* (vr.c/get-time) 2)
-                                0.5 (do (merge w {:vg.gltf/audiobox (va/SoundSource {:synth #'va/alarm :mul 0.3})})
+                                7 (do (merge w {:vg.gltf/audiobox (va/SoundSource {:synth #'my-music-synth :mul 0.06})})
                                       "1 nova mensagem")
-                                (do (merge w {:vg.gltf/audiobox (va/SoundSource {:synth #'va/alarm :mul 0.0})})
+                                (do (merge w {:vg.gltf/audiobox (va/SoundSource {:synth #'my-music-synth :mul 0.0})})
                                     ""))))))
 
     (vg/with-drawing
@@ -326,11 +383,13 @@
             (if (get (w ::audiobox-message) [vt/Str :uma-mensagem])
               (do
                 (when (vr.c/is-mouse-button-released (raylib/MOUSE_BUTTON_LEFT))
+                  (va/sound (hover-sound :amp 0.03 :rate 1.3))
                   (merge w
                          {::audiobox-message (vf/del [vt/Str :uma-mensagem])}))
                 (hover-text "Close mailbox!"))
               (do
                 (when (vr.c/is-mouse-button-released (raylib/MOUSE_BUTTON_LEFT))
+                  (va/sound (cling-sound :amp 0.03 :rate 1.6))
                   (merge w
                          {::audiobox-message [[(vt/Str "Olha só, eita danado!") :uma-mensagem]]}))
                 (hover-text "Read Message"))))
@@ -348,17 +407,14 @@
 #_ (init)
 
 (def game-config
-  ;; iPad config.
-  #_{:screen-size [1080 700]
-     :window-position [0 0]}
+  (case nil
+    :ipad {:screen-size [1080 700]
+           :window-position [0 0]}
 
-  ;; Full-screen config.
-  #_{:full-screen true
-     :window-position [0 0]}
-
-  ;; 600x600 config.
-  {:screen-size [600 600]
-   :window-position [1120 200]})
+    :full {:full-screen true
+           :window-position [0 0]}
+    {:screen-size [600 600]
+     :window-position [1120 200]}))
 
 (defn init
   []
