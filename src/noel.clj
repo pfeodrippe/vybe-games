@@ -180,8 +180,11 @@
         switch? (and raycasted (vr.c/is-mouse-button-released (raylib/MOUSE_BUTTON_LEFT)))
         _ (when switch?
             (if (::turned-on tv)
-              (disj tv ::turned-on)
-              (conj tv ::turned-on)))
+              (do
+                (disj tv ::turned-on)
+                (va/sound (va/hover :rate 1.3)))
+              (do (conj tv ::turned-on)
+                  (va/sound (va/cling :rate 1.6)))))
         turned-on (get tv ::turned-on)]
 
     (if turned-on
@@ -271,7 +274,9 @@
                                   m)
                               (condp #(< (mod %2 3) %1) (* (vr.c/get-time) 2)
                                 0.5 (do (merge w {:vg.gltf/audiobox (va/SoundSource {:synth #'va/alarm :mul 0.3})})
-                                      "1 nova mensagem")
+                                        "1 nova mensagem")
+                                #_ #_7 (do (merge w {:vg.gltf/audiobox (va/SoundSource {:synth #'va/my-music :mul 0.02})})
+                                           "1 nova mensagem")
                                 (do (merge w {:vg.gltf/audiobox (va/SoundSource {:synth #'va/alarm :mul 0.0})})
                                     ""))))))
 
@@ -326,11 +331,13 @@
             (if (get (w ::audiobox-message) [vt/Str :uma-mensagem])
               (do
                 (when (vr.c/is-mouse-button-released (raylib/MOUSE_BUTTON_LEFT))
+                  (va/sound (va/hover :rate 1.3))
                   (merge w
                          {::audiobox-message (vf/del [vt/Str :uma-mensagem])}))
                 (hover-text "Close mailbox!"))
               (do
                 (when (vr.c/is-mouse-button-released (raylib/MOUSE_BUTTON_LEFT))
+                  (va/sound (va/cling :rate 1.6))
                   (merge w
                          {::audiobox-message [[(vt/Str "Olha só, eita danado!") :uma-mensagem]]}))
                 (hover-text "Read Message"))))
