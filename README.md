@@ -7,6 +7,8 @@ Sample games for Vybe (https://github.com/pfeodrippe/vybe).
 ``` shell
 # This will put the dynamic libs in the right place and start raylib in the main thread,
 # open the REPL and call call the `init` function inside `leo.clj`.
+# To start audio, install SuperCollider (https://supercollider.github.io/downloads.html) you may also need to add a configuration file if it was not added automatically https://doc.sccode.org/Reference/StartupFile.html and start the audio server (start SuperCollider app and run Boot Server)
+# After this is done, in leo.clj evaluate (va/audio-enable!) and you can now play music (e.g. (va/sound (demo 0.2 (sin-osc 400))))
 
 # Linux (x64)
 clj -M:linux -m vybe.native.loader && clj -M:linux -m vybe.raylib
