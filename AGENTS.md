@@ -51,49 +51,44 @@ REPL run recording rule (MANDATORY)
 
 - Purpose: create a complete, auditable trail of every snippet the assistant or a developer evaluates in the running REPL. This must be kept up-to-date for reproducibility and debugging.
 
-- Before-eval (required): ALWAYS append a pre-run entry to `REPL_RUNS.md` _before_ executing code via the assistant REPL tooling. The pre-run entry must contain:
-  - UTC timestamp in ISO8601 format.
-  - The exact code snippet that will be evaluated (byte-for-byte).
-  - A one-line intent note (why the snippet will be executed).
-
-  Example pre-run entry:
-
-  ```markdown
-  ## Run at 2025-11-08T13:40:00Z  # UTC
-
-  ```clojure
-  ;; intent: count entities with :vf/observer
-  (vybe.raylib/t
-    (require 'vybe.flecs)
-    ;; ... exact snippet ...)
-  ```
-  ```
-
 - Execution: When running code that interacts with Flecs or the running world, the snippet MUST be wrapped with `vybe.raylib/t` as described above. If you forget to wrap it, stop and update the code to include the wrapper.
-
-- After-eval (required): Immediately after the evaluation finishes, append the evaluation output to the same `REPL_RUNS.md` entry. Include:
-  - The exact printed stdout and stderr (as captured by the REPL).
-  - The returned value (if any) or an explicit note that the evaluation returned nil/failed.
-  - Any thrown exception message and stack summary (if present).
-
-  Example post-run addition to the same entry:
-
-  ```markdown
-  Output:
-
-  with-query :vf/observer count: 0
-  sample: ()
-  ```
 
 - Failure policy: If the assistant cannot edit files via the usual editing tool (apply_patch) due to an internal error, it MUST fall back to appending the entry using a terminal append and then report the fallback in the conversation. The assistant must not proceed with an evaluation until the pre-run entry is recorded one way or another.
 
-- Responsibility: The assistant is responsible for performing the pre- and post-run recording on every REPL snippet it executes. If a human runs snippets directly in the REPL, they should follow the same recording rules.
-
 - Checklist to follow for every REPL-driven evaluation:
   1. Prepare exact snippet and intent note.
- 2. Append pre-run entry to `REPL_RUNS.md` (apply_patch preferred, terminal fallback allowed).
- 3. Execute snippet (wrap with `vybe.raylib/t` if interacting with Flecs).
- 4. Append execution output/result to the same entry.
- 5. Mention in the conversation that the audit file was updated and where to find the entry.
+  2. Report it back to the user.
+  3. Execute snippet (wrap with `vybe.raylib/t` if interacting with Flecs).
+  4. Append execution output/result to the same entry.
+  5. Mention in the conversation that the audit file was updated and where to find the entry.
 
 Note: This rule is enforced for the assistant's runs. Humans are asked to follow it when making reproductions.
+
+Bracket tracking and iterative function development
+
+- When replacing or creating complex functions, follow these steps STRICTLY:
+  1. **First evaluation step**: Define a simplified version and test it in the REPL with clojure_evaluate_code
+  2. **Verify step**: After each modification, use clojure_evaluate_code to test the function
+  3. **Bracket safety**: Always use clojure_balance_brackets for the complete function before finalizing
+  4. **Small increments**: Build functions incrementally, not all at once
+  5. **Test modifications**: After each file edit, reload and test in REPL before proceeding
+
+CRITICAL: After every file change
+- ALWAYS reload the namespace using clojure_evaluate_code with: `(require 'noel :reload)`
+- This ensures changes are picked up by the running REPL
+- NEVER skip this step - it's essential for testing changes immediately
+- Note: The REPL must be connected (game must be running). If REPL is not connected, notify user to start the game first
+
+Example workflow for complex function changes:
+  ```
+  Step 1: Create base function structure → evaluate in REPL
+  Step 2: Add first feature → evaluate in REPL
+  Step 3: Add animation logic → evaluate in REPL
+  Step 4: Add color transitions → evaluate in REPL
+  Step 5: Final balance check → use bracket balancer
+  Step 6: Reload namespace and confirm visual output
+  ```
+
+- Never attempt multiple large modifications in one edit. Always verify incrementally.
+
+```
