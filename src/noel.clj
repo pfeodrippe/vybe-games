@@ -12,9 +12,7 @@
    [vybe.jolt.c :as vj.c]
    [vybe.audio :as va]
    [vybe.util :as vy.u]
-   [overtone.core :refer :all])
-  (:import
-   (org.vybe.raylib raylib)))
+   [overtone.core :refer :all]))
 
 (vg/try-requiring-flow-storm!)
 
@@ -94,7 +92,7 @@
                           :use-color-ids true})))
 
     (->> (-> (vr.c/rl-read-texture-pixels (:id (:texture rt))
-                                          1 1 (raylib/RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8))
+                                          1 1 (vr/raylib-constant :RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8))
              (vp/arr (* 1 1) vr/Color)
              first)
          (vg/color-identifier->entity w)
@@ -221,7 +219,7 @@
 
   (let [tv (w :vg.gltf/tv.001)
         raycasted (= (raycasted-entity w) tv) #_false
-        switch? (and raycasted (vr.c/is-mouse-button-released (raylib/MOUSE_BUTTON_LEFT)))
+        switch? (and raycasted (vr.c/is-mouse-button-released (vr/raylib-constant :MOUSE_BUTTON_LEFT)))
         _ (when switch?
             (if (::turned-on tv)
               (do
@@ -382,13 +380,13 @@
             (= (raycasted-entity w) (w :vg.gltf/audiobox))
             (if (get (w ::audiobox-message) [vt/Str :uma-mensagem])
               (do
-                (when (vr.c/is-mouse-button-released (raylib/MOUSE_BUTTON_LEFT))
+                (when (vr.c/is-mouse-button-released (vr/raylib-constant :MOUSE_BUTTON_LEFT))
                   (va/sound (hover-sound :amp 0.03 :rate 1.3))
                   (merge w
                          {::audiobox-message (vf/del [vt/Str :uma-mensagem])}))
                 (hover-text "Close mailbox!"))
               (do
-                (when (vr.c/is-mouse-button-released (raylib/MOUSE_BUTTON_LEFT))
+                (when (vr.c/is-mouse-button-released (vr/raylib-constant :MOUSE_BUTTON_LEFT))
                   (va/sound (cling-sound :amp 0.03 :rate 1.6))
                   (merge w
                          {::audiobox-message [[(vt/Str "Olha só, eita danado!") :uma-mensagem]]}))
