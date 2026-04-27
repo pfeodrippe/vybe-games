@@ -45,16 +45,26 @@
 
 (defn raycasted-entity
   [w]
-  (let [{:keys [position direction]} (-> (vt/Vector2 [(/ (vr.c/get-screen-width) 2.0)
-                                                      (/ (vr.c/get-screen-height) 2.0)])
-                                         (vr.c/vy-get-screen-to-world-ray (-> (w :vg.gltf/Camera)
-                                                                              (get vt/Camera))))
-        pos (vr.c/vector-3-add position (-> (vt/Vector3 direction)
-                                            (vr.c/vector-3-scale 0.2)))
-        direction (mapv #(* % 10000) (vals direction))
-        phys (get (w (vg/root)) vj/PhysicsSystem)
-        body (vj/cast-ray phys pos direction)]
-    (vg/body->entity w body)))
+  (or (when-let [path (some (fn [rel]
+                              (when (and (vector? rel)
+                                         (= :vg/raycast-body (first rel)))
+                                (second rel)))
+                            (get w :vg/raycast))]
+        (let [path (if (and (seq? path)
+                            (= 'vybe.flecs/path (first path)))
+                     (vf/path (second path))
+                     path)]
+          (w (get-in w [path vt/Eid :id]))))
+      (let [{:keys [position direction]} (-> (vt/Vector2 [(/ (vr.c/get-screen-width) 2.0)
+                                                          (/ (vr.c/get-screen-height) 2.0)])
+                                             (vr.c/vy-get-screen-to-world-ray (-> (w :vg.gltf/Camera)
+                                                                                  (get vt/Camera))))
+            pos (vr.c/vector-3-add position (-> (vt/Vector3 direction)
+                                                (vr.c/vector-3-scale 0.2)))
+            direction (mapv #(* % 10000) (vals direction))
+            phys (get (w (vg/root)) vj/PhysicsSystem)
+            body (vj/cast-ray phys pos direction)]
+        (vg/body->entity w body))))
 
 (defn- draw-cursor
   ([]
@@ -217,8 +227,9 @@
 
   #_ (init)
 
-  (let [tv (w :vg.gltf/tv.001)
-        raycasted (= (raycasted-entity w) tv) #_false
+  (let [hovered-entity (raycasted-entity w)
+        tv (w :vg.gltf/tv.001)
+        raycasted (= hovered-entity tv) #_false
         switch? (and raycasted (vr.c/is-mouse-button-released (vr/raylib-constant :MOUSE_BUTTON_LEFT)))
         _ (when switch?
             (if (::turned-on tv)
@@ -371,13 +382,13 @@
                                                                                       [0.02 (+ 0.016 (vg/wobble 0.01))
                                                                                        (+ 0.040 (vg/wobble 0.01))]))}]
                                     [::vg/shader-noise-blur {:u_radius (+ 1.0 (rand 1))}]]}
-        (let [raycasted (raycasted-entity w)]
+        (let [raycasted hovered-entity]
           (cond
-            (= (raycasted-entity w) (w :vg.gltf/tv.001))
+            (= raycasted (w :vg.gltf/tv.001))
             (hover-text (if turned-on "Turn Off" "Turn On"))
 
             ;; We will implement a simple message change.
-            (= (raycasted-entity w) (w :vg.gltf/audiobox))
+            (= raycasted (w :vg.gltf/audiobox))
             (if (get (w ::audiobox-message) [vt/Str :uma-mensagem])
               (do
                 (when (vr.c/is-mouse-button-released (vr/raylib-constant :MOUSE_BUTTON_LEFT))
